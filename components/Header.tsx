@@ -23,8 +23,8 @@ const Header: React.FC<HeaderProps> = ({ currentView, onChangeView }) => {
     }`;
 
   const linkClass = (view: ViewState) => `cursor-pointer font-medium tracking-wide transition-colors ${currentView === view
-      ? 'text-stone-900 border-b-2 border-stone-800'
-      : (isScrolled ? 'text-stone-600 hover:text-stone-900' : 'text-stone-800 hover:text-stone-600')
+    ? 'text-stone-900 border-b-2 border-stone-800'
+    : (isScrolled ? 'text-stone-600 hover:text-stone-900' : 'text-stone-800 hover:text-stone-600')
     }`;
 
   const handleNavClick = (view: ViewState) => {
@@ -69,24 +69,27 @@ const Header: React.FC<HeaderProps> = ({ currentView, onChangeView }) => {
 
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white shadow-xl py-6 px-4 flex flex-col space-y-6 animate-in slide-in-from-top-5">
-          <button onClick={() => handleNavClick(ViewState.HOME)} className="flex items-center space-x-3 text-lg font-medium text-stone-700">
+        <div className="md:hidden fixed inset-0 top-16 bg-white z-40 flex flex-col p-6 space-y-8 animate-in slide-in-from-right-10">
+          <button onClick={() => handleNavClick(ViewState.HOME)} className="flex items-center space-x-4 text-xl font-medium text-stone-700 p-2 active:bg-stone-50 rounded-lg">
             <span>Inicio</span>
           </button>
-          <button onClick={() => handleNavClick(ViewState.BOOKING)} className="flex items-center space-x-3 text-lg font-medium text-stone-700">
-            <Scissors size={20} />
+          <button onClick={() => handleNavClick(ViewState.BOOKING)} className="flex items-center space-x-4 text-xl font-medium text-stone-700 p-2 active:bg-stone-50 rounded-lg">
+            <Scissors size={24} />
             <span>Corte & Brushing</span>
           </button>
-          <button onClick={() => handleNavClick(ViewState.CATALOG)} className="flex items-center space-x-3 text-lg font-medium text-stone-700">
-            <ShoppingBag size={20} />
+          <button onClick={() => handleNavClick(ViewState.CATALOG)} className="flex items-center space-x-4 text-xl font-medium text-stone-700 p-2 active:bg-stone-50 rounded-lg">
+            <ShoppingBag size={24} />
             <span>Perfumes</span>
           </button>
-          <button
-            onClick={() => handleNavClick(ViewState.BOOKING)}
-            className="bg-stone-900 text-white w-full py-3 rounded-lg text-center uppercase tracking-widest font-bold"
-          >
-            Agendar Cita
-          </button>
+
+          <div className="mt-auto pb-8">
+            <button
+              onClick={() => handleNavClick(ViewState.BOOKING)}
+              className="w-full bg-stone-900 text-white py-4 rounded-xl text-center uppercase tracking-widest font-bold shadow-lg active:scale-95 transition-transform"
+            >
+              Agendar Cita
+            </button>
+          </div>
         </div>
       )}
     </nav>

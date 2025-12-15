@@ -60,30 +60,32 @@ const PerfumeCatalog: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Note Filters */}
-                <div className="flex flex-wrap gap-2 items-center">
-                    <span className="text-xs font-bold uppercase text-stone-400 mr-2">Filtrar por nota:</span>
-                    {allNotes.map(note => (
-                        <button
-                            key={note}
-                            onClick={() => setSelectedNote(selectedNote === note ? null : note)}
-                            className={`text-xs px-3 py-1.5 rounded-full border transition-all duration-200 ${selectedNote === note
-                                    ? 'bg-stone-900 text-white border-stone-900 shadow-md transform scale-105'
-                                    : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400 hover:bg-stone-50'
-                                }`}
-                        >
-                            {note}
-                        </button>
-                    ))}
-                    {selectedNote && (
-                        <button
-                            onClick={() => setSelectedNote(null)}
-                            className="ml-2 text-stone-400 hover:text-stone-900 transition-colors"
-                            aria-label="Limpiar filtro"
-                        >
-                            <X size={16} />
-                        </button>
-                    )}
+                {/* Note Filters - Horizontal Scroll on Mobile */}
+                <div className="w-full overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+                    <div className="flex flex-nowrap md:flex-wrap gap-2 items-center min-w-max">
+                        <span className="text-xs font-bold uppercase text-stone-400 mr-2 sticky left-0 bg-white pl-2 md:pl-0">Filtrar:</span>
+                        {allNotes.map(note => (
+                            <button
+                                key={note}
+                                onClick={() => setSelectedNote(selectedNote === note ? null : note)}
+                                className={`text-xs px-4 py-2 rounded-full border transition-all duration-200 whitespace-nowrap ${selectedNote === note
+                                    ? 'bg-stone-900 text-white border-stone-900 shadow-md'
+                                    : 'bg-white text-stone-600 border-stone-200 active:bg-stone-100'
+                                    }`}
+                            >
+                                {note}
+                            </button>
+                        ))}
+                        {selectedNote && (
+                            <button
+                                onClick={() => setSelectedNote(null)}
+                                className="ml-2 text-stone-400 hover:text-stone-900 transition-colors p-2"
+                                aria-label="Limpiar filtro"
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
