@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { ViewState } from './types';
+import { ViewState, BookingData } from './types';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import BookingForm from './components/BookingForm';
 import PerfumeCatalog from './components/PerfumeCatalog';
 import Footer from './components/Footer';
 import ChatAssistant from './components/ChatAssistant';
+import BookingConfirmation from './components/BookingConfirmation';
 import { Scissors, ShoppingBag, ArrowRight } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
+  const [lastBooking, setLastBooking] = useState<BookingData | null>(null);
 
   const renderView = () => {
     switch (currentView) {
@@ -20,8 +22,19 @@ const App: React.FC = () => {
               <span className="text-sm font-bold tracking-widest text-stone-500 uppercase">Reserva tu momento</span>
               <h2 className="serif text-4xl md:text-5xl mt-3 text-stone-900">Agenda tu Cita</h2>
             </div>
-            <BookingForm onSuccess={() => setCurrentView(ViewState.HOME)} />
+            <BookingForm onSuccess={(data) => {
+              setLastBooking(data);
+              setCurrentView(ViewState.CONFIRMATION);
+            }} />
           </div>
+        );
+      case ViewState.CONFIRMATION:
+        return (
+          <BookingConfirmation
+            isHomeService={lastBooking?.isHomeService || false}
+            onGoHome={() => setCurrentView(ViewState.HOME)}
+            onGoCatalog={() => setCurrentView(ViewState.CATALOG)}
+          />
         );
       case ViewState.CATALOG:
         return (

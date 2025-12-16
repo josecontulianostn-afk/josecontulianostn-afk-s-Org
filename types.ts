@@ -22,7 +22,8 @@ export enum ViewState {
   HOME = 'HOME',
   BOOKING = 'BOOKING',
   CATALOG = 'CATALOG',
-  CONTACT = 'CONTACT'
+  CONTACT = 'CONTACT',
+  CONFIRMATION = 'CONFIRMATION'
 }
 
 export interface BookingData {

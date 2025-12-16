@@ -5,7 +5,7 @@ import { Calendar as CalendarIcon, MapPin, Clock, CheckCircle, Smartphone, Alert
 import { supabase } from '../services/supabaseClient';
 
 interface BookingFormProps {
-    onSuccess?: () => void;
+    onSuccess?: (data: BookingData) => void;
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
@@ -264,7 +264,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
         setShowModifyModal(false);
         setFormData(prev => ({ ...prev, name: '', phone: '+569 ' })); // Reset fields to avoid loop
         alert(`Entendido. Tu cita anterior (${existingBooking.date} a las ${existingBooking.time}) se mantiene. ¡Gracias!`);
-        if (onSuccess) onSuccess();
     };
 
 
@@ -302,7 +301,7 @@ Espero su confirmación final. Gracias.
 
         // Call success callback to close the form/change view
         if (onSuccess) {
-            onSuccess();
+            onSuccess(formData);
         }
 
         if (method === 'whatsapp') {
