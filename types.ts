@@ -7,6 +7,7 @@ export interface Perfume {
   price10ml: number;
   image: string;
   notes: string[];
+  category: 'classic' | 'arab';
 }
 
 export interface Service {
