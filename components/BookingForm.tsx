@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { BookingData } from '../types';
 import { SERVICES, HOME_SERVICE_FEE, HOME_SERVICE_EXTRA_MINUTES, COVERAGE_AREAS, PHONE_NUMBER, EMAIL_ADDRESS } from '../constants';
-import { Calendar as CalendarIcon, MapPin, Clock, CheckCircle, Smartphone, AlertCircle, Loader2, Info } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, Clock, CheckCircle, Smartphone, AlertCircle, Loader2, Info, X } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
-const BookingForm: React.FC = () => {
+interface BookingFormProps {
+    onSuccess?: () => void;
+}
+
+const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
     const service = SERVICES[0];
 
     const [formData, setFormData] = useState<BookingData>({
         name: '',
         email: '',
-        phone: '',
+        phone: '+569 ',
         date: '',
         time: '',
         isHomeService: false,
@@ -22,6 +26,8 @@ const BookingForm: React.FC = () => {
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
     const [bookedSlots, setBookedSlots] = useState<{ start: number, end: number }[]>([]);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const [existingBooking, setExistingBooking] = useState<any | null>(null);
+    const [showModifyModal, setShowModifyModal] = useState(false);
 
     // Calculate duration: Base + 30 mins if home service
     const currentDuration = service.durationMin + (formData.isHomeService ? HOME_SERVICE_EXTRA_MINUTES : 0);
@@ -41,38 +47,65 @@ const BookingForm: React.FC = () => {
         }
     }, [formData.date, bookedSlots, currentDuration]);
 
+    // Check for existing booking when Name and Phone are entered
+    useEffect(() => {
+        const checkExisting = () => {
+            if (formData.name.length > 3 && formData.phone.length > 8) {
+                // Try LocalStorage first (for Demo/MVP)
+                const stored = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+                const found = stored.find((b: any) =>
+                    b.phone.replace(/\s/g, '') === formData.phone.replace(/\s/g, '') &&
+                    b.name.toLowerCase() === formData.name.toLowerCase()
+                );
+
+                if (found) {
+                    setExistingBooking(found);
+                    setShowModifyModal(true);
+                }
+            }
+        };
+
+        const timeoutId = setTimeout(checkExisting, 1000); // Debounce check
+        return () => clearTimeout(timeoutId);
+    }, [formData.name, formData.phone]);
+
+
     const fetchBookingsForDate = async (date: string) => {
         setFetchingSlots(true);
         try {
-            // Safe check for Supabase client
-            if (!supabase) {
-                // Demo Mode or No Config: Assume no bookings to allow testing the UI
-                setBookedSlots([]);
-                setFetchingSlots(false);
-                return;
+            let slots: { start: number, end: number }[] = [];
+
+            // 1. Try Supabase
+            if (supabase) {
+                const { data, error } = await supabase
+                    .from('bookings')
+                    .select('time, duration_minutes')
+                    .eq('date', date);
+
+                if (!error && data) {
+                    slots = data.map((b: any) => {
+                        const [hours, minutes] = b.time.split(':').map(Number);
+                        const startMinutes = hours * 60 + minutes;
+                        return { start: startMinutes, end: startMinutes + b.duration_minutes };
+                    });
+                }
             }
 
-            const { data, error } = await supabase
-                .from('bookings')
-                .select('time, duration_minutes')
-                .eq('date', date);
+            // 2. Merge with LocalStorage (for Demo)
+            const stored = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+            const localForDate = stored.filter((b: any) => b.date === date);
+            const localSlots = localForDate.map((b: any) => {
+                const [hours, minutes] = b.time.split(':').map(Number);
+                const startMinutes = hours * 60 + minutes;
+                // Provide default duration if missing in legacy data
+                const duration = b.duration_minutes || 60;
+                return { start: startMinutes, end: startMinutes + duration };
+            });
 
-            if (error) {
-                console.warn('Supabase fetch error:', error.message);
-                setBookedSlots([]);
-            } else if (data) {
-                const slots = data.map((b: any) => {
-                    const [hours, minutes] = b.time.split(':').map(Number);
-                    const startMinutes = hours * 60 + minutes;
-                    return {
-                        start: startMinutes,
-                        end: startMinutes + b.duration_minutes
-                    };
-                });
-                setBookedSlots(slots);
-            }
+            setBookedSlots([...slots, ...localSlots]);
+
         } catch (e) {
-            console.warn("Supabase connection skipped or failed", e);
+            console.warn("Error fetching slots", e);
             setBookedSlots([]);
         } finally {
             setFetchingSlots(false);
@@ -120,7 +153,7 @@ const BookingForm: React.FC = () => {
     const validateForm = () => {
         const newErrors: { [key: string]: string } = {};
         if (!formData.name) newErrors.name = 'El nombre es obligatorio';
-        if (!formData.phone) newErrors.phone = 'El teléfono es obligatorio';
+        if (!formData.phone || formData.phone.trim() === '+569') newErrors.phone = 'El teléfono es obligatorio';
         if (!formData.email) {
             newErrors.email = 'El email es obligatorio';
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -164,12 +197,37 @@ const BookingForm: React.FC = () => {
         }
     };
 
-    const saveBookingToSupabase = async () => {
-        if (!supabase) return; // Skip if in Demo mode
+    const saveBooking = async () => {
+        // 1. Save to LocalStorage (Always, for MVP/Demo redundancy)
+        const stored = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+        const newBooking = {
+            id: Date.now(),
+            ...formData,
+            duration_minutes: currentDuration,
+            created_at: new Date().toISOString()
+        };
+        stored.push(newBooking);
+        localStorage.setItem('mock_bookings', JSON.stringify(stored));
 
-        try {
-            const { error } = await supabase.from('bookings').insert([
-                {
+        // 2. Try Supabase (Real DB)
+        if (supabase) {
+            try {
+                // A. Guardar/Actualizar Lead (Cliente)
+                // Usamos 'phone' como identificador único para upsert
+                const { error: leadError } = await supabase
+                    .from('leads')
+                    .upsert({
+                        phone: formData.phone,
+                        name: formData.name,
+                        email: formData.email,
+                        last_booking_date: formData.date,
+                        // Incrementamos contador manualmente o dejamos que un trigger lo haga (simplificado aquí user update)
+                    }, { onConflict: 'phone' });
+
+                if (leadError) console.warn("Error saving lead:", leadError);
+
+                // B. Guardar Reserva
+                await supabase.from('bookings').insert([{
                     name: formData.name,
                     email: formData.email,
                     phone: formData.phone,
@@ -178,28 +236,47 @@ const BookingForm: React.FC = () => {
                     is_home_service: formData.isHomeService,
                     address: formData.address || null,
                     duration_minutes: currentDuration
-                }
-            ]);
+                }]);
 
-            if (error) {
-                console.error("Supabase Error:", error);
+            } catch (err) {
+                console.warn("Supabase save failed, relying on local:", err);
             }
-        } catch (err) {
-            console.warn("Could not save to Supabase:", err);
         }
     };
 
+    const deleteBooking = (bookingId: number) => {
+        const stored = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+        const filtered = stored.filter((b: any) => b.id !== bookingId);
+        localStorage.setItem('mock_bookings', JSON.stringify(filtered));
+        // Note: We are not deleting from Supabase here as we don't have the ID reliably mapped without real keys
+    };
+
+    const handleConfirmModify = () => {
+        if (existingBooking) {
+            deleteBooking(existingBooking.id);
+            setExistingBooking(null);
+            setShowModifyModal(false);
+            // User can now proceed to book normally
+        }
+    };
+
+    const handleCancelModify = () => {
+        setShowModifyModal(false);
+        setFormData(prev => ({ ...prev, name: '', phone: '+569 ' })); // Reset fields to avoid loop
+        alert(`Entendido. Tu cita anterior (${existingBooking.date} a las ${existingBooking.time}) se mantiene. ¡Gracias!`);
+        if (onSuccess) onSuccess();
+    };
+
+
     const handleBooking = async (method: 'whatsapp' | 'email') => {
         if (!validateForm()) {
-            const firstError = Object.values(errors)[0] || "Por favor completa los campos requeridos"; // Fallback message
-            // Optionally scroll to top or show toast, but field errors are visible
             return;
         }
 
         setLoading(true);
 
-        // Try to save to database but don't block WhatsApp if it fails
-        await saveBookingToSupabase();
+        // Save Data
+        await saveBooking();
 
         const serviceName = `${service.name}${formData.isHomeService ? ' + Domicilio' : ' (En Studio)'}`;
         const formattedPrice = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(totalPrice);
@@ -219,9 +296,14 @@ ${formData.isHomeService ? `*Dirección:* ${formData.address}` : ''}
 Espero su confirmación final. Gracias.
     `.trim();
 
-        // Small delay for UX feeling
+        // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 800));
         setLoading(false);
+
+        // Call success callback to close the form/change view
+        if (onSuccess) {
+            onSuccess();
+        }
 
         if (method === 'whatsapp') {
             const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(messageBody)}`;
@@ -234,7 +316,35 @@ Espero su confirmación final. Gracias.
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start fade-in pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start fade-in pb-12 relative">
+
+            {/* Modify Booking Modal Overly */}
+            {showModifyModal && existingBooking && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-white/95 backdrop-blur-sm rounded-2xl animate-in fade-in zoom-in-95">
+                    <div className="bg-white border border-stone-200 shadow-2xl p-8 rounded-2xl max-w-sm text-center">
+                        <AlertCircle className="mx-auto text-amber-500 mb-4 h-12 w-12" />
+                        <h3 className="serif text-2xl font-bold text-stone-900 mb-2">Ya tienes una reserva</h3>
+                        <p className="text-stone-600 mb-6 text-sm">
+                            Hemos encontrado una cita para <strong>{existingBooking.name}</strong> el día <strong>{existingBooking.date}</strong> a las <strong>{existingBooking.time}</strong>.
+                        </p>
+                        <p className="font-bold text-stone-900 mb-6 text-lg">¿Deseas cambiar tu reserva?</p>
+                        <div className="space-y-3">
+                            <button
+                                onClick={handleConfirmModify}
+                                className="w-full bg-stone-900 text-white py-3 rounded-xl font-bold hover:bg-stone-700 transition"
+                            >
+                                Sí, cambiar cita
+                            </button>
+                            <button
+                                onClick={handleCancelModify}
+                                className="w-full bg-stone-100 text-stone-600 py-3 rounded-xl font-bold hover:bg-stone-200 transition"
+                            >
+                                No, mantener la anterior
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Col 1: Service Info & Personal Data */}
             <div className="space-y-6">
@@ -408,8 +518,8 @@ Espero su confirmación final. Gracias.
                                                 key={time}
                                                 onClick={() => handleTimeSelect(time)}
                                                 className={`py-3 px-2 rounded-lg text-sm font-bold transition-all transform active:scale-95 ${formData.time === time
-                                                        ? 'bg-stone-900 text-white shadow-md scale-105 ring-2 ring-offset-2 ring-stone-900'
-                                                        : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-900 hover:bg-stone-50'
+                                                    ? 'bg-stone-900 text-white shadow-md scale-105 ring-2 ring-offset-2 ring-stone-900'
+                                                    : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-900 hover:bg-stone-50'
                                                     }`}
                                             >
                                                 {time}
@@ -442,10 +552,10 @@ Espero su confirmación final. Gracias.
                         className="w-full flex justify-center items-center space-x-2 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-xl transition-all transform hover:-translate-y-1 disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none"
                     >
                         {loading ? <Loader2 className="animate-spin" /> : <Smartphone size={22} />}
-                        <span className="text-lg">{loading ? 'Procesando...' : 'Confirmar Reserva'}</span>
+                        <span className="text-lg">{loading ? 'Procesando...' : 'Confirmar y Enviar WhatsApp'}</span>
                     </button>
                     <p className="text-xs text-center text-stone-400 mt-3 px-4">
-                        Al confirmar, tus datos quedarán registrados y se abrirá WhatsApp para finalizar el contacto directo.
+                        Al confirmar, volverás al inicio y se abrirá WhatsApp.
                     </p>
                 </div>
 
