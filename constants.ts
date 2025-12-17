@@ -28,7 +28,7 @@ export const PERFUMES: Perfume[] = [
     description: 'Proyectado como el líder indiscutible en valor. Destaca por su nota de "Iris Noble" y se mantiene como el pilar del lujo y la "felicidad".',
     price5ml: 9990,
     price10ml: 18990,
-    image: 'https://i.notino.com/google/lancome/3605533286555_01-o.jpg',
+    image: 'https://fragrancebuy.ca/cdn/shop/products/LancomeLaVieEstBelle-W-100ml_500x.jpg',
     notes: ['Floral Gourmand', 'Iris Noble', 'Pachulí'],
     category: 'classic'
   },
@@ -39,7 +39,7 @@ export const PERFUMES: Perfume[] = [
     description: 'Un símbolo de estatus masivo en Chile. Su aroma potente (tuberosa y café) y su icónica botella de tacón aseguran su puesto en el podio.',
     price5ml: 9990,
     price10ml: 18990,
-    image: 'https://i.notino.com/google/carolina-herrera/8411061818961_01-o.jpg',
+    image: 'https://fragrancebuy.ca/cdn/shop/products/Carolina-Herrera-Good-Girl-Woman-150ml_500x.jpg',
     notes: ['Ámbar Floral', 'Tuberosa', 'Café'],
     category: 'classic'
   },
@@ -50,7 +50,7 @@ export const PERFUMES: Perfume[] = [
     description: 'Se consolida como la opción moderna y elegante, especialmente atractiva para el segmento millennial que busca notas de flores blancas y sal.',
     price5ml: 10500,
     price10ml: 19500,
-    image: 'https://i.notino.com/google/lancome/3614272639638_01-o.jpg',
+    image: 'https://fragrancebuy.ca/cdn/shop/products/LancomeIdole-W-75ml_500x.jpg',
     notes: ['Chipre Floral', 'Flores Blancas', 'Sal'],
     category: 'classic'
   },
@@ -61,7 +61,7 @@ export const PERFUMES: Perfume[] = [
     description: 'Un clásico esencial para el verano chileno. Se mantiene en el top por su perfil fresco de menta y limón, ideal para el uso diario.',
     price5ml: 9500,
     price10ml: 17900,
-    image: 'https://i.notino.com/google/armani/3605521172861_01-o.jpg',
+    image: 'https://fragrancebuy.ca/cdn/shop/products/GiorgioArmaniAcquaDiGioia-W-100ml_500x.jpg',
     notes: ['Floral Acuática', 'Menta', 'Limón'],
     category: 'classic'
   },
@@ -72,7 +72,7 @@ export const PERFUMES: Perfume[] = [
     description: 'Sigue firme en las listas de popularidad para 2025-26, siendo la opción preferida para la vida nocturna y fiestas por su intensidad.',
     price5ml: 10990,
     price10ml: 19990,
-    image: 'https://i.notino.com/google/yves-saint-laurent/3365440787971_01-o.jpg',
+    image: 'https://fragrancebuy.ca/cdn/shop/products/YSLBlackOpium-W-90ml_500x.jpg',
     notes: ['Oriental Vainilla', 'Café', 'Vainilla'],
     category: 'classic'
   },
@@ -83,7 +83,7 @@ export const PERFUMES: Perfume[] = [
     description: 'A pesar de las nuevas propuestas, este clásico mantiene su popularidad gracias a su reconocimiento global y frescura, ideal para primavera-verano.',
     price5ml: 8990,
     price10ml: 16990,
-    image: 'https://i.notino.com/google/dolce-gabbana/3423473020263_01-o.jpg',
+    image: 'https://fragrancebuy.ca/cdn/shop/products/Dolce_GabbanaLightBlue-W-100ml_500x.jpg',
     notes: ['Floral Frutal', 'Manzana', 'Cedro'],
     category: 'classic'
   },
