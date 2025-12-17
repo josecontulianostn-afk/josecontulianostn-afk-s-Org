@@ -1,4 +1,4 @@
-import { Perfume, Service } from './types';
+import { Perfume, Service, Review } from './types';
 
 export const PHONE_NUMBER = "56984524774";
 export const EMAIL_ADDRESS = "contacto@tus3b.cl";
@@ -96,7 +96,7 @@ export const PERFUMES: Perfume[] = [
     description: 'Es el fenómeno viral del momento en Chile. Destaca por su aroma dulce y cremoso (a menudo comparado con batido de fresa) y lidera las ventas online.',
     price5ml: 5990,
     price10ml: 10990,
-    image: 'https://images.unsplash.com/photo-1547887538-e3a2f32cb1cc?auto=format&fit=crop&q=80&w=600', // Pink vibe
+    image: 'https://m.media-amazon.com/images/I/51h1T1G1zGL._SX522_.jpg',
     notes: ['Orquídea', 'Heliotropo', 'Frutas Tropicales'],
     category: 'arab'
   },
@@ -107,7 +107,7 @@ export const PERFUMES: Perfume[] = [
     description: 'Un superventas constante en tiendas especializadas chilenas. Es muy buscado por su perfil olfativo oscuro y elegante, similar a Coco Noir de Chanel.',
     price5ml: 6500,
     price10ml: 11990,
-    image: 'https://images.unsplash.com/photo-1585250462215-d9c9b506e76d?auto=format&fit=crop&q=80&w=600', // Dark vibe
+    image: 'https://m.media-amazon.com/images/I/71cQ7+3jilL._AC_SL1500_.jpg',
     notes: ['Rosa', 'Azafrán', 'Pachulí'],
     category: 'arab'
   },
@@ -118,7 +118,7 @@ export const PERFUMES: Perfume[] = [
     description: 'Una tendencia creciente en 2025-26 dentro de la categoría gourmand (aromas comestibles).',
     price5ml: 6990,
     price10ml: 12500,
-    image: 'https://images.unsplash.com/photo-1594035910387-fea4779426e9?auto=format&fit=crop&q=80&w=600', // Golden vibe
+    image: 'https://fragrancebuy.ca/cdn/shop/files/LattafaEclaire-Woman-100ml_500x.jpg',
     notes: ['Caramelo', 'Leche', 'Miel'],
     category: 'arab'
   },
@@ -129,7 +129,7 @@ export const PERFUMES: Perfume[] = [
     description: 'Gana popularidad por su similitud con Delina Exclusif. Es una opción floral frutal muy potente y femenina disponible en el retail local.',
     price5ml: 7500,
     price10ml: 13500,
-    image: 'https://images.unsplash.com/photo-1587017539504-67cfbddac569?auto=format&fit=crop&q=80&w=600', // White/Floral vibe
+    image: 'https://fragrancebuy.ca/cdn/shop/products/ArmafClubDeNuitImperiale-Woman-105ml_500x.jpg',
     notes: ['Lichi', 'Bergamota', 'Rosa Turca'],
     category: 'arab'
   },
@@ -140,7 +140,7 @@ export const PERFUMES: Perfume[] = [
     description: 'Aunque es unisex, tiene una venta masiva en el público femenino por ser la alternativa directa al lujoso Baccarat Rouge 540.',
     price5ml: 7500,
     price10ml: 13500,
-    image: 'https://images.unsplash.com/photo-1616091093461-9c1ad298e25c?auto=format&fit=crop&q=80&w=600', // Red/Amber vibe
+    image: 'https://fragrancebuy.ca/cdn/shop/products/ArmafClubDeNuitUntold-Man-105ml_500x.jpg',
     notes: ['Azafrán', 'Jazmín', 'Ámbar Gris'],
     category: 'arab'
   },
@@ -151,8 +151,53 @@ export const PERFUMES: Perfume[] = [
     description: 'Un éxito rotundo en ventas globales y locales. Es una fragancia unisex que muchas mujeres chilenas adoptan en invierno por su calidez especiada y dulce.',
     price5ml: 7990,
     price10ml: 14500,
-    image: 'https://images.unsplash.com/photo-1592914610354-fd354ea45e48?auto=format&fit=crop&q=80&w=600', // Whiskey/Warm vibe
+    image: 'https://fragrancebuy.ca/cdn/shop/products/LattafaKhamrah-Man-100ml_500x.jpg',
     notes: ['Dátiles', 'Canela', 'Vainilla'],
     category: 'arab'
+  }
+];
+
+export const REVIEWS: Review[] = [
+  {
+    id: 'r1',
+    name: 'Maria Paz',
+    rating: 5,
+    comment: 'Me encantó el servicio, muy profesionales y puntuales. El corte que me hicieron fue exactamente lo que pedía.',
+    date: 'Hace 2 semanas'
+  },
+  {
+    id: 'r2',
+    name: 'Carla S.',
+    rating: 5,
+    comment: 'Increíble la atención a domicilio. Todo muy limpio y ordenado, y los perfumes huelen delicioso. Totalmente recomendada.',
+    date: 'Hace 1 mes'
+  },
+  {
+    id: 'r3',
+    name: 'Valentina R.',
+    rating: 5,
+    comment: 'Compré el Lattafa Yara y es exquisito, llegó super rápido. Además aproveché de hacerme un masaje capilar y quedé como nueva.',
+    date: 'Hace 3 semanas'
+  },
+  {
+    id: 'r4',
+    name: 'Isidora M.',
+    rating: 5,
+    comment: 'Excelente experiencia con Tus3B. La calidad de los productos y la dedicación en el servicio se notan. Volveré a comprar seguro.',
+    date: 'Hace 1 mes'
+  },
+  {
+    id: 'r5',
+    name: 'Fernanda L.',
+    rating: 5,
+    comment: 'Muy buena disposición y asesoría para elegir mi perfume. Los precios son muy convenientes para la calidad que ofrecen.',
+    date: 'Hace 2 semanas'
+  },
+  {
+    id: 'r6',
+    name: 'Camila J.',
+    rating: 4,
+    comment: 'Todo super bien, el perfume llegó en perfecto estado. Solo demoró un poquito más de lo esperado la coordinación, pero la atención un 7.',
+    date: 'Hace 1 mes'
   }
 ];

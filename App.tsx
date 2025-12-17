@@ -7,6 +7,7 @@ import PerfumeCatalog from './components/PerfumeCatalog';
 import Footer from './components/Footer';
 import ChatAssistant from './components/ChatAssistant';
 import BookingConfirmation from './components/BookingConfirmation';
+import Reviews from './components/Reviews';
 import { Scissors, ShoppingBag, ArrowRight } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -112,6 +113,8 @@ const App: React.FC = () => {
                 </div>
               </div>
             </section>
+
+            <Reviews />
           </>
         );
     }

@@ -36,3 +36,11 @@ export interface BookingData {
   isHomeService: boolean; // Domicilio
   address?: string; // Required if isHomeService is true
 }
+
+export interface Review {
+  id: string;
+  name: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
