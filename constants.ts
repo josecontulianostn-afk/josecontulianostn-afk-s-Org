@@ -5,12 +5,54 @@ export const EMAIL_ADDRESS = "contacto@tus3b.cl";
 
 export const SERVICES: Service[] = [
   {
-    id: 'hair-1',
-    name: 'Corte & Brushing Premium',
-    description: 'Renueva tu estilo con nuestro servicio completo de corte y peinado.',
-    price: 19990,
+    id: 'cut-1',
+    name: 'Corte de Puntas / Flequillos',
+    description: 'Mantenimiento esencial para eliminar horquillas y sanear el cabello.',
+    price: 7000,
+    durationMin: 30,
+    includes: ['Corte técnico de puntas o flequillo', 'Sellado de puntas']
+  },
+  {
+    id: 'cut-2',
+    name: 'Corte Bordado',
+    description: 'Elimina el frizz y puntas dañadas sin afectar el largo de tu cabello.',
+    price: 10000,
+    durationMin: 45,
+    includes: ['Corte con máquina bordadora', 'Limpieza de puntas']
+  },
+  {
+    id: 'wash-1',
+    name: 'Lavado',
+    description: 'Lavado profesional refrescante.',
+    price: 5000,
+    durationMin: 20,
+    includes: ['Shampoo profesional', 'Acondicionador'],
+    homeServiceOnly: true
+  },
+  {
+    id: 'massage-1',
+    name: 'Masaje Capilar',
+    description: 'Tratamiento profundo para hidratar y revitalizar tu cabello.',
+    price: 5000,
+    durationMin: 30,
+    includes: ['Ampolla o crema de tratamiento', 'Masaje craneal']
+  },
+  {
+    id: 'brushing-1',
+    name: 'Brushing',
+    description: 'Peinado profesional para dar volumen, brillo y movimiento.',
+    price: 14000,
+    durationMin: 45,
+    includes: ['Secado', 'Modelado con cepillo'],
+  },
+  {
+    id: 'color-1',
+    name: 'Aplicación de Tintura',
+    description: 'Aplicación profesional de tu color (tintura no incluida).',
+    price: 10000,
     durationMin: 60,
-    includes: ['Lavado Capilar', 'Masaje Craneal Relajante', 'Corte Personalizado', 'Brushing / Styling']
+    includes: ['Aplicación uniforme', 'Lavado final'],
+    homeServiceOnly: true
   }
 ];
 
@@ -153,51 +195,88 @@ export const PERFUMES: Perfume[] = [
     price10ml: 14500,
     image: '/images/perfumes/lattafa-khamrah.png',
     notes: ['Dátiles', 'Canela', 'Vainilla'],
-    category: 'arab'
-  }
-];
+    // ... existing code ...
 
-export const REVIEWS: Review[] = [
-  {
-    id: 'r1',
-    name: 'Maria Paz',
-    rating: 5,
-    comment: 'Me encantó el servicio, muy profesionales y puntuales. El corte que me hicieron fue exactamente lo que pedía.',
-    date: 'Hace 2 semanas'
-  },
-  {
-    id: 'r2',
-    name: 'Carla S.',
-    rating: 5,
-    comment: 'Increíble la atención a domicilio. Todo muy limpio y ordenado, y los perfumes huelen delicioso. Totalmente recomendada.',
-    date: 'Hace 1 mes'
-  },
-  {
-    id: 'r3',
-    name: 'Valentina R.',
-    rating: 5,
-    comment: 'Compré el Lattafa Yara y es exquisito, llegó super rápido. Además aproveché de hacerme un masaje capilar y quedé como nueva.',
-    date: 'Hace 3 semanas'
-  },
-  {
-    id: 'r4',
-    name: 'Isidora M.',
-    rating: 5,
-    comment: 'Excelente experiencia con Tus3B. La calidad de los productos y la dedicación en el servicio se notan. Volveré a comprar seguro.',
-    date: 'Hace 1 mes'
-  },
-  {
-    id: 'r5',
-    name: 'Fernanda L.',
-    rating: 5,
-    comment: 'Muy buena disposición y asesoría para elegir mi perfume. Los precios son muy convenientes para la calidad que ofrecen.',
-    date: 'Hace 2 semanas'
-  },
-  {
-    id: 'r6',
-    name: 'Camila J.',
-    rating: 4,
-    comment: 'Todo super bien, el perfume llegó en perfecto estado. Solo demoró un poquito más de lo esperado la coordinación, pero la atención un 7.',
-    date: 'Hace 1 mes'
-  }
-];
+    export const GALLERY_IMAGES = [
+      {
+        id: '1',
+        url: '/images/gallery/work_1.png',
+        category: 'Cortes',
+        description: 'Corte Bob Estilizado'
+      },
+      {
+        id: '2',
+        url: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&q=80&w=800',
+        category: 'Color',
+        description: 'Balayage Caramelo'
+      },
+      {
+        id: '3',
+        url: 'https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?auto=format&fit=crop&q=80&w=800',
+        category: 'Cortes',
+        description: 'Melena Midi con Movimiento'
+      },
+      {
+        id: '4',
+        url: 'https://images.unsplash.com/photo-1605497788044-5a32c7078486?auto=format&fit=crop&q=80&w=800',
+        category: 'Peinados',
+        description: 'Ondas Playeras'
+      },
+      {
+        id: '5',
+        url: 'https://images.unsplash.com/photo-1522337360705-8b13d520a15e?auto=format&fit=crop&q=80&w=800',
+        category: 'Color',
+        description: 'Babylights Rubios'
+      },
+      {
+        id: '6',
+        url: 'https://images.unsplash.com/photo-1492106087820-71f171ce71d0?auto=format&fit=crop&q=80&w=800',
+        category: 'Peinados',
+        description: 'Recogido Elegante'
+      }
+    ];
+
+    export const REVIEWS: Review[] = [
+      {
+        id: 'r1',
+        name: 'Maria Paz',
+        rating: 5,
+        comment: 'Me encantó el servicio, muy profesionales y puntuales. El corte que me hicieron fue exactamente lo que pedía.',
+        date: 'Hace 2 semanas'
+      },
+      {
+        id: 'r2',
+        name: 'Carla S.',
+        rating: 5,
+        comment: 'Increíble la atención a domicilio. Todo muy limpio y ordenado, y los perfumes huelen delicioso. Totalmente recomendada.',
+        date: 'Hace 1 mes'
+      },
+      {
+        id: 'r3',
+        name: 'Valentina R.',
+        rating: 5,
+        comment: 'Compré el Lattafa Yara y es exquisito, llegó super rápido. Además aproveché de hacerme un masaje capilar y quedé como nueva.',
+        date: 'Hace 3 semanas'
+      },
+      {
+        id: 'r4',
+        name: 'Isidora M.',
+        rating: 5,
+        comment: 'Excelente experiencia con Tus3B. La calidad de los productos y la dedicación en el servicio se notan. Volveré a comprar seguro.',
+        date: 'Hace 1 mes'
+      },
+      {
+        id: 'r5',
+        name: 'Fernanda L.',
+        rating: 5,
+        comment: 'Muy buena disposición y asesoría para elegir mi perfume. Los precios son muy convenientes para la calidad que ofrecen.',
+        date: 'Hace 2 semanas'
+      },
+      {
+        id: 'r6',
+        name: 'Camila J.',
+        rating: 4,
+        comment: 'Todo super bien, el perfume llegó en perfecto estado. Solo demoró un poquito más de lo esperado la coordinación, pero la atención un 7.',
+        date: 'Hace 1 mes'
+      }
+    ];

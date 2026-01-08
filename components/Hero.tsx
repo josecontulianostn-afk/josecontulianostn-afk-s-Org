@@ -27,17 +27,30 @@ const Hero: React.FC<HeroProps> = ({ onCtaClick }) => {
           Redefine Tu Estilo <br /> <span className="italic">Tu Esencia</span>
         </h1>
         <p className="text-stone-200 max-w-lg mx-auto text-lg mb-10 font-light">
-          Cortes profesionales a domicilio y perfumería de alta gama en formatos exclusivos. La experiencia que mereces, donde la necesitas.
+          Cortes profesionales a domicilio y perfumería de alta gama. Descubre nuestras ofertas de verano.
         </p>
 
-        <button
-          onClick={onCtaClick}
-          className="group relative px-8 py-4 bg-white/10 backdrop-blur-md border border-white/40 text-white overflow-hidden rounded-sm transition-all hover:bg-white hover:text-stone-900"
-        >
-          <span className="relative z-10 text-sm font-bold uppercase tracking-widest">Reserva Tu Cita</span>
-        </button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button
+            onClick={onCtaClick}
+            className="px-8 py-4 bg-white text-stone-900 rounded-full font-bold uppercase tracking-widest hover:bg-stone-100 transition shadow-lg"
+          >
+            Reserva Tu Cita
+          </button>
+        </div>
+
+        <div className="mt-12 flex items-center justify-center space-x-8 text-white/90 text-sm font-medium">
+          <div className="flex items-center bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10">
+            <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+            Disponible Hoy
+          </div>
+          <div className="flex items-center bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10">
+            <span className="mr-1">Desde</span>
+            <span className="font-bold text-lg">$7.000</span>
+          </div>
+        </div>
       </div>
-    </div>
+    </div >
   );
 };
 

@@ -17,6 +17,14 @@ export interface Service {
   price: number;
   durationMin: number;
   includes: string[];
+  homeServiceOnly?: boolean;
+}
+
+export interface LoyaltyProfile {
+  phone: string;
+  visits: number;
+  referrals: number;
+  lastVisit?: string;
 }
 
 export enum ViewState {
@@ -24,7 +32,10 @@ export enum ViewState {
   BOOKING = 'BOOKING',
   CATALOG = 'CATALOG',
   CONTACT = 'CONTACT',
-  CONFIRMATION = 'CONFIRMATION'
+  CONFIRMATION = 'CONFIRMATION',
+  LOYALTY = 'LOYALTY',
+  ADMIN = 'ADMIN',
+  GALLERY = 'GALLERY'
 }
 
 export interface BookingData {
@@ -35,6 +46,9 @@ export interface BookingData {
   time: string;
   isHomeService: boolean; // Domicilio
   address?: string; // Required if isHomeService is true
+  serviceId: string;
+  serviceName: string;
+  referral?: string; // Phone number or name of referrer
 }
 
 export interface Review {

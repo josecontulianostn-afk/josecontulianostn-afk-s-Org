@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookingData } from '../types';
 import { SERVICES, HOME_SERVICE_FEE, HOME_SERVICE_EXTRA_MINUTES, COVERAGE_AREAS, PHONE_NUMBER, EMAIL_ADDRESS } from '../constants';
-import { Calendar as CalendarIcon, MapPin, Clock, CheckCircle, Smartphone, AlertCircle, Loader2, Info, X } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, Clock, CheckCircle, Smartphone, AlertCircle, Loader2, Info, UserPlus } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
 interface BookingFormProps {
@@ -9,7 +9,9 @@ interface BookingFormProps {
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
-    const service = SERVICES[0];
+    // Default to first service
+    const [selectedServiceId, setSelectedServiceId] = useState(SERVICES[0].id);
+    const service = SERVICES.find(s => s.id === selectedServiceId) || SERVICES[0];
 
     const [formData, setFormData] = useState<BookingData>({
         name: '',
@@ -18,7 +20,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
         date: '',
         time: '',
         isHomeService: false,
-        address: ''
+        address: '',
+        serviceId: service.id,
+        serviceName: service.name,
+        referral: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -28,6 +33,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [existingBooking, setExistingBooking] = useState<any | null>(null);
     const [showModifyModal, setShowModifyModal] = useState(false);
+
+    // Update form data when service changes
+    useEffect(() => {
+        setFormData(prev => ({
+            ...prev,
+            serviceId: service.id,
+            serviceName: service.name,
+            // If service requires home service, force it to true
+            isHomeService: service.homeServiceOnly ? true : prev.isHomeService
+        }));
+    }, [service]);
 
     // Calculate duration: Base + 30 mins if home service
     const currentDuration = service.durationMin + (formData.isHomeService ? HOME_SERVICE_EXTRA_MINUTES : 0);
@@ -51,7 +67,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
     useEffect(() => {
         const checkExisting = () => {
             if (formData.name.length > 3 && formData.phone.length > 8) {
-                // Try LocalStorage first (for Demo/MVP)
                 const stored = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
                 const found = stored.find((b: any) =>
                     b.phone.replace(/\s/g, '') === formData.phone.replace(/\s/g, '') &&
@@ -65,7 +80,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
             }
         };
 
-        const timeoutId = setTimeout(checkExisting, 1000); // Debounce check
+        const timeoutId = setTimeout(checkExisting, 1000);
         return () => clearTimeout(timeoutId);
     }, [formData.name, formData.phone]);
 
@@ -97,7 +112,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
             const localSlots = localForDate.map((b: any) => {
                 const [hours, minutes] = b.time.split(':').map(Number);
                 const startMinutes = hours * 60 + minutes;
-                // Provide default duration if missing in legacy data
                 const duration = b.duration_minutes || 60;
                 return { start: startMinutes, end: startMinutes + duration };
             });
@@ -118,21 +132,18 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
         const endHour = 20;
         const slots: string[] = [];
 
-        // Generate slots every 30 minutes
         for (let h = startHour; h < endHour; h++) {
             for (let m = 0; m < 60; m += 30) {
                 const timeInMinutes = h * 60 + m;
                 const endTimeInMinutes = timeInMinutes + currentDuration;
 
-                // Check if slot exceeds working hours
                 if (endTimeInMinutes > endHour * 60) continue;
 
-                // Check overlap
                 const isOverlapping = bookedSlots.some(booked => {
                     return (
-                        (timeInMinutes >= booked.start && timeInMinutes < booked.end) || // Starts inside existing
-                        (endTimeInMinutes > booked.start && endTimeInMinutes <= booked.end) || // Ends inside existing
-                        (timeInMinutes <= booked.start && endTimeInMinutes >= booked.end) // Encloses existing
+                        (timeInMinutes >= booked.start && timeInMinutes < booked.end) ||
+                        (endTimeInMinutes > booked.start && endTimeInMinutes <= booked.end) ||
+                        (timeInMinutes <= booked.start && endTimeInMinutes >= booked.end)
                     );
                 });
 
@@ -144,7 +155,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
         }
         setAvailableSlots(slots);
 
-        // Clear selected time if it's no longer valid
         if (formData.time && !slots.includes(formData.time)) {
             setFormData(prev => ({ ...prev, time: '' }));
         }
@@ -169,14 +179,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
-        const checked = (e.target as HTMLInputElement).checked; // Only for checkbox
+        const checked = (e.target as HTMLInputElement).checked;
 
         setFormData(prev => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
 
-        // Clear error for this field
         if (errors[name]) {
             setErrors(prev => {
                 const newErr = { ...prev };
@@ -198,7 +207,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
     };
 
     const saveBooking = async () => {
-        // 1. Save to LocalStorage (Always, for MVP/Demo redundancy)
+        // 1. Save to LocalStorage
         const stored = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
         const newBooking = {
             id: Date.now(),
@@ -209,11 +218,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
         stored.push(newBooking);
         localStorage.setItem('mock_bookings', JSON.stringify(stored));
 
-        // 2. Try Supabase (Real DB)
+        // 2. Try Supabase
         if (supabase) {
             try {
-                // A. Guardar/Actualizar Lead (Cliente)
-                // Usamos 'phone' como identificador único para upsert
+                // Upsert Lead (with potential referral logic handled by backend or manual update later)
                 const { error: leadError } = await supabase
                     .from('leads')
                     .upsert({
@@ -221,12 +229,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
                         name: formData.name,
                         email: formData.email,
                         last_booking_date: formData.date,
-                        // Incrementamos contador manualmente o dejamos que un trigger lo haga (simplificado aquí user update)
+                        // defined_referral: formData.referral // If we had this column
                     }, { onConflict: 'phone' });
 
                 if (leadError) console.warn("Error saving lead:", leadError);
 
-                // B. Guardar Reserva
                 await supabase.from('bookings').insert([{
                     name: formData.name,
                     email: formData.email,
@@ -235,7 +242,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
                     time: formData.time,
                     is_home_service: formData.isHomeService,
                     address: formData.address || null,
-                    duration_minutes: currentDuration
+                    duration_minutes: currentDuration,
+                    // service_id: formData.serviceId, // If schema supports
+                    // referral: formData.referral // If schema supports
                 }]);
 
             } catch (err) {
@@ -248,7 +257,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
         const stored = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
         const filtered = stored.filter((b: any) => b.id !== bookingId);
         localStorage.setItem('mock_bookings', JSON.stringify(filtered));
-        // Note: We are not deleting from Supabase here as we don't have the ID reliably mapped without real keys
     };
 
     const handleConfirmModify = () => {
@@ -256,13 +264,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
             deleteBooking(existingBooking.id);
             setExistingBooking(null);
             setShowModifyModal(false);
-            // User can now proceed to book normally
         }
     };
 
     const handleCancelModify = () => {
         setShowModifyModal(false);
-        setFormData(prev => ({ ...prev, name: '', phone: '+569 ' })); // Reset fields to avoid loop
+        setFormData(prev => ({ ...prev, name: '', phone: '+569 ' }));
         alert(`Entendido. Tu cita anterior (${existingBooking.date} a las ${existingBooking.time}) se mantiene. ¡Gracias!`);
     };
 
@@ -274,7 +281,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
 
         setLoading(true);
 
-        // Save Data
         await saveBooking();
 
         const serviceName = `${service.name}${formData.isHomeService ? ' + Domicilio' : ' (En Studio)'}`;
@@ -290,16 +296,15 @@ Hola Tus3B Style, acabo de reservar en la web.
 *Hora:* ${formData.time}
 *Duración:* ${currentDuration} min
 ${formData.isHomeService ? `*Dirección:* ${formData.address}` : ''}
+${formData.referral ? `*Referido por:* ${formData.referral}` : ''}
 *Total:* ${formattedPrice}
 --------------------------------
 Espero su confirmación final. Gracias.
     `.trim();
 
-        // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 800));
         setLoading(false);
 
-        // Call success callback to close the form/change view
         if (onSuccess) {
             onSuccess(formData);
         }
@@ -317,7 +322,6 @@ Espero su confirmación final. Gracias.
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start fade-in pb-12 relative">
 
-            {/* Modify Booking Modal Overly */}
             {showModifyModal && existingBooking && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-white/95 backdrop-blur-sm rounded-2xl animate-in fade-in zoom-in-95">
                     <div className="bg-white border border-stone-200 shadow-2xl p-8 rounded-2xl max-w-sm text-center">
@@ -328,37 +332,39 @@ Espero su confirmación final. Gracias.
                         </p>
                         <p className="font-bold text-stone-900 mb-6 text-lg">¿Deseas cambiar tu reserva?</p>
                         <div className="space-y-3">
-                            <button
-                                onClick={handleConfirmModify}
-                                className="w-full bg-stone-900 text-white py-3 rounded-xl font-bold hover:bg-stone-700 transition"
-                            >
-                                Sí, cambiar cita
-                            </button>
-                            <button
-                                onClick={handleCancelModify}
-                                className="w-full bg-stone-100 text-stone-600 py-3 rounded-xl font-bold hover:bg-stone-200 transition"
-                            >
-                                No, mantener la anterior
-                            </button>
+                            <button onClick={handleConfirmModify} className="w-full bg-stone-900 text-white py-3 rounded-xl font-bold hover:bg-stone-700 transition">Sí, cambiar cita</button>
+                            <button onClick={handleCancelModify} className="w-full bg-stone-100 text-stone-600 py-3 rounded-xl font-bold hover:bg-stone-200 transition">No, mantener la anterior</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Col 1: Service Info & Personal Data */}
             <div className="space-y-6">
 
-                {/* Service Summary */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 relative overflow-hidden">
-
-                    {/* Demo Mode Badge */}
+                {/* Service Selection */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 relative">
                     {!supabase && (
                         <div className="absolute top-0 right-0 bg-amber-100 text-amber-800 text-[10px] font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1 z-10">
                             <Info size={12} /> MODO DEMO
                         </div>
                     )}
 
-                    <h3 className="serif text-2xl text-stone-900 mb-2">{service.name}</h3>
+                    <label className="block text-xs font-bold text-stone-500 uppercase mb-2">Elige tu Servicio</label>
+                    <div className="relative mb-6">
+                        <select
+                            value={selectedServiceId}
+                            onChange={(e) => setSelectedServiceId(e.target.value)}
+                            className="w-full p-4 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 font-serif text-lg focus:ring-2 focus:ring-stone-900 outline-none appearance-none"
+                        >
+                            {SERVICES.map(s => (
+                                <option key={s.id} value={s.id}>{s.name} - ${s.price.toLocaleString('es-CL')}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <svg className="w-5 h-5 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+
                     <p className="text-stone-500 font-light text-sm mb-4">{service.description}</p>
 
                     <div className="flex justify-between items-center bg-stone-50 p-4 rounded-xl mb-4">
@@ -375,7 +381,7 @@ Espero su confirmación final. Gracias.
                     </div>
 
                     <div className="mb-4">
-                        <div className="flex items-start bg-blue-50/50 p-3 rounded-lg border border-blue-100 relative">
+                        <div className={`flex items-start p-3 rounded-lg border relative transition-colors ${service.homeServiceOnly ? 'bg-amber-50 border-amber-200' : 'bg-blue-50/50 border-blue-100'}`}>
                             <div className="flex items-center h-5 mt-0.5">
                                 <input
                                     id="isHomeService"
@@ -383,16 +389,17 @@ Espero su confirmación final. Gracias.
                                     type="checkbox"
                                     checked={formData.isHomeService}
                                     onChange={handleChange}
-                                    className="focus:ring-stone-500 h-5 w-5 text-stone-900 border-gray-300 rounded cursor-pointer"
+                                    disabled={service.homeServiceOnly}
+                                    className="focus:ring-stone-500 h-5 w-5 text-stone-900 border-gray-300 rounded cursor-pointer disabled:opacity-50"
                                 />
                             </div>
                             <div className="ml-3">
                                 <label htmlFor="isHomeService" className="font-bold text-stone-900 cursor-pointer">
-                                    ¿Servicio a Domicilio? (+ $3.000)
+                                    {service.homeServiceOnly ? 'Servicio Exclusivo a Domicilio' : '¿Servicio a Domicilio? (+ $3.000)'}
                                 </label>
                                 <p className="text-xs text-stone-500 mt-1 leading-relaxed">
                                     Vamos a tu casa en {COVERAGE_AREAS.join(', ')}. <br />
-                                    <span className="text-blue-600 font-medium">Incluye +30 min de tiempo de traslado/montaje.</span>
+                                    <span className="text-blue-600 font-medium">Incluye +30 min de traslado.</span>
                                 </p>
                             </div>
                         </div>
@@ -455,6 +462,21 @@ Espero su confirmación final. Gracias.
                                 />
                                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                             </div>
+                        </div>
+
+                        {/* Referral Field */}
+                        <div className="animate-in fade-in pt-2">
+                            <label className="block text-xs font-bold text-stone-500 uppercase mb-1 flex items-center gap-1">
+                                <UserPlus size={12} /> ¿Quién te recomendó? (Opcional)
+                            </label>
+                            <input
+                                type="text"
+                                name="referral"
+                                value={formData.referral}
+                                onChange={handleChange}
+                                className="w-full px-4 py-3 rounded-lg bg-purple-50 border border-purple-100 focus:border-purple-300 focus:ring-1 outline-none transition-all placeholder-purple-300 text-purple-900"
+                                placeholder="Nombre o Teléfono de tu amiga"
+                            />
                         </div>
 
                         {formData.isHomeService && (
@@ -543,7 +565,6 @@ Espero su confirmación final. Gracias.
                     )}
                 </div>
 
-                {/* Confirmation Actions */}
                 <div className="pt-2 sticky bottom-4 z-10">
                     <button
                         onClick={() => handleBooking('whatsapp')}
@@ -557,7 +578,6 @@ Espero su confirmación final. Gracias.
                         Al confirmar, volverás al inicio y se abrirá WhatsApp.
                     </p>
                 </div>
-
             </div>
         </div>
     );
