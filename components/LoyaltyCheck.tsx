@@ -1,29 +1,39 @@
 import React, { useState } from 'react';
 import { Gift, Star, UserCheck, Search, Loader2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
+import DigitalCard from './DigitalCard';
 
 const LoyaltyCheck: React.FC = () => {
     const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
-    const [stats, setStats] = useState<{ visits: number; referrals: number; nextReward: number } | null>(null);
+    const [stats, setStats] = useState<{ name?: string; visits: number; referrals: number; nextReward: number; token?: string; tier?: string } | null>(null);
 
-    const checkLoyalty = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (phone.length < 8) return;
+    const checkLoyalty = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+
+        // Determine search method
+        const params = new URLSearchParams(window.location.search);
+        const tokenParam = params.get('token');
+
+        if (!tokenParam && phone.length < 8) return;
 
         setLoading(true);
 
         try {
-            // Consulta real a Supabase
-            const { data, error } = await supabase
-                .from('clients')
-                .select('*')
-                .eq('phone', phone)
-                .single();
+            let query = supabase.from('clients').select('*');
 
-            if (error && error.code !== 'PGRST116') { // PGRST116 es "no found"
+            if (tokenParam) {
+                query = query.eq('member_token', tokenParam);
+            } else {
+                query = query.eq('phone', phone);
+            }
+
+            const { data, error } = await query.single();
+
+            if (error && error.code !== 'PGRST116') {
                 console.error("Error fetching loyalty:", error);
-                alert("Hubo un error al consultar. Intenta de nuevo.");
+                // Only alert if manual action
+                if (!tokenParam) alert("Hubo un error al consultar. Intenta de nuevo.");
                 setLoading(false);
                 return;
             }
@@ -32,24 +42,35 @@ const LoyaltyCheck: React.FC = () => {
                 setStats({
                     visits: data.visits,
                     referrals: data.referrals,
-                    nextReward: 5
+                    nextReward: 5,
+                    token: data.member_token,
+                    tier: data.tier
                 });
-            } else {
-                // Cliente nuevo o no registrado
+            } else if (!tokenParam) {
+                // Only show "new client" for phone search, not invalid token
                 setStats({
                     visits: 0,
                     referrals: 0,
-                    nextReward: 5
+                    nextReward: 5,
+                    token: 'new-client',
+                    tier: 'Silver'
                 });
             }
 
         } catch (err) {
             console.error("Unexpected error:", err);
-            alert("Error de conexión.");
         } finally {
             setLoading(false);
         }
     };
+
+    // Auto-check if token is present
+    React.useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('token')) {
+            checkLoyalty();
+        }
+    }, []);
 
     return (
         <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
@@ -88,38 +109,29 @@ const LoyaltyCheck: React.FC = () => {
                         </button>
                     </form>
                 ) : (
-                    <div className="animate-in fade-in zoom-in-95 duration-500">
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div className="bg-white/10 rounded-2xl p-4 border border-white/5">
-                                <span className="block text-3xl font-bold text-amber-400 mb-1">{stats.visits}</span>
-                                <span className="text-xs uppercase tracking-widest text-stone-400 font-bold">Visitas</span>
-                            </div>
-                            <div className="bg-white/10 rounded-2xl p-4 border border-white/5">
-                                <span className="block text-3xl font-bold text-purple-400 mb-1">{stats.referrals}</span>
-                                <span className="text-xs uppercase tracking-widest text-stone-400 font-bold">Referidos</span>
-                            </div>
-                        </div>
+                    <div className="animate-in fade-in zoom-in-95 duration-500 mb-8">
+                        <DigitalCard
+                            clientName={stats.name || "Miembro Exclusivo"}
+                            token={stats.token || "pending-token"}
+                            visits={stats.visits}
+                            nextReward={5}
+                            tier={stats.tier}
+                        />
 
-                        {/* Progress Bar */}
-                        <div className="bg-white/5 rounded-full h-4 mb-2 overflow-hidden relative">
-                            <div
-                                className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-1000 ease-out"
-                                style={{ width: `${(stats.visits / 5) * 100}%` }}
-                            ></div>
+                        <div className="text-center mt-6">
+                            <p className="text-sm text-stone-300 mb-4">
+                                {stats.visits >= 5
+                                    ? "¡Felicidades! Tienes un descuento disponible."
+                                    : `Te faltan ${5 - stats.visits} visitas para tu recompensa.`
+                                }
+                            </p>
+                            <button
+                                onClick={() => setStats(null)}
+                                className="text-sm text-stone-400 hover:text-white underline decoration-stone-600 underline-offset-4"
+                            >
+                                Consultar otro número
+                            </button>
                         </div>
-                        <p className="text-sm text-stone-300 mb-6">
-                            {stats.visits >= 5
-                                ? "¡Felicidades! Tienes un descuento disponible para tu próxima cita."
-                                : `Te faltan ${5 - stats.visits} visitas para tu recompensa.`
-                            }
-                        </p>
-
-                        <button
-                            onClick={() => setStats(null)}
-                            className="text-sm text-stone-400 hover:text-white underline decoration-stone-600 underline-offset-4"
-                        >
-                            Consultar otro número
-                        </button>
                     </div>
                 )}
 

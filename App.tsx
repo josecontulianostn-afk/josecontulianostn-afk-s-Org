@@ -17,6 +17,22 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
   const [lastBooking, setLastBooking] = useState<BookingData | null>(null);
 
+  // Handle URL tokens for direct loyalty card access
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    // Also support /club/:token style via hash or path if we were using a router, 
+    // but for simple query param support:
+    if (token) {
+      // We need to pass this token to LoyaltyCheck somehow. 
+      // For now, we'll switch view and rely on LoyaltyCheck to read the param or 
+      // we can store it in a context/state if we want to be cleaner.
+      // Let's modify LoyaltyCheck to look at URL param too.
+      setCurrentView(ViewState.LOYALTY);
+    }
+  }, []);
+
   const renderView = () => {
     switch (currentView) {
       case ViewState.ADMIN:

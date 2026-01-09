@@ -34,6 +34,8 @@ export interface Client {
   referrals: number;
   last_visit?: string;
   created_at: string;
+  member_token?: string;
+  tier?: 'Silver' | 'Gold' | 'Diamante';
 }
 
 export enum ViewState {
