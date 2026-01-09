@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserCheck, Shield, PlusCircle, Save } from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
 
 const AdminPanel: React.FC = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -16,13 +17,48 @@ const AdminPanel: React.FC = () => {
         }
     };
 
-    const handleAddVisit = () => {
+    const handleAddVisit = async () => {
         if (phone.length < 8) return;
 
-        // Mock Logic: In real app, this would call Supabase RPC
-        setMessage(`Visita registrada para ${phone}. ¡Puntos actualizados!`);
-        setPhone('');
-        setTimeout(() => setMessage(''), 3000);
+        try {
+            // Verificar si el cliente existe
+            const { data: existingClient, error: fetchError } = await supabase
+                .from('clients')
+                .select('*')
+                .eq('phone', phone)
+                .single();
+
+            if (fetchError && fetchError.code !== 'PGRST116') {
+                alert("Error al buscar cliente");
+                return;
+            }
+
+            const currentVisits = existingClient ? existingClient.visits : 0;
+            const newVisits = currentVisits + 1;
+
+            // Upsert (Insertar o Actualizar)
+            const { error: upsertError } = await supabase
+                .from('clients')
+                .upsert({
+                    phone: phone,
+                    visits: newVisits,
+                    last_visit: new Date().toISOString()
+                }, { onConflict: 'phone' });
+
+            if (upsertError) {
+                console.error(upsertError);
+                alert("Error al actualizar visita");
+                return;
+            }
+
+            setMessage(`Visita registrada para ${phone}. Total visitas: ${newVisits}`);
+            setPhone('');
+            setTimeout(() => setMessage(''), 3000);
+
+        } catch (err) {
+            console.error(err);
+            alert("Error de conexión");
+        }
     };
 
     if (!isAuthenticated) {

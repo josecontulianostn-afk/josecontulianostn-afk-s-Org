@@ -27,6 +27,15 @@ export interface LoyaltyProfile {
   lastVisit?: string;
 }
 
+export interface Client {
+  id: string;
+  phone: string;
+  visits: number;
+  referrals: number;
+  last_visit?: string;
+  created_at: string;
+}
+
 export enum ViewState {
   HOME = 'HOME',
   BOOKING = 'BOOKING',

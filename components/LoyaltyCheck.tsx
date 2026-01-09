@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Gift, Star, UserCheck, Search, Loader2 } from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
 
 const LoyaltyCheck: React.FC = () => {
     const [phone, setPhone] = useState('');
@@ -11,22 +12,43 @@ const LoyaltyCheck: React.FC = () => {
         if (phone.length < 8) return;
 
         setLoading(true);
-        // Simulate API call / Mock logic
-        // In a real app, query 'leads' or 'loyalty' table in Supabase
-        await new Promise(r => setTimeout(r, 1000));
 
-        // Mock Logic: deterministic based on last digit of phone
-        // If last digit is even -> 2 visits. If odd -> 4 visits (close to reward!)
-        const lastDigit = parseInt(phone.replace(/\D/g, '').slice(-1));
-        const visits = isNaN(lastDigit) ? 0 : (lastDigit % 2 === 0 ? 2 : 4);
-        const referrals = isNaN(lastDigit) ? 0 : (lastDigit > 5 ? 1 : 0);
+        try {
+            // Consulta real a Supabase
+            const { data, error } = await supabase
+                .from('clients')
+                .select('*')
+                .eq('phone', phone)
+                .single();
 
-        setStats({
-            visits: visits,
-            referrals: referrals,
-            nextReward: 5
-        });
-        setLoading(false);
+            if (error && error.code !== 'PGRST116') { // PGRST116 es "no found"
+                console.error("Error fetching loyalty:", error);
+                alert("Hubo un error al consultar. Intenta de nuevo.");
+                setLoading(false);
+                return;
+            }
+
+            if (data) {
+                setStats({
+                    visits: data.visits,
+                    referrals: data.referrals,
+                    nextReward: 5
+                });
+            } else {
+                // Cliente nuevo o no registrado
+                setStats({
+                    visits: 0,
+                    referrals: 0,
+                    nextReward: 5
+                });
+            }
+
+        } catch (err) {
+            console.error("Unexpected error:", err);
+            alert("Error de conexión.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
