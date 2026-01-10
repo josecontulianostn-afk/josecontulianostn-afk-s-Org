@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { UserCheck, Shield, PlusCircle, Save, QrCode, X, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, Users, Search, QrCode, X, Scissors, PlusCircle, Save } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 // import QrReader from 'react-qr-scanner';
@@ -9,11 +9,19 @@ const AdminPanel: React.FC = () => {
     const [password, setPassword] = useState('');
     const [phone, setPhone] = useState('');
     const [message, setMessage] = useState('');
-    const [showScanner, setShowScanner] = useState(false);
+    const [scannerActive, setScannerActive] = useState(false);
     const [scanResult, setScanResult] = useState<string | null>(null);
 
-    React.useEffect(() => {
-        if (showScanner && !scanResult) {
+    // Hair Service State
+    const [activeTab, setActiveTab] = useState<'loyalty' | 'hair'>('loyalty');
+    const [serviceType, setServiceType] = useState('Corte');
+    const [servicePrice, setServicePrice] = useState('7000');
+
+    // const [serviceNotes, setServiceNotes] = useState('');
+    const [client, setClient] = useState<any>(null); // State to hold looked-up client for actions
+
+    useEffect(() => {
+        if (scannerActive && !scanResult) {
             const scanner = new Html5QrcodeScanner(
                 "reader",
                 { fps: 10, qrbox: { width: 250, height: 250 } },
@@ -26,12 +34,12 @@ const AdminPanel: React.FC = () => {
                 scanner.clear().catch(error => console.error("Failed to clear html5-qrcode scanner. ", error));
             };
         }
-    }, [showScanner, scanResult]);
+    }, [scannerActive, scanResult]);
 
     const onScanSuccess = async (decodedText: string, decodedResult: any) => {
         if (scanResult) return; // Already processed
         setScanResult(decodedText);
-        setShowScanner(false);
+        setScannerActive(false);
 
         // Call RPC function
         try {
@@ -42,9 +50,9 @@ const AdminPanel: React.FC = () => {
             if (error) throw error;
 
             if (data.success) {
-                setMessage(`✅ ${data.message}. Visitas: ${data.new_visits}`);
+                setMessage('OK: ' + data.message + ' Visitas: ' + data.new_visits);
             } else {
-                setMessage(`❌ ${data.message}`);
+                setMessage('Error: ' + data.message);
             }
 
             // Reset after delay
@@ -61,7 +69,7 @@ const AdminPanel: React.FC = () => {
     };
 
     const onScanFailure = (error: any) => {
-        // console.warn(`Code scan error = ${error}`);
+        // Handle failure silently
     };
 
     const handleLogin = (e: React.FormEvent) => {
@@ -70,6 +78,38 @@ const AdminPanel: React.FC = () => {
             setIsAuthenticated(true);
         } else {
             alert('Contraseña incorrecta');
+        }
+    };
+
+    const handleRedeemDiscount = async () => {
+        if (!client) return;
+        if (!window.confirm('¿Confirmar canje del 10% de Descuento?')) return;
+
+        const { data, error } = await supabase.rpc('redeem_discount_5th', { token_input: client.member_token });
+        if (error) {
+            setMessage('Error: ' + error.message);
+        } else {
+            setMessage(data.message);
+            if (data.success) {
+                const { data: updated } = await supabase.from('clients').select('*').eq('id', client.id).single();
+                setClient(updated);
+            }
+        }
+    };
+
+    const handleRedeemFreeCut = async () => {
+        if (!client) return;
+        if (!window.confirm('¿Confirmar canje del Corte Gratis?')) return;
+
+        const { data, error } = await supabase.rpc('redeem_free_cut', { token_input: client.member_token });
+        if (error) {
+            setMessage('Error: ' + error.message);
+        } else {
+            setMessage(data.message);
+            if (data.success) {
+                const { data: updated } = await supabase.from('clients').select('*').eq('id', client.id).single();
+                setClient(updated);
+            }
         }
     };
 
@@ -93,13 +133,15 @@ const AdminPanel: React.FC = () => {
             const newVisits = currentVisits + 1;
 
             // Upsert (Insertar o Actualizar)
-            const { error: upsertError } = await supabase
+            const { data: upsertData, error: upsertError } = await supabase
                 .from('clients')
                 .upsert({
                     phone: phone,
                     visits: newVisits,
                     last_visit: new Date().toISOString()
-                }, { onConflict: 'phone' });
+                }, { onConflict: 'phone' })
+                .select()
+                .single();
 
             if (upsertError) {
                 console.error(upsertError);
@@ -107,9 +149,10 @@ const AdminPanel: React.FC = () => {
                 return;
             }
 
-            setMessage(`Visita registrada para ${phone}. Total visitas: ${newVisits}`);
+            setClient(upsertData); // Update persistent client state
+            setMessage('Visita registrada para ' + phone + '. Total visitas: ' + newVisits);
             setPhone('');
-            setTimeout(() => setMessage(''), 3000);
+            // setTimeout(() => setMessage(''), 3000); // Keep message/client visible
 
         } catch (err) {
             console.error(err);
@@ -142,7 +185,9 @@ const AdminPanel: React.FC = () => {
 
     return (
         <div className="max-w-2xl mx-auto p-4 py-12">
-            <h2 className="text-3xl serif text-stone-900 mb-8 border-b pb-4">Panel de Control</h2>
+            <h2 className="text-3xl serif text-stone-900 mb-8 border-b pb-4 flex justify-between">
+                Panel de Control
+            </h2>
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 mb-8">
                 <h3 className="text-xl font-bold text-stone-900 mb-4 flex items-center gap-2">
@@ -170,19 +215,107 @@ const AdminPanel: React.FC = () => {
                     </button>
                 </div>
 
-                <button
-                    onClick={() => setShowScanner(true)}
-                    className="w-full bg-stone-100 text-stone-700 py-3 rounded-lg font-bold hover:bg-stone-200 transition flex items-center justify-center gap-2 border border-stone-200"
-                >
-                    <QrCode size={18} />
-                    Escanear QR
-                </button>
+                <div className="flex justify-center mb-6">
+                    <div className="bg-stone-800 p-1 rounded-xl inline-flex">
+                        <button
+                            onClick={() => setActiveTab('loyalty')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'loyalty' ? 'bg-amber-500 text-stone-900' : 'text-stone-400 hover:text-white'}`}
+                        >
+                            Visitas (General)
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('hair')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'hair' ? 'bg-purple-500 text-white' : 'text-stone-400 hover:text-white'}`}
+                        >
+                            Peluquería (Servicios)
+                        </button>
+                    </div>
+                </div>
 
-                {showScanner && (
+                <div className="bg-stone-800 p-6 rounded-2xl shadow-xl border border-white/5">
+                    <h3 className="serif text-xl mb-4 text-center">
+                        {activeTab === 'loyalty' ? 'Registrar Visita' : 'Registrar Servicio Peluquería'}
+                    </h3>
+
+                    {activeTab === 'hair' && (
+                        <div className="mb-4 space-y-3">
+                            <select
+                                value={serviceType}
+                                onChange={(e) => setServiceType(e.target.value)}
+                                className="w-full bg-stone-900 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            >
+                                <option value="Corte">Corte ($7.000+)</option>
+                                <option value="Lavado">Lavado ($5.000)</option>
+                                <option value="Tintura">Tintura ($10.000+)</option>
+                                <option value="Masaje">Masaje ($5.000)</option>
+                            </select>
+                            <input
+                                type="number"
+                                value={servicePrice}
+                                onChange={(e) => setServicePrice(e.target.value)}
+                                placeholder="Precio Real"
+                                className="w-full bg-stone-900 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            />
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => setScannerActive(true)}
+                        className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg transition ${activeTab === 'hair' ? 'bg-purple-600 hover:bg-purple-500 text-white' : 'bg-amber-500 hover:bg-amber-400 text-stone-900'}`}
+                    >
+                        <QrCode size={24} />
+                        {activeTab === 'hair' ? 'Escanear para Servicio' : 'Escanear Tarjeta'}
+                    </button>
+
+                    {message && (
+                        <div className="mt-4 p-3 bg-green-500/20 text-green-400 rounded-lg text-sm font-medium whitespace-pre-wrap">
+                            {message}
+                        </div>
+                    )}
+
+                    {client && (
+                        <div className="mt-6 border-t border-white/10 pt-4">
+                            <h3 className="font-bold text-white mb-3">Cliente: {client.phone}</h3>
+                            <div className="grid grid-cols-2 gap-2 text-sm text-stone-300 mb-4">
+                                <div>Visitas: {client.visits}</div>
+                                <div>Peluquería: {client.hair_service_count || 0}</div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {client.discount_5th_visit_available ? (
+                                    <button
+                                        onClick={handleRedeemDiscount}
+                                        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 animate-pulse"
+                                    >
+                                        <span>💎 Canjear 10% Descuento</span>
+                                    </button>
+                                ) : (
+                                    <div className="p-2 bg-stone-900/50 rounded text-center text-stone-500 text-xs">
+                                        Descuento 10%: {5 - ((client.hair_service_count || 0) % 5)} para desbloquear
+                                    </div>
+                                )}
+
+                                {client.free_cut_available ? (
+                                    <button
+                                        onClick={handleRedeemFreeCut}
+                                        className="w-full bg-yellow-500 hover:bg-yellow-400 text-stone-900 font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 animate-pulse shadow-lg"
+                                    >
+                                        <span>✂️ Canjear Corte Gratis</span>
+                                    </button>
+                                ) : (
+                                    <div className="p-2 bg-stone-900/50 rounded text-center text-stone-500 text-xs">
+                                        Corte Gratis: {10 - ((client.hair_service_count || 0) % 10)} para desbloquear
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+                {scannerActive && (
                     <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4">
                         <div className="bg-white p-4 rounded-2xl w-full max-w-sm relative">
                             <button
-                                onClick={() => setShowScanner(false)}
+                                onClick={() => setScannerActive(false)}
                                 className="absolute -top-12 right-0 text-white p-2"
                             >
                                 <X size={32} />

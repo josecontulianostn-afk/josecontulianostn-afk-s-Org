@@ -36,6 +36,19 @@ export interface Client {
   created_at: string;
   member_token?: string;
   tier?: 'Silver' | 'Gold' | 'Diamante';
+  // Hair Loyalty
+  hair_service_count?: number;
+  discount_5th_visit_available?: boolean;
+  free_cut_available?: boolean;
+}
+
+export interface Reward {
+  id: string;
+  name: string;
+  cost_visits: number;
+  type: string;
+  allowed_perfume_segment?: 'arab' | 'classic' | null;
+  description?: string;
 }
 
 export enum ViewState {

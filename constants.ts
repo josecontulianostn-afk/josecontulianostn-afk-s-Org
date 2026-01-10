@@ -202,39 +202,33 @@ export const PERFUMES: Perfume[] = [
 export const GALLERY_IMAGES = [
   {
     id: '1',
-    url: '/images/gallery/work_1.png',
+    url: '/images/greici/greici-portrait.jpg',
     category: 'Cortes',
-    description: 'Corte Bob Estilizado'
+    description: 'Estilista Greici Nataly'
   },
   {
     id: '2',
-    url: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&q=80&w=800',
+    url: '/images/greici/greici-salon-wide.jpg',
     category: 'Color',
-    description: 'Balayage Caramelo'
+    description: 'Atención Personalizada'
   },
   {
     id: '3',
-    url: 'https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?auto=format&fit=crop&q=80&w=800',
+    url: '/images/greici/greici-back-view.jpg',
     category: 'Cortes',
-    description: 'Melena Midi con Movimiento'
+    description: 'Acabados Perfectos'
   },
   {
     id: '4',
-    url: 'https://images.unsplash.com/photo-1605497788044-5a32c7078486?auto=format&fit=crop&q=80&w=800',
-    category: 'Peinados',
-    description: 'Ondas Playeras'
+    url: '/images/greici/greici-red-shirt.jpg',
+    category: 'Cortes',
+    description: 'Precisión y Estilo'
   },
   {
     id: '5',
-    url: 'https://images.unsplash.com/photo-1522337360705-8b13d520a15e?auto=format&fit=crop&q=80&w=800',
+    url: '/images/greici/greici-side-work.jpg',
     category: 'Color',
-    description: 'Babylights Rubios'
-  },
-  {
-    id: '6',
-    url: 'https://images.unsplash.com/photo-1492106087820-71f171ce71d0?auto=format&fit=crop&q=80&w=800',
-    category: 'Peinados',
-    description: 'Recogido Elegante'
+    description: 'Técnica Profesional'
   }
 ];
 
