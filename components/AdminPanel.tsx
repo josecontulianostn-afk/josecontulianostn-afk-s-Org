@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Users, Search, QrCode, X, Scissors, PlusCircle, Save } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { PERFUMES } from '../constants';
 // import QrReader from 'react-qr-scanner';
 
@@ -23,27 +23,27 @@ const AdminPanel: React.FC = () => {
 
     useEffect(() => {
         if (scannerActive && !scanResult) {
-            const scanner = new Html5QrcodeScanner(
-                "reader",
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0
-                },
-                /* verbose= */ false
-            );
+            const html5QrCode = new Html5Qrcode("reader");
 
-            // Add slight delay to render to ensure DOM is ready
-            setTimeout(() => {
-                try {
-                    scanner.render(onScanSuccess, onScanFailure);
-                } catch (e) {
-                    setMessage("Error iniciando cámara: " + e);
-                }
-            }, 100);
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            // Start the scanner specifically requesting the back camera (environment)
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => {
+                console.error("Error starting scanner:", err);
+                setMessage("Error iniciando cámara: " + err);
+            });
 
             return () => {
-                scanner.clear().catch(error => console.error("Failed to clear html5-qrcode scanner. ", error));
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                }).catch(err => {
+                    console.error("Failed to stop scanner", err);
+                });
             };
         }
     }, [scannerActive, scanResult]);
