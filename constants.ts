@@ -72,10 +72,10 @@ export const PERFUMES: Perfume[] = [
     price10ml: 12990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/la-vie-est-belle.png', // Placeholder
+    image: '/images/perfumes/la-vie-est-belle.png',
     notes: ['Iris', 'Vainilla', 'Praliné'],
     category: 'classic',
-    stock: true
+    stock: false
   },
   {
     id: 'l2',
@@ -86,7 +86,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 14990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/good-girl.png', // Placeholder
+    image: '/images/perfumes/good-girl.png',
     notes: ['Tuberosa', 'Jazmín', 'Cacao'],
     category: 'classic',
     stock: false
@@ -100,7 +100,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 12990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/idole.png', // Placeholder
+    image: '/images/perfumes/idole.png',
     notes: ['Rosa', 'Jazmín', 'Chipre Blanco'],
     category: 'classic',
     stock: false
@@ -114,7 +114,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 12990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/acqua-di-gioia.png', // Placeholder
+    image: '/images/perfumes/acqua-di-gioia.png',
     notes: ['Limón', 'Menta', 'Jazmín de Agua'],
     category: 'classic',
     stock: false
@@ -128,7 +128,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 14990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/black-opium.png', // Placeholder
+    image: '/images/perfumes/black-opium.png',
     notes: ['Café', 'Vainilla', 'Flores Blancas'],
     category: 'classic',
     stock: false
@@ -142,7 +142,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 9990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/light-blue.png', // Placeholder
+    image: '/images/perfumes/light-blue.png',
     notes: ['Limón Siciliano', 'Manzana', 'Cedro'],
     category: 'classic',
     stock: false
@@ -158,13 +158,138 @@ export const PERFUMES: Perfume[] = [
     price10ml: 8990,
     margin5ml: 2803,
     margin10ml: 4616,
+    stock: true,
+    priceFullBottle: 29990,
     image: '/images/perfumes/lattafa-yara-rosa.png',
     notes: ['Orquídea', 'Heliotropo', 'Frutas Tropicales'],
-    category: 'arab',
-    stock: true
+    category: 'arab'
   },
   {
     id: 'a2',
+    brand: 'Lattafa',
+    name: 'Yara Tous',
+    description: 'La versión tropical y solar de Yara. Mango y maracuyá.',
+    price5ml: 5990,
+    price10ml: 8990,
+    margin5ml: 2850,
+    margin10ml: 4711,
+    stock: true,
+    priceFullBottle: 29990,
+    image: '/images/perfumes/lattafa-yara-tous.png',
+    notes: ['Mango', 'Coco', 'Vainilla'],
+    category: 'arab'
+  },
+  {
+    id: 'a3',
+    brand: 'Lattafa',
+    name: 'Rave Now Women',
+    description: 'Dulce, frutal y vibrante. Energía pura en una botella.',
+    price5ml: 4990,
+    price10ml: 7990,
+    margin5ml: 2040,
+    margin10ml: 4091,
+    stock: true,
+    priceFullBottle: 29990,
+    image: '/images/perfumes/lattafa-rave-now-women.png',
+    notes: ['Frutas Rojas', 'Malvavisco', 'Almizcle'],
+    category: 'arab'
+  },
+  {
+    id: 'a4',
+    brand: 'Fragrance World',
+    name: 'Valentia Rome Intense',
+    description: 'Inspirada en el lujo italiano. Floral y moderna.',
+    price5ml: 5990,
+    price10ml: 8990,
+    margin5ml: 2898,
+    margin10ml: 4806,
+    stock: true,
+    priceFullBottle: 29990,
+    image: '/images/perfumes/fw-valentia-rome.png',
+    notes: ['Jazmín', 'Grosella Negra', 'Vainilla Bourbon'],
+    category: 'arab'
+  },
+  {
+    id: 'a5',
+    brand: 'Maison Alhambra',
+    name: 'Leonie EDP',
+    description: 'Elegancia y sofisticación. Una fragancia que impone presencia.',
+    price5ml: 4990,
+    price10ml: 6990,
+    margin5ml: 2183,
+    margin10ml: 3376,
+    stock: true,
+    priceFullBottle: 27990,
+    image: '/images/perfumes/maison-alhambra-leonie.png',
+    notes: ['Floral', 'Ámbar', 'Vainilla'],
+    category: 'arab'
+  },
+  {
+    id: 'a6',
+    brand: 'Lattafa',
+    name: 'Ana Abiyedh',
+    description: 'Limpio, almizclado y frutal. Un aroma que dura todo el día.',
+    price5ml: 6990,
+    price10ml: 9990,
+    margin5ml: 3487,
+    margin10ml: 4983,
+    stock: true,
+    priceFullBottle: 29990,
+    image: '/images/perfumes/lattafa-ana-abiyedh.png',
+    notes: ['Almizcle Blanco', 'Pera', 'Bergamota'],
+    category: 'arab'
+  },
+  {
+    id: 'a7',
+    brand: 'Maison Alhambra',
+    name: 'Bad Femme',
+    description: 'Atrevida y seductora. Ideal para la noche.',
+    price5ml: 4990,
+    price10ml: 6990,
+    margin5ml: 2135,
+    margin10ml: 3281,
+    stock: true,
+    priceFullBottle: 27990,
+    image: '/images/perfumes/maison-alhambra-bad-femme.png',
+    notes: ['Tuberosa', 'Jazmín', 'Cacao'],
+    category: 'arab'
+  },
+  // --- DESODORANTES ---
+  {
+    id: 'd1',
+    brand: 'Lattafa',
+    name: 'Yara Desodorante Spray',
+    description: 'El complemento perfecto para tu perfume Yara.',
+    price5ml: 0,
+    price10ml: 0,
+    margin5ml: 0,
+    margin10ml: 0,
+    stock: true,
+    priceFullBottle: 5990,
+    isSpray: true,
+    image: '/images/perfumes/yara-spray.png', // Placeholder
+    notes: ['Tropical', 'Dulce', 'Cremoso'],
+    category: 'arab'
+  },
+  {
+    id: 'd2',
+    brand: 'Lattafa',
+    name: 'Qaed Al Fursan Desodorante',
+    description: 'Fresco, piña ahumada y maderas.',
+    price5ml: 0,
+    price10ml: 0,
+    margin5ml: 0,
+    margin10ml: 0,
+    stock: true,
+    priceFullBottle: 5990,
+    isSpray: true,
+    image: '/images/perfumes/qaed-al-fursan-spray.png', // Placeholder
+    notes: ['Piña', 'Musgo', 'Azafrán'],
+    category: 'arab'
+  },
+  // --- RESTO SIN STOCK ---
+  {
+    id: 'a8',
     brand: 'Armaf',
     name: 'Club de Nuit Intense Woman EDP',
     description: 'Un chipre floral intenso y elegante. Misterioso.',
@@ -172,13 +297,13 @@ export const PERFUMES: Perfume[] = [
     price10ml: 8990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/club-de-nuit-intense-woman.png', // Placeholder
+    image: '/images/perfumes/club-de-nuit-intense-woman.png',
     notes: ['Rosa', 'Azafrán', 'Geranio'],
     category: 'arab',
     stock: false
   },
   {
-    id: 'a3',
+    id: 'a9',
     brand: 'Lattafa',
     name: 'Eclaire EDP',
     description: 'Dulce y envolvente, con notas gourmand irresistibles.',
@@ -186,13 +311,13 @@ export const PERFUMES: Perfume[] = [
     price10ml: 8990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/lattafa-eclaire.png', // Placeholder
+    image: '/images/perfumes/lattafa-eclaire.png',
     notes: ['Caramelo', 'Leche', 'Miel'],
     category: 'arab',
     stock: false
   },
   {
-    id: 'a4',
+    id: 'a10',
     brand: 'Armaf',
     name: 'Club de Nuit Untold EDP',
     description: 'El dupe perfecto de Baccarat Rouge 540. Lujoso y dulce.',
@@ -200,13 +325,13 @@ export const PERFUMES: Perfume[] = [
     price10ml: 9990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/club-de-nuit-untold.png', // Placeholder
+    image: '/images/perfumes/club-de-nuit-untold.png',
     notes: ['Azafrán', 'Jazmín', 'Amberwood'],
     category: 'arab',
-    stock: true
+    stock: false
   },
   {
-    id: 'a5',
+    id: 'a11',
     brand: 'Lattafa',
     name: 'Khamrah EDP',
     description: 'Cálido y especiado. Canela, dátiles y praliné.',
@@ -214,13 +339,13 @@ export const PERFUMES: Perfume[] = [
     price10ml: 9990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/lattafa-khamrah.png', // Placeholder
+    image: '/images/perfumes/lattafa-khamrah.png',
     notes: ['Canela', 'Dátiles', 'Praliné'],
     category: 'arab',
-    stock: true
+    stock: false
   },
   {
-    id: 'a6',
+    id: 'a12',
     brand: 'Armaf',
     name: 'Club de Nuit Imperiale',
     description: 'Floral, fresco y frutal. Elegancia moderna.',
@@ -228,7 +353,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 8990,
     margin5ml: 0,
     margin10ml: 0,
-    image: '/images/perfumes/club-de-nuit-imperiale.png', // Placeholder
+    image: '/images/perfumes/club-de-nuit-imperiale.png',
     notes: ['Litchi', 'Bergamota', 'Rosa Turca'],
     category: 'arab',
     stock: false

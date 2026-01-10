@@ -12,6 +12,8 @@ export interface Perfume {
   margin5ml?: number;
   margin10ml?: number;
   stock?: boolean;
+  priceFullBottle?: number; // Precio botella completa
+  isSpray?: boolean; // Si es desodorante/spray
 }
 
 export interface Service {

@@ -33,6 +33,13 @@ const PerfumeCatalog: React.FC = () => {
         window.open(url, '_blank');
     };
 
+    const handleFullBottleOrder = (perfume: Perfume) => {
+        if (!perfume.priceFullBottle) return;
+        const message = `Hola Tus3B Style, quiero comprar la botella completa de *${perfume.brand} - ${perfume.name}* por $${perfume.priceFullBottle.toLocaleString('es-CL')}. ¿Tienen disponibilidad?`;
+        const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank');
+    };
+
     const handleSpecialRequest = () => {
         const message = "Hola Tus3B Style, me gustaría cotizar/encargar un perfume que no veo en el catálogo.";
         window.open(`https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
@@ -78,23 +85,43 @@ const PerfumeCatalog: React.FC = () => {
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 mt-auto">
-                            <button
-                                onClick={() => handleOrder(perfume, '5ml')}
-                                disabled={!perfume.stock}
-                                className={`group/btn flex flex-col items-center justify-center p-2.5 border rounded-lg transition-all duration-300 ${!perfume.stock ? 'border-stone-100 bg-stone-50 opacity-50 cursor-not-allowed' : 'border-stone-200 hover:border-stone-900 hover:bg-stone-900'}`}
-                            >
-                                <span className="text-[10px] font-bold text-stone-500 uppercase mb-0.5 group-hover/btn:text-stone-400">5 ML</span>
-                                <span className="text-stone-900 font-semibold group-hover/btn:text-white">${perfume.price5ml.toLocaleString('es-CL')}</span>
-                            </button>
-                            <button
-                                onClick={() => handleOrder(perfume, '10ml')}
-                                disabled={!perfume.stock}
-                                className={`group/btn flex flex-col items-center justify-center p-2.5 border rounded-lg transition-all duration-300 ${!perfume.stock ? 'border-stone-100 bg-stone-50 opacity-50 cursor-not-allowed' : 'border-stone-200 hover:border-stone-900 hover:bg-stone-900'}`}
-                            >
-                                <span className="text-[10px] font-bold text-stone-500 uppercase mb-0.5 group-hover/btn:text-stone-400">10 ML</span>
-                                <span className="text-stone-900 font-semibold group-hover/btn:text-white">${perfume.price10ml.toLocaleString('es-CL')}</span>
-                            </button>
+                        <div className="mt-auto space-y-3">
+                            {/* Decant Options - Only if NOT a spray */}
+                            {!perfume.isSpray && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => handleOrder(perfume, '5ml')}
+                                        disabled={!perfume.stock}
+                                        className={`group/btn flex flex-col items-center justify-center p-2.5 border rounded-lg transition-all duration-300 ${!perfume.stock ? 'border-stone-100 bg-stone-50 opacity-50 cursor-not-allowed' : 'border-stone-200 hover:border-stone-900 hover:bg-stone-900'}`}
+                                    >
+                                        <span className="text-[10px] font-bold text-stone-500 uppercase mb-0.5 group-hover/btn:text-stone-400">5 ML</span>
+                                        <span className="text-stone-900 font-semibold group-hover/btn:text-white">${perfume.price5ml.toLocaleString('es-CL')}</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleOrder(perfume, '10ml')}
+                                        disabled={!perfume.stock}
+                                        className={`group/btn flex flex-col items-center justify-center p-2.5 border rounded-lg transition-all duration-300 ${!perfume.stock ? 'border-stone-100 bg-stone-50 opacity-50 cursor-not-allowed' : 'border-stone-200 hover:border-stone-900 hover:bg-stone-900'}`}
+                                    >
+                                        <span className="text-[10px] font-bold text-stone-500 uppercase mb-0.5 group-hover/btn:text-stone-400">10 ML</span>
+                                        <span className="text-stone-900 font-semibold group-hover/btn:text-white">${perfume.price10ml.toLocaleString('es-CL')}</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Full Bottle Option - Only if price exists */}
+                            {perfume.priceFullBottle && (
+                                <button
+                                    onClick={() => handleFullBottleOrder(perfume)}
+                                    disabled={!perfume.stock}
+                                    className={`w-full flex items-center justify-center gap-2 p-3 rounded-lg font-bold uppercase text-xs tracking-wider transition-all ${!perfume.stock
+                                            ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                                            : 'bg-stone-900 text-white hover:bg-stone-800 shadow-md hover:shadow-lg'
+                                        }`}
+                                >
+                                    <ShoppingBag size={14} />
+                                    <span>Botella {perfume.isSpray ? '200ml' : '100ml'} - ${perfume.priceFullBottle.toLocaleString('es-CL')}</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
