@@ -12,7 +12,7 @@ const Hero: React.FC<HeroProps> = ({ onCtaClick }) => {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('/images/greici/greici-salon-wide.jpg')`,
+          backgroundImage: `url('/images/greici/greici-main-new.jpg')`,
         }}
       >
         <div className="absolute inset-0 bg-black/20 mix-blend-multiply" />
