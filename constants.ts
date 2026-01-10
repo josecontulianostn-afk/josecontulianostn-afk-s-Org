@@ -72,7 +72,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 6990,
     margin5ml: 2183,
     margin10ml: 3376,
-    image: '/images/perfumes/maison-alhambra-leonie.png', // Placeholder path
+    image: '/images/perfumes/maison-alhambra-leonie.png',
     notes: ['Floral', 'Ámbar', 'Vainilla'],
     category: 'arab',
     stock: true
@@ -86,7 +86,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 6990,
     margin5ml: 2135,
     margin10ml: 3281,
-    image: '/images/perfumes/maison-alhambra-bad-femme.png', // Placeholder path
+    image: '/images/perfumes/maison-alhambra-bad-femme.png',
     notes: ['Tuberosa', 'Jazmín', 'Cacao'],
     category: 'arab',
     stock: true
@@ -100,7 +100,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 7990,
     margin5ml: 2040,
     margin10ml: 4091,
-    image: '/images/perfumes/lattafa-rave-now.png', // Placeholder path
+    image: '/images/perfumes/lattafa-rave-now-women.png',
     notes: ['Frutas Rojas', 'Malvavisco', 'Almizcle'],
     category: 'arab',
     stock: true
@@ -114,7 +114,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 8990,
     margin5ml: 2898,
     margin10ml: 4806,
-    image: '/images/perfumes/fw-valentia-rome.png', // Placeholder path
+    image: '/images/perfumes/fw-valentia-rome.png',
     notes: ['Jazmín', 'Grosella Negra', 'Vainilla Bourbon'],
     category: 'arab',
     stock: true
@@ -128,7 +128,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 8990,
     margin5ml: 2850,
     margin10ml: 4711,
-    image: '/images/perfumes/lattafa-yara-tous.png', // Placeholder path
+    image: '/images/perfumes/lattafa-yara-tous.png',
     notes: ['Mango', 'Coco', 'Vainilla'],
     category: 'arab',
     stock: true
@@ -142,7 +142,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 8990,
     margin5ml: 2803,
     margin10ml: 4616,
-    image: '/images/perfumes/lattafa-yara.png',
+    image: '/images/perfumes/lattafa-yara-rosa.png',
     notes: ['Orquídea', 'Heliotropo', 'Frutas Tropicales'],
     category: 'arab',
     stock: true
@@ -156,7 +156,7 @@ export const PERFUMES: Perfume[] = [
     price10ml: 9990,
     margin5ml: 3487,
     margin10ml: 4983,
-    image: '/images/perfumes/lattafa-ana-abiyedh.png', // Placeholder path
+    image: '/images/perfumes/lattafa-ana-abiyedh.png',
     notes: ['Almizcle Blanco', 'Pera', 'Bergamota'],
     category: 'arab',
     stock: true
