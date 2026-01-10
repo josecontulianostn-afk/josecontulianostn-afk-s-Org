@@ -24,11 +24,22 @@ const AdminPanel: React.FC = () => {
         if (scannerActive && !scanResult) {
             const scanner = new Html5QrcodeScanner(
                 "reader",
-                { fps: 10, qrbox: { width: 250, height: 250 } },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                },
                 /* verbose= */ false
             );
 
-            scanner.render(onScanSuccess, onScanFailure);
+            // Add slight delay to render to ensure DOM is ready
+            setTimeout(() => {
+                try {
+                    scanner.render(onScanSuccess, onScanFailure);
+                } catch (e) {
+                    setMessage("Error iniciando cámara: " + e);
+                }
+            }, 100);
 
             return () => {
                 scanner.clear().catch(error => console.error("Failed to clear html5-qrcode scanner. ", error));
@@ -69,7 +80,12 @@ const AdminPanel: React.FC = () => {
     };
 
     const onScanFailure = (error: any) => {
-        // Handle failure silently
+        // Handle failure silently usually, but for debugging prompt:
+        console.warn(error);
+        // Only set message if it's a critical initialization error, otherwise scanning noise causes too many updates
+        if (typeof error === 'string' && (error.includes("NotAllowedError") || error.includes("NotFoundError"))) {
+            setMessage("Error de Cámara: " + error);
+        }
     };
 
     const handleLogin = (e: React.FormEvent) => {
