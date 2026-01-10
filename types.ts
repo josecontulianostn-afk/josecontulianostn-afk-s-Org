@@ -14,6 +14,7 @@ export interface Perfume {
   stock?: boolean;
   priceFullBottle?: number; // Precio botella completa
   isSpray?: boolean; // Si es desodorante/spray
+  secondaryImage?: string; // Imagen secundaria (hover)
 }
 
 export interface Service {

@@ -161,6 +161,7 @@ export const PERFUMES: Perfume[] = [
     stock: true,
     priceFullBottle: 29990,
     image: '/images/perfumes/lattafa-yara-rosa.png',
+    secondaryImage: '/images/perfumes/yara-rosa-notes.jpg',
     notes: ['Orquídea', 'Heliotropo', 'Frutas Tropicales'],
     category: 'arab'
   },
@@ -176,6 +177,7 @@ export const PERFUMES: Perfume[] = [
     stock: true,
     priceFullBottle: 29990,
     image: '/images/perfumes/lattafa-yara-tous.png',
+    secondaryImage: '/images/perfumes/yara-tous-notes.jpg',
     notes: ['Mango', 'Coco', 'Vainilla'],
     category: 'arab'
   },

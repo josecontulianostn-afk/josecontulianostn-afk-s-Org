@@ -57,11 +57,20 @@ const PerfumeCatalog: React.FC = () => {
                             </div>
                         )}
 
-                        <img
-                            src={perfume.image}
-                            alt={perfume.name}
-                            className="w-full h-full object-contain p-8 transition-transform duration-700 ease-out group-hover:scale-110"
-                        />
+                        <div className="relative w-full h-full p-8 transition-transform duration-700 ease-out group-hover:scale-105">
+                            <img
+                                src={perfume.image}
+                                alt={perfume.name}
+                                className={`w-full h-full object-contain ${perfume.secondaryImage ? 'transition-opacity duration-500 group-hover:opacity-0' : ''}`}
+                            />
+                            {perfume.secondaryImage && (
+                                <img
+                                    src={perfume.secondaryImage}
+                                    alt={`${perfume.name} detalle`}
+                                    className="absolute inset-0 w-full h-full object-contain p-0 transition-opacity duration-500 opacity-0 group-hover:opacity-100"
+                                />
+                            )}
+                        </div>
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-stone-900/90 text-white text-[10px] uppercase font-bold px-2 py-1 rounded">
                             Original
                         </div>
@@ -114,8 +123,8 @@ const PerfumeCatalog: React.FC = () => {
                                     onClick={() => handleFullBottleOrder(perfume)}
                                     disabled={!perfume.stock}
                                     className={`w-full flex items-center justify-center gap-2 p-3 rounded-lg font-bold uppercase text-xs tracking-wider transition-all ${!perfume.stock
-                                            ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
-                                            : 'bg-stone-900 text-white hover:bg-stone-800 shadow-md hover:shadow-lg'
+                                        ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                                        : 'bg-stone-900 text-white hover:bg-stone-800 shadow-md hover:shadow-lg'
                                         }`}
                                 >
                                     <ShoppingBag size={14} />
