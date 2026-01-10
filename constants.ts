@@ -62,79 +62,95 @@ export const COVERAGE_AREAS = ['Santiago Centro', 'Ñuñoa'];
 
 // Data for perfumes using reliable product image CDNs (Notino/Unsplash)
 export const PERFUMES: Perfume[] = [
-  // --- STOCK ACTUAL ---
+  // --- CLÁSICOS DE LUJO ---
+  {
+    id: 'l1',
+    brand: 'Lancôme',
+    name: 'La Vie Est Belle EDP',
+    description: 'La fragancia de la felicidad. Iris pallida, Jazmín Sambac y Azahar.',
+    price5ml: 6990,
+    price10ml: 12990,
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/la-vie-est-belle.png', // Placeholder
+    notes: ['Iris', 'Vainilla', 'Praliné'],
+    category: 'classic',
+    stock: true
+  },
+  {
+    id: 'l2',
+    brand: 'Carolina Herrera',
+    name: 'Good Girl EDP',
+    description: 'Audaz y sexy, elegante y enigmática. El famoso tacón.',
+    price5ml: 7990,
+    price10ml: 14990,
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/good-girl.png', // Placeholder
+    notes: ['Tuberosa', 'Jazmín', 'Cacao'],
+    category: 'classic',
+    stock: false
+  },
+  {
+    id: 'l3',
+    brand: 'Lancôme',
+    name: 'Idôle EDP',
+    description: 'Para la mujer que sueña a lo grande. Limpio y luminoso.',
+    price5ml: 6990,
+    price10ml: 12990,
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/idole.png', // Placeholder
+    notes: ['Rosa', 'Jazmín', 'Chipre Blanco'],
+    category: 'classic',
+    stock: false
+  },
+  {
+    id: 'l4',
+    brand: 'Giorgio Armani',
+    name: 'Acqua Di Gioia EDP',
+    description: 'La esencia de la alegría. Fresco, acuático y cítrico.',
+    price5ml: 6990,
+    price10ml: 12990,
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/acqua-di-gioia.png', // Placeholder
+    notes: ['Limón', 'Menta', 'Jazmín de Agua'],
+    category: 'classic',
+    stock: false
+  },
+  {
+    id: 'l5',
+    brand: 'Yves Saint Laurent',
+    name: 'Black Opium EDP',
+    description: 'Adrenalina y energía. Café negro y flores blancas.',
+    price5ml: 7990,
+    price10ml: 14990,
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/black-opium.png', // Placeholder
+    notes: ['Café', 'Vainilla', 'Flores Blancas'],
+    category: 'classic',
+    stock: false
+  },
+  {
+    id: 'l6',
+    brand: 'Dolce & Gabbana',
+    name: 'Light Blue EDT',
+    description: 'La alegría de vivir el Mediterráneo. Fresco y frutal.',
+    price5ml: 5990,
+    price10ml: 9990,
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/light-blue.png', // Placeholder
+    notes: ['Limón Siciliano', 'Manzana', 'Cedro'],
+    category: 'classic',
+    stock: false
+  },
+
+  // --- ÁRABES ---
   {
     id: 'a1',
-    brand: 'Maison Alhambra',
-    name: 'Leonie EDP',
-    description: 'Elegancia y sofisticación. Una fragancia que impone presencia.',
-    price5ml: 4990,
-    price10ml: 6990,
-    margin5ml: 2183,
-    margin10ml: 3376,
-    image: '/images/perfumes/maison-alhambra-leonie.png',
-    notes: ['Floral', 'Ámbar', 'Vainilla'],
-    category: 'arab',
-    stock: true
-  },
-  {
-    id: 'a2',
-    brand: 'Maison Alhambra',
-    name: 'Bad Femme',
-    description: 'Atrevida y seductora. Ideal para la noche.',
-    price5ml: 4990,
-    price10ml: 6990,
-    margin5ml: 2135,
-    margin10ml: 3281,
-    image: '/images/perfumes/maison-alhambra-bad-femme.png',
-    notes: ['Tuberosa', 'Jazmín', 'Cacao'],
-    category: 'arab',
-    stock: true
-  },
-  {
-    id: 'a3',
-    brand: 'Lattafa',
-    name: 'Rave Now Women',
-    description: 'Dulce, frutal y vibrante. Energía pura en una botella.',
-    price5ml: 4990,
-    price10ml: 7990,
-    margin5ml: 2040,
-    margin10ml: 4091,
-    image: '/images/perfumes/lattafa-rave-now-women.png',
-    notes: ['Frutas Rojas', 'Malvavisco', 'Almizcle'],
-    category: 'arab',
-    stock: true
-  },
-  {
-    id: 'a4',
-    brand: 'Fragrance World',
-    name: 'Valentia Rome',
-    description: 'Inspirada en el lujo italiano. Floral y moderna.',
-    price5ml: 5990,
-    price10ml: 8990,
-    margin5ml: 2898,
-    margin10ml: 4806,
-    image: '/images/perfumes/fw-valentia-rome.png',
-    notes: ['Jazmín', 'Grosella Negra', 'Vainilla Bourbon'],
-    category: 'arab',
-    stock: true
-  },
-  {
-    id: 'a5',
-    brand: 'Lattafa',
-    name: 'Yara Tous',
-    description: 'La versión tropical y solar de Yara. Mango y maracuyá.',
-    price5ml: 5990,
-    price10ml: 8990,
-    margin5ml: 2850,
-    margin10ml: 4711,
-    image: '/images/perfumes/lattafa-yara-tous.png',
-    notes: ['Mango', 'Coco', 'Vainilla'],
-    category: 'arab',
-    stock: true
-  },
-  {
-    id: 'a6',
     brand: 'Lattafa',
     name: 'Yara (Rosa) EDP',
     description: 'El viral de TikTok. Dulce, cremoso y adictivo.',
@@ -148,18 +164,74 @@ export const PERFUMES: Perfume[] = [
     stock: true
   },
   {
-    id: 'a7',
+    id: 'a2',
+    brand: 'Armaf',
+    name: 'Club de Nuit Intense Woman EDP',
+    description: 'Un chipre floral intenso y elegante. Misterioso.',
+    price5ml: 5990,
+    price10ml: 8990,
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/club-de-nuit-intense-woman.png', // Placeholder
+    notes: ['Rosa', 'Azafrán', 'Geranio'],
+    category: 'arab',
+    stock: false
+  },
+  {
+    id: 'a3',
     brand: 'Lattafa',
-    name: 'Ana Abiyedh',
-    description: 'Limpio, almizclado y frutal. Un aroma que dura todo el día.',
+    name: 'Eclaire EDP',
+    description: 'Dulce y envolvente, con notas gourmand irresistibles.',
+    price5ml: 5990,
+    price10ml: 8990,
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/lattafa-eclaire.png', // Placeholder
+    notes: ['Caramelo', 'Leche', 'Miel'],
+    category: 'arab',
+    stock: false
+  },
+  {
+    id: 'a4',
+    brand: 'Armaf',
+    name: 'Club de Nuit Untold EDP',
+    description: 'El dupe perfecto de Baccarat Rouge 540. Lujoso y dulce.',
     price5ml: 6990,
     price10ml: 9990,
-    margin5ml: 3487,
-    margin10ml: 4983,
-    image: '/images/perfumes/lattafa-ana-abiyedh.png',
-    notes: ['Almizcle Blanco', 'Pera', 'Bergamota'],
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/club-de-nuit-untold.png', // Placeholder
+    notes: ['Azafrán', 'Jazmín', 'Amberwood'],
     category: 'arab',
     stock: true
+  },
+  {
+    id: 'a5',
+    brand: 'Lattafa',
+    name: 'Khamrah EDP',
+    description: 'Cálido y especiado. Canela, dátiles y praliné.',
+    price5ml: 6990,
+    price10ml: 9990,
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/lattafa-khamrah.png', // Placeholder
+    notes: ['Canela', 'Dátiles', 'Praliné'],
+    category: 'arab',
+    stock: true
+  },
+  {
+    id: 'a6',
+    brand: 'Armaf',
+    name: 'Club de Nuit Imperiale',
+    description: 'Floral, fresco y frutal. Elegancia moderna.',
+    price5ml: 5990,
+    price10ml: 8990,
+    margin5ml: 0,
+    margin10ml: 0,
+    image: '/images/perfumes/club-de-nuit-imperiale.png', // Placeholder
+    notes: ['Litchi', 'Bergamota', 'Rosa Turca'],
+    category: 'arab',
+    stock: false
   }
 ];
 

@@ -58,6 +58,11 @@ const PerfumeCatalog: React.FC = () => {
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-stone-900/90 text-white text-[10px] uppercase font-bold px-2 py-1 rounded">
                             Original
                         </div>
+                        {!perfume.stock && (
+                            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-20">
+                                <span className="bg-stone-900 text-white px-4 py-2 rounded-lg font-bold uppercase tracking-widest text-xs shadow-lg">Agotado</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex-1 flex flex-col">
@@ -76,14 +81,16 @@ const PerfumeCatalog: React.FC = () => {
                         <div className="grid grid-cols-2 gap-3 mt-auto">
                             <button
                                 onClick={() => handleOrder(perfume, '5ml')}
-                                className="group/btn flex flex-col items-center justify-center p-2.5 border border-stone-200 rounded-lg hover:border-stone-900 hover:bg-stone-900 transition-all duration-300"
+                                disabled={!perfume.stock}
+                                className={`group/btn flex flex-col items-center justify-center p-2.5 border rounded-lg transition-all duration-300 ${!perfume.stock ? 'border-stone-100 bg-stone-50 opacity-50 cursor-not-allowed' : 'border-stone-200 hover:border-stone-900 hover:bg-stone-900'}`}
                             >
                                 <span className="text-[10px] font-bold text-stone-500 uppercase mb-0.5 group-hover/btn:text-stone-400">5 ML</span>
                                 <span className="text-stone-900 font-semibold group-hover/btn:text-white">${perfume.price5ml.toLocaleString('es-CL')}</span>
                             </button>
                             <button
                                 onClick={() => handleOrder(perfume, '10ml')}
-                                className="group/btn flex flex-col items-center justify-center p-2.5 border border-stone-200 rounded-lg hover:border-stone-900 hover:bg-stone-900 transition-all duration-300"
+                                disabled={!perfume.stock}
+                                className={`group/btn flex flex-col items-center justify-center p-2.5 border rounded-lg transition-all duration-300 ${!perfume.stock ? 'border-stone-100 bg-stone-50 opacity-50 cursor-not-allowed' : 'border-stone-200 hover:border-stone-900 hover:bg-stone-900'}`}
                             >
                                 <span className="text-[10px] font-bold text-stone-500 uppercase mb-0.5 group-hover/btn:text-stone-400">10 ML</span>
                                 <span className="text-stone-900 font-semibold group-hover/btn:text-white">${perfume.price10ml.toLocaleString('es-CL')}</span>
