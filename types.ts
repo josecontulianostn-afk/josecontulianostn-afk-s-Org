@@ -8,6 +8,10 @@ export interface Perfume {
   image: string;
   notes: string[];
   category: 'classic' | 'arab';
+  // Admin Data
+  margin5ml?: number;
+  margin10ml?: number;
+  stock?: boolean;
 }
 
 export interface Service {

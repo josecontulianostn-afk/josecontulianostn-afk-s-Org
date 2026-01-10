@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Users, Search, QrCode, X, Scissors, PlusCircle, Save } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import { PERFUMES } from '../constants';
 // import QrReader from 'react-qr-scanner';
 
 const AdminPanel: React.FC = () => {
@@ -13,7 +14,7 @@ const AdminPanel: React.FC = () => {
     const [scanResult, setScanResult] = useState<string | null>(null);
 
     // Hair Service State
-    const [activeTab, setActiveTab] = useState<'loyalty' | 'hair'>('loyalty');
+    const [activeTab, setActiveTab] = useState<'loyalty' | 'hair' | 'inventory'>('loyalty');
     const [serviceType, setServiceType] = useState('Corte');
     const [servicePrice, setServicePrice] = useState('7000');
 
@@ -245,13 +246,54 @@ const AdminPanel: React.FC = () => {
                         >
                             Peluquería (Servicios)
                         </button>
+                        <button
+                            onClick={() => setActiveTab('inventory')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'inventory' ? 'bg-blue-500 text-white' : 'text-stone-400 hover:text-white'}`}
+                        >
+                            Inventario
+                        </button>
                     </div>
                 </div>
 
                 <div className="bg-stone-800 p-6 rounded-2xl shadow-xl border border-white/5">
                     <h3 className="serif text-xl mb-4 text-center">
-                        {activeTab === 'loyalty' ? 'Registrar Visita' : 'Registrar Servicio Peluquería'}
+                        {activeTab === 'loyalty' ? 'Registrar Visita' : activeTab === 'hair' ? 'Registrar Servicio Peluquería' : 'Gestión de Inventario'}
                     </h3>
+
+                    {activeTab === 'inventory' && (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-left text-stone-300">
+                                <thead className="text-xs text-stone-400 uppercase bg-stone-700/50">
+                                    <tr>
+                                        <th className="px-3 py-2">Perfume</th>
+                                        <th className="px-3 py-2 text-center">5ml (Venta/Costo)</th>
+                                        <th className="px-3 py-2 text-center">10ml (Venta/Costo)</th>
+                                        <th className="px-3 py-2 text-right">Margen Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {PERFUMES.map((p) => (
+                                        <tr key={p.id} className="border-b border-stone-700 hover:bg-stone-700/20">
+                                            <td className="px-3 py-2 font-medium text-white">{p.name}</td>
+                                            <td className="px-3 py-2 text-center">
+                                                <div className="text-green-400">${p.price5ml.toLocaleString()}</div>
+                                                <div className="text-stone-500 text-[10px]">${(p.price5ml - (p.margin5ml || 0)).toLocaleString()}</div>
+                                            </td>
+                                            <td className="px-3 py-2 text-center">
+                                                <div className="text-green-400">${p.price10ml.toLocaleString()}</div>
+                                                <div className="text-stone-500 text-[10px]">${(p.price10ml - (p.margin10ml || 0)).toLocaleString()}</div>
+                                            </td>
+                                            <td className="px-3 py-2 text-right">
+                                                <div className="text-blue-400 font-bold">+${((p.margin5ml || 0) + (p.margin10ml || 0)).toLocaleString()}</div>
+                                                {/* Note: This is just summing margins for display, real total depends on sales volume which we don't track yet */}
+                                                <div className="text-[10px] text-stone-500">Unitario (5+10)</div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
 
                     {activeTab === 'hair' && (
                         <div className="mb-4 space-y-3">
