@@ -1,11 +1,29 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { PERFUMES, PHONE_NUMBER } from '../constants';
+import { supabase } from '../services/supabaseClient';
 import { Perfume } from '../types';
-import { Search, ShoppingBag, MessageCircle, PackageSearch, X, Star, Crown, Sparkles } from 'lucide-react';
+import { Search, ShoppingBag, MessageCircle, PackageSearch, X, Star, Crown, Sparkles, Info, DollarSign, Tag, Check } from 'lucide-react';
 
 const PerfumeCatalog: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedNote, setSelectedNote] = useState<string | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<'all' | 'classic' | 'arab'>('all');
+    const [inventory, setInventory] = useState<Record<string, number>>({});
+
+    useEffect(() => {
+        fetchInventory();
+    }, []);
+
+    const fetchInventory = async () => {
+        const { data } = await supabase.from('inventory').select('product_id, quantity');
+        if (data) {
+            const invMap: Record<string, number> = {};
+            data.forEach((item: any) => {
+                invMap[item.product_id] = item.quantity;
+            });
+            setInventory(invMap);
+        }
+    };
 
     // Extract unique notes for filter chips
     const allNotes = useMemo(() => {
@@ -19,14 +37,16 @@ const PerfumeCatalog: React.FC = () => {
             const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 p.brand.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesNote = selectedNote ? p.notes.includes(selectedNote) : true;
-            return matchesSearch && matchesNote;
+            const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+            return matchesSearch && matchesNote && matchesCategory;
         }).sort((a, b) => {
-            // Sort by Stock (true first)
-            if (a.stock && !b.stock) return -1;
-            if (!a.stock && b.stock) return 1;
-            return 0; // Keep original order
+            // Sort by Stock (Real Inventory > 0 or Static Stock true)
+            const stockA = inventory[a.id] !== undefined ? inventory[a.id] > 0 : a.stock;
+            const stockB = inventory[b.id] !== undefined ? inventory[b.id] > 0 : b.stock;
+            if (stockA === stockB) return 0;
+            return stockA ? -1 : 1;
         });
-    }, [searchTerm, selectedNote]);
+    }, [searchTerm, selectedNote, selectedCategory, inventory]);
 
     const classics = filteredPerfumes.filter(p => p.category === 'classic');
     const arabs = filteredPerfumes.filter(p => p.category === 'arab');
@@ -126,8 +146,8 @@ const PerfumeCatalog: React.FC = () => {
                             {perfume.priceFullBottle && (
                                 <button
                                     onClick={() => handleFullBottleOrder(perfume)}
-                                    disabled={!perfume.stock}
-                                    className={`w-full flex items-center justify-center gap-2 p-3 rounded-lg font-bold uppercase text-xs tracking-wider transition-all ${!perfume.stock
+                                    disabled={!(inventory[perfume.id] !== undefined ? inventory[perfume.id] > 0 : perfume.stock)}
+                                    className={`w-full flex items-center justify-center gap-2 p-3 rounded-lg font-bold uppercase text-xs tracking-wider transition-all ${!(inventory[perfume.id] !== undefined ? inventory[perfume.id] > 0 : perfume.stock)
                                         ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
                                         : 'bg-stone-900 text-white hover:bg-stone-800 shadow-md hover:shadow-lg'
                                         }`}

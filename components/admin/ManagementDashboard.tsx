@@ -33,6 +33,61 @@ interface ProductBCG {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+const InventoryEditRow: React.FC<{ perfume: any }> = ({ perfume }) => {
+    const [quantity, setQuantity] = useState<number | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        fetchQty();
+    }, []);
+
+    const fetchQty = async () => {
+        const { data } = await supabase.from('inventory').select('quantity').eq('product_id', perfume.id).single();
+        if (data) setQuantity(data.quantity);
+        else setQuantity(0);
+    };
+
+    const handleUpdate = async (newQty: number) => {
+        if (newQty < 0) return;
+        setLoading(true);
+        const { error } = await supabase.from('inventory').upsert({
+            product_id: perfume.id,
+            quantity: newQty,
+            updated_at: new Date().toISOString()
+        });
+        if (error) alert("Error: " + error.message);
+        else setQuantity(newQty);
+        setLoading(false);
+    };
+
+    return (
+        <tr className="border-b border-stone-100">
+            <td className="px-4 py-2">{perfume.name}</td>
+            <td className="px-4 py-2 text-center">
+                <span className={`font-bold ${quantity !== null && quantity > 2 ? 'text-green-600' : 'text-red-500'}`}>
+                    {quantity !== null ? quantity : '...'}
+                </span>
+            </td>
+            <td className="px-4 py-2 text-right flex justify-end gap-1">
+                <button
+                    onClick={() => handleUpdate((quantity || 0) + 1)}
+                    disabled={loading}
+                    className="bg-stone-200 text-stone-800 px-2 py-1 rounded text-xs font-bold hover:bg-stone-300"
+                >
+                    +
+                </button>
+                <button
+                    onClick={() => handleUpdate((quantity || 0) - 1)}
+                    disabled={loading || (quantity || 0) <= 0}
+                    className="bg-stone-200 text-stone-800 px-2 py-1 rounded text-xs font-bold hover:bg-stone-300"
+                >
+                    -
+                </button>
+            </td>
+        </tr>
+    );
+};
+
 const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
@@ -463,7 +518,6 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                 <h3 className="text-xl font-bold flex items-center gap-2">
                                     <Package size={20} /> Inventario Perfumes
                                 </h3>
-                                {/* Placeholder for future inventory logic */}
                                 <button onClick={downloadCSV} className="text-sm text-blue-600 font-bold hover:underline flex items-center gap-1">
                                     <Download size={14} /> Exportar CSV
                                 </button>
@@ -473,23 +527,13 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                     <thead className="text-xs uppercase bg-stone-50 text-stone-500 sticky top-0">
                                         <tr>
                                             <th className="px-4 py-2">Producto</th>
-                                            <th className="px-4 py-2 text-center">Stock</th>
-                                            <th className="px-4 py-2 text-right">Margen 10ml</th>
+                                            <th className="px-4 py-2 text-center">Stock Real</th>
+                                            <th className="px-4 py-2 text-right">Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {PERFUMES.map((p) => (
-                                            <tr key={p.id} className="border-b border-stone-100">
-                                                <td className="px-4 py-2">{p.name}</td>
-                                                <td className="px-4 py-2 text-center">
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${p.stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                        {p.stock ? 'OK' : 'AGOTADO'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-2 text-right text-blue-600 font-medium">
-                                                    ${(p.margin10ml || 0).toLocaleString()}
-                                                </td>
-                                            </tr>
+                                            <InventoryEditRow key={p.id} perfume={p} />
                                         ))}
                                     </tbody>
                                 </table>

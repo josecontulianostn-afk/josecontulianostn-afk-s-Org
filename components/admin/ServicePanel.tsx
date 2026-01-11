@@ -8,6 +8,61 @@ interface ServicePanelProps {
     onLogout: () => void;
 }
 
+const InventoryRow: React.FC<{ perfume: any, onSell: (amount: number, desc: string) => void }> = ({ perfume, onSell }) => {
+    const [stock, setStock] = useState<number | null>(null);
+
+    useEffect(() => {
+        fetchStock();
+    }, []);
+
+    const fetchStock = async () => {
+        const { data } = await supabase.from('inventory').select('quantity').eq('product_id', perfume.id).single();
+        if (data) setStock(data.quantity);
+        else setStock(perfume.stock ? 5 : 0); // Fallback
+    };
+
+    const handleSell = async () => {
+        if (!window.confirm(`¿Confirmar venta de ${perfume.name}?`)) return;
+
+        // 1. Decrement Stock
+        const { data, error } = await supabase.rpc('sell_product', { p_id: perfume.id, qty: 1 });
+
+        if (error) {
+            alert('Error: ' + error.message);
+        } else if (data.success) {
+            setStock(data.new_stock);
+            // 2. Record Transaction (Assuming 10ml price for simplicity or ask?)
+            // For rapid prototype, let's assume 10ml price is the standard "unit" sale or maybe full bottle?
+            // "Vender" implies selling a unit. Usually decants. Let's use price10ml as default value.
+            onSell(perfume.price10ml, `Venta: ${perfume.name} (10ml)`);
+            alert('Venta exitosa. Nuevo stock: ' + data.new_stock);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    };
+
+    return (
+        <tr className="border-b border-stone-700 hover:bg-stone-700/20">
+            <td className="px-3 py-2 font-medium text-white">{perfume.name}</td>
+            <td className="px-3 py-2 text-center">
+                <span className={`px-2 py-1 rounded text-xs font-bold ${stock !== null && stock > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                    {stock !== null ? stock : '...'}
+                </span>
+            </td>
+            <td className="px-3 py-2 text-center text-green-400">${perfume.price10ml.toLocaleString()}</td>
+            <td className="px-3 py-2 text-right">
+                <button
+                    onClick={handleSell}
+                    disabled={stock !== null && stock <= 0}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-stone-600 disabled:cursor-not-allowed text-white px-3 py-1 rounded text-xs font-bold shadow-lg"
+                >
+                    Vender
+                </button>
+            </td>
+        </tr>
+    );
+};
+
 const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     // Auth state removed, passed as prop
     const [phone, setPhone] = useState('');
@@ -256,20 +311,19 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                 <thead className="text-xs text-stone-400 uppercase bg-stone-700/50">
                                     <tr>
                                         <th className="px-3 py-2">Perfume</th>
-                                        <th className="px-3 py-2 text-center">5ml</th>
-                                        <th className="px-3 py-2 text-center">10ml</th>
-                                        <th className="px-3 py-2 text-right">Margen (5+10)</th>
+                                        <th className="px-3 py-2 text-center">Stock</th>
+                                        <th className="px-3 py-2 text-center">Precio 10ml</th>
+                                        <th className="px-3 py-2 text-right">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {PERFUMES.map((p) => (
-                                        <tr key={p.id} className="border-b border-stone-700 hover:bg-stone-700/20">
-                                            <td className="px-3 py-2 font-medium text-white">{p.name}</td>
-                                            <td className="px-3 py-2 text-center text-green-400">${p.price5ml.toLocaleString()}</td>
-                                            <td className="px-3 py-2 text-center text-green-400">${p.price10ml.toLocaleString()}</td>
-                                            <td className="px-3 py-2 text-right text-blue-400 font-bold">+${((p.margin5ml || 0) + (p.margin10ml || 0)).toLocaleString()}</td>
-                                        </tr>
-                                    ))}
+                                    {PERFUMES.map((p) => {
+                                        // We need to fetch real stock here as well, but for now we might rely on a unified fetch or just prop drilling?
+                                        // For simplicity in this component, let's fetch inventory once on load
+                                        return (
+                                            <InventoryRow key={p.id} perfume={p} onSell={(amount, desc) => recordTransaction(client?.id || 'anon', amount, 'product', desc)} />
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
