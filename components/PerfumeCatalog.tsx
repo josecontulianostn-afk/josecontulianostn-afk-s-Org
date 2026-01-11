@@ -20,6 +20,11 @@ const PerfumeCatalog: React.FC = () => {
                 p.brand.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesNote = selectedNote ? p.notes.includes(selectedNote) : true;
             return matchesSearch && matchesNote;
+        }).sort((a, b) => {
+            // Sort by Stock (true first)
+            if (a.stock && !b.stock) return -1;
+            if (!a.stock && b.stock) return 1;
+            return 0; // Keep original order
         });
     }, [searchTerm, selectedNote]);
 
