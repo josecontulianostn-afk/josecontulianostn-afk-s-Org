@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../services/supabaseClient';
 import Login from './admin/Login';
 import ServicePanel from './admin/ServicePanel';
 import ManagementDashboard from './admin/ManagementDashboard';
@@ -14,7 +15,8 @@ const AdminPanel: React.FC = () => {
         if (email) setUserEmail(email);
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
         setRole(null);
         setUserEmail('');
     };
