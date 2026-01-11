@@ -3,6 +3,7 @@ import { PERFUMES, PHONE_NUMBER } from '../constants';
 import { supabase } from '../services/supabaseClient';
 import { Perfume } from '../types';
 import { Search, ShoppingBag, MessageCircle, PackageSearch, X, Star, Crown, Sparkles, Info, DollarSign, Tag, Check } from 'lucide-react';
+import PerfumeRecommender from './PerfumeRecommender';
 
 const PerfumeCatalog: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +23,23 @@ const PerfumeCatalog: React.FC = () => {
                 invMap[item.product_id] = item.quantity;
             });
             setInventory(invMap);
+        }
+    };
+
+    const handleRecommendation = (perfumeId: string) => {
+        setSearchTerm('');
+        // Find the perfume to set category if needed or just scroll
+        const p = PERFUMES.find(x => x.id === perfumeId);
+        if (p) {
+            setSelectedCategory(p.category as any); // Switch to correct category tab
+            // Use setTimeout to allow render, then scroll
+            setTimeout(() => {
+                const el = document.getElementById(`perfume-${perfumeId}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Highlight effect
+                el?.classList.add('ring-4', 'ring-purple-500', 'ring-opacity-50');
+                setTimeout(() => el?.classList.remove('ring-4', 'ring-purple-500', 'ring-opacity-50'), 2000);
+            }, 100);
         }
     };
 
@@ -270,6 +288,8 @@ const PerfumeCatalog: React.FC = () => {
                 </div>
                 <div className="absolute top-0 left-0 w-full h-full bg-[url('https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80')] opacity-20 bg-cover bg-center mix-blend-overlay grayscale"></div>
             </div>
+            {/* Recommender */}
+            <PerfumeRecommender onSelectPerfume={handleRecommendation} />
         </div>
     );
 };
