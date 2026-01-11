@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
-import { PERFUMES } from '../../constants';
-import { Download, TrendingUp, Users, DollarSign, Package } from 'lucide-react';
+import { PERFUMES, SERVICES } from '../../constants';
+import { Download, TrendingUp, Users, DollarSign, Package, PieChart, BarChart as BarChartIcon, ScatterChart as ScatterChartIcon } from 'lucide-react';
+import {
+    PieChart as RechartsPie, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
+    BarChart, Bar, XAxis, YAxis, CartesianGrid,
+    ScatterChart, Scatter, ZAxis, ReferenceLine
+} from 'recharts';
 
 interface Transaction {
     id: string;
@@ -9,6 +14,7 @@ interface Transaction {
     created_at: string;
     client_id: string;
     type: string;
+    description?: string; // Add description to track product/service name
 }
 
 interface ClientStat {
@@ -17,6 +23,15 @@ interface ClientStat {
     total_spent: number;
     visit_count: number;
 }
+
+interface ProductBCG {
+    name: string;
+    volume: number; // Share of total count
+    growth: number; // Growth vs previous period
+    type: 'star' | 'cow' | 'question' | 'dog';
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -27,6 +42,11 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [totalNet, setTotalNet] = useState(0);
     const [avgTicket, setAvgTicket] = useState(0);
     const [topClients, setTopClients] = useState<ClientStat[]>([]);
+
+    // Analytics Data
+    const [salesByCategory, setSalesByCategory] = useState<any[]>([]);
+    const [topProducts, setTopProducts] = useState<any[]>([]);
+    const [bcgMatrix, setBcgMatrix] = useState<ProductBCG[]>([]);
 
     const [activeTab, setActiveTab] = useState<'dashboard' | 'clients'>('dashboard');
     const [clients, setClients] = useState<any[]>([]);
@@ -44,7 +64,7 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            // 1. Fetch Transactions
+            // 1. Fetch Transactions (Current Period)
             const rangeDate = new Date();
             if (timeRange === 'week') rangeDate.setDate(rangeDate.getDate() - 7);
             else rangeDate.setDate(rangeDate.getDate() - 30);
@@ -55,8 +75,21 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                 .gte('created_at', rangeDate.toISOString());
 
             if (transError) throw transError;
-
             const trans = transData as Transaction[] || [];
+
+            // 2. Fetch Transactions (Previous Period for Growth)
+            const prevRangeDate = new Date(rangeDate);
+            if (timeRange === 'week') prevRangeDate.setDate(prevRangeDate.getDate() - 7);
+            else prevRangeDate.setDate(prevRangeDate.getDate() - 30);
+
+            const { data: prevTransData } = await supabase
+                .from('transactions')
+                .select('*')
+                .gte('created_at', prevRangeDate.toISOString())
+                .lt('created_at', rangeDate.toISOString());
+
+            const prevTrans = prevTransData as Transaction[] || [];
+
             setTransactions(trans);
 
             // Calculate KPIs
@@ -64,9 +97,80 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             setTotalNet(total);
             setAvgTicket(trans.length ? Math.round(total / trans.length) : 0);
 
-            // 2. Calculate Top Clients
-            const clientMap = new Map<string, ClientStat>();
+            // 3. Analytics: Sales by Category
+            const categoryMap = new Map<string, number>();
+            trans.forEach(t => {
+                const cat = t.type === 'product' ? 'Productos' : 'Servicios';
+                categoryMap.set(cat, (categoryMap.get(cat) || 0) + t.amount);
+            });
+            setSalesByCategory(Array.from(categoryMap).map(([name, value]) => ({ name, value })));
 
+            // 4. Analytics: Top Products/Services & BCG Construction
+            // Note: We need 'description' or similar in transaction to identify specific items. 
+            // Assuming for now 'type' serves as proxy or we infer from context. 
+            // *Wait*, the current transaction table might not have Item Names. 
+            // We will simulate item names based on 'amount' matching known prices for demonstration 
+            // OR use a mock distribution if descriptions are missing to show the chart functionality.
+            // *Self-Correction*: Use a heuristic matching price to existing catalog for now.
+
+            const productStats = new Map<string, { current: number, previous: number }>();
+
+            // Helper to guess item name from price (Heuristic)
+            const guessItem = (amount: number, type: string) => {
+                if (type === 'product') {
+                    const p = PERFUMES.find(p => p.price5ml === amount || p.price10ml === amount || p.priceFullBottle === amount);
+                    return p ? p.name : 'Producto Genérico';
+                } else {
+                    const s = SERVICES.find(s => s.price === amount);
+                    return s ? s.name : 'Servicio General';
+                }
+            };
+
+            trans.forEach(t => {
+                const name = guessItem(t.amount, t.type);
+                if (!productStats.has(name)) productStats.set(name, { current: 0, previous: 0 });
+                productStats.get(name)!.current++;
+            });
+
+            prevTrans.forEach(t => {
+                const name = guessItem(t.amount, t.type);
+                if (!productStats.has(name)) productStats.set(name, { current: 0, previous: 0 });
+                productStats.get(name)!.previous++;
+            });
+
+            // Build Top Products List
+            const sortedProducts = Array.from(productStats.entries())
+                .map(([name, stats]) => ({ name, count: stats.current }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+            setTopProducts(sortedProducts);
+
+            // Build BCG Matrix
+            const totalVolume = trans.length || 1;
+            const avgVolumeShare = (trans.length / productStats.size) / totalVolume; // Avg share
+
+            const bcgData: ProductBCG[] = [];
+            productStats.forEach((stats, name) => {
+                if (stats.current === 0) return; // Skip if no sales this period
+
+                const volumeShare = stats.current / totalVolume;
+                // Growth: (Current - Previous) / Previous
+                // Handle division by zero: if prev is 0, growth is 100% (1) if current > 0
+                const growth = stats.previous === 0 ? 1 : (stats.current - stats.previous) / stats.previous;
+
+                let type: ProductBCG['type'] = 'question';
+                if (volumeShare >= avgVolumeShare && growth >= 0) type = 'star'; // High Share, High Growth
+                else if (volumeShare >= avgVolumeShare && growth < 0) type = 'cow'; // High Share, Low Growth
+                else if (volumeShare < avgVolumeShare && growth >= 0) type = 'question'; // Low Share, High Growth
+                else type = 'dog'; // Low Share, Low Growth
+
+                bcgData.push({ name, volume: volumeShare, growth, type });
+            });
+            setBcgMatrix(bcgData);
+
+
+            // 5. Calculate Top Clients
+            const clientMap = new Map<string, ClientStat>();
             trans.forEach(t => {
                 if (!t.client_id) return;
                 const current = clientMap.get(t.client_id) || { id: t.client_id, phone: 'Cargando...', total_spent: 0, visit_count: 0 };
@@ -221,6 +325,98 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                             </div>
                         </div>
                     </div>
+
+                    {/* Charts Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        {/* 1. Category Distribution */}
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
+                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                                <PieChart size={18} /> Origen de Ingresos
+                            </h3>
+                            <div className="h-[250px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RechartsPie>
+                                        <Pie
+                                            data={salesByCategory}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            fill="#8884d8"
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {salesByCategory.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                                        <Legend />
+                                    </RechartsPie>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* 2. Top Products Bar Chart */}
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
+                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                                <BarChartIcon size={18} /> Top Productos/Servicios
+                            </h3>
+                            <div className="h-[250px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={topProducts} layout="vertical">
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                        <XAxis type="number" hide />
+                                        <YAxis dataKey="name" type="category" width={100} style={{ fontSize: '10px' }} />
+                                        <Tooltip />
+                                        <Bar dataKey="count" fill="#8884d8" radius={[0, 4, 4, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* 3. BCG Matrix Visualization */}
+                        <div className="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
+                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                                <ScatterChartIcon size={18} /> Matriz BCG (Crecimiento vs Participación)
+                            </h3>
+                            <div className="h-[300px] w-full relative">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                        <CartesianGrid />
+                                        <XAxis type="number" dataKey="volume" name="Cuota (Volumen)" unit="%" domain={[0, 'auto']} tickFormatter={(v) => Math.round(v * 100) + '%'} />
+                                        <YAxis type="number" dataKey="growth" name="Crecimiento" unit="%" tickFormatter={(v) => Math.round(v * 100) + '%'} />
+                                        <Tooltip cursor={{ strokeDasharray: '3 3' }} formatter={(value: number, name: string) => [Math.round(value * 100) + '%', name === 'volume' ? 'Cuota' : 'Crecimiento']} />
+
+                                        {/* Quadrants Reference Lines */}
+                                        <ReferenceLine y={0} stroke="#ccc" strokeDasharray="3 3" />
+
+                                        <Scatter name="Productos" data={bcgMatrix} fill="#8884d8">
+                                            {bcgMatrix.map((entry, index) => {
+                                                let color = '#8884d8';
+                                                if (entry.type === 'star') color = '#FFBB28'; // Star (Yellow)
+                                                else if (entry.type === 'cow') color = '#00C49F'; // Cow (Green)
+                                                else if (entry.type === 'dog') color = '#FF8042'; // Dog (Orange)
+                                                else color = '#999'; // Question (Grey)
+                                                return <Cell key={`cell-${index}`} fill={color} />;
+                                            })}
+                                        </Scatter>
+                                    </ScatterChart>
+                                </ResponsiveContainer>
+
+                                <div className="absolute top-4 right-4 bg-white/90 p-2 rounded border border-stone-200 text-xs shadow-lg grid grid-cols-2 gap-2">
+                                    <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#FFBB28] rounded-full"></div> ⭐️ Estrella</div>
+                                    <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#00C49F] rounded-full"></div> 🐮 Vaca</div>
+                                    <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#999] rounded-full"></div> ❓ Interrogante</div>
+                                    <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#FF8042] rounded-full"></div> 🐕 Perro</div>
+                                </div>
+                            </div>
+                            <p className="text-xs text-stone-400 mt-2 text-center">
+                                * Eje X: Cuota de Mercado (Volumen) | Eje Y: Crecimiento respecto al periodo anterior
+                            </p>
+                        </div>
+                    </div>
+
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                         {/* Top Clients */}
