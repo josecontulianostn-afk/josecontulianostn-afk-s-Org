@@ -87,6 +87,17 @@ const App: React.FC = () => {
             <PerfumeCatalog />
           </div>
         );
+      case ViewState.GIFTS:
+        return (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 text-center min-h-[60vh] flex flex-col justify-center items-center">
+            <div className="bg-amber-50 p-6 rounded-full mb-6 animate-bounce">
+              <Gift size={64} className="text-amber-500" />
+            </div>
+            <h2 className="serif text-5xl text-stone-900 mb-4">Zona de Regalitos</h2>
+            <p className="text-xl text-stone-500 font-light tracking-wide uppercase">Pronto Sorpresitas hermosas</p>
+            <p className="text-stone-400 mt-4 max-w-md">Estamos preparando una selección exclusiva para que regales con amor y estilo.</p>
+          </div>
+        );
       case ViewState.HOME:
       default:
         return (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ViewState } from '../types';
-import { Menu, X, ShoppingBag, Scissors, Calendar } from 'lucide-react';
+import { Menu, X, ShoppingBag, Scissors, Calendar, Gift } from 'lucide-react';
 
 interface HeaderProps {
   currentView: ViewState;
@@ -49,6 +49,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onChangeView }) => {
             <a onClick={() => handleNavClick(ViewState.HOME)} className={linkClass(ViewState.HOME)}>Inicio</a>
             <a onClick={() => handleNavClick(ViewState.BOOKING)} className={linkClass(ViewState.BOOKING)}>Servicios & Reserva</a>
             <a onClick={() => handleNavClick(ViewState.CATALOG)} className={linkClass(ViewState.CATALOG)}>Perfumes (Decants)</a>
+            <a onClick={() => handleNavClick(ViewState.GIFTS)} className={linkClass(ViewState.GIFTS)}>Regalos</a>
 
             <button
               onClick={() => handleNavClick(ViewState.BOOKING)}
@@ -80,6 +81,10 @@ const Header: React.FC<HeaderProps> = ({ currentView, onChangeView }) => {
           <button onClick={() => handleNavClick(ViewState.CATALOG)} className="flex items-center space-x-4 text-xl font-medium text-stone-700 p-2 active:bg-stone-50 rounded-lg">
             <ShoppingBag size={24} />
             <span>Perfumes</span>
+          </button>
+          <button onClick={() => handleNavClick(ViewState.GIFTS)} className="flex items-center space-x-4 text-xl font-medium text-stone-700 p-2 active:bg-stone-50 rounded-lg">
+            <Gift size={24} />
+            <span>Regalos</span>
           </button>
 
           <div className="mt-auto pb-8">

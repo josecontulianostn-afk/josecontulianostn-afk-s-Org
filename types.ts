@@ -66,7 +66,8 @@ export enum ViewState {
   CONFIRMATION = 'CONFIRMATION',
   LOYALTY = 'LOYALTY',
   ADMIN = 'ADMIN',
-  GALLERY = 'GALLERY'
+  GALLERY = 'GALLERY',
+  GIFTS = 'GIFTS'
 }
 
 export interface BookingData {
