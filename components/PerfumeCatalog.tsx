@@ -225,39 +225,66 @@ const PerfumeCatalog: React.FC = () => {
                 </div>
             </div>
 
-            {/* SECCIÓN CLÁSICOS */}
-            {classics.length > 0 && (
-                <section>
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="bg-stone-100 p-2 rounded-full">
-                            <Crown size={24} className="text-stone-800" />
-                        </div>
-                        <div>
-                            <h2 className="serif text-3xl text-stone-900">Clásicos del Lujo</h2>
-                            <p className="text-sm text-stone-500 uppercase tracking-widest font-bold mt-1">Ranking de Tendencia 2025-26</p>
-                        </div>
-                    </div>
-                    {renderGrid(classics)}
-                </section>
-            )}
+            {(() => {
+                const getStockStatus = (items: Perfume[]) => items.some(p => inventory[p.id] !== undefined ? inventory[p.id] > 0 : p.stock);
 
-            {classics.length > 0 && arabs.length > 0 && <div className="border-t border-stone-100"></div>}
+                const sections = [
+                    {
+                        id: 'classic',
+                        originalIndex: 0,
+                        items: classics,
+                        render: () => (
+                            <section key="classic">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <div className="bg-stone-100 p-2 rounded-full">
+                                        <Crown size={24} className="text-stone-800" />
+                                    </div>
+                                    <div>
+                                        <h2 className="serif text-3xl text-stone-900">Clásicos del Lujo</h2>
+                                        <p className="text-sm text-stone-500 uppercase tracking-widest font-bold mt-1">Ranking de Tendencia 2025-26</p>
+                                    </div>
+                                </div>
+                                {renderGrid(classics)}
+                            </section>
+                        )
+                    },
+                    {
+                        id: 'arab',
+                        originalIndex: 1,
+                        items: arabs,
+                        render: () => (
+                            <section key="arab">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <div className="bg-amber-50 p-2 rounded-full">
+                                        <Sparkles size={24} className="text-amber-600" />
+                                    </div>
+                                    <div>
+                                        <h2 className="serif text-3xl text-stone-900">Tendencia Árabe</h2>
+                                        <p className="text-sm text-amber-600/80 uppercase tracking-widest font-bold mt-1">Exclusividad & Notas Gourmand</p>
+                                    </div>
+                                </div>
+                                {renderGrid(arabs)}
+                            </section>
+                        )
+                    }
+                ];
 
-            {/* SECCIÓN ÁRABES */}
-            {arabs.length > 0 && (
-                <section>
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="bg-amber-50 p-2 rounded-full">
-                            <Sparkles size={24} className="text-amber-600" />
-                        </div>
-                        <div>
-                            <h2 className="serif text-3xl text-stone-900">Tendencia Árabe</h2>
-                            <p className="text-sm text-amber-600/80 uppercase tracking-widest font-bold mt-1">Exclusividad & Notas Gourmand</p>
-                        </div>
-                    </div>
-                    {renderGrid(arabs)}
-                </section>
-            )}
+                const sortedSections = sections.sort((a, b) => {
+                    const stockA = getStockStatus(a.items);
+                    const stockB = getStockStatus(b.items);
+                    if (stockA === stockB) return a.originalIndex - b.originalIndex; // Stable sort
+                    return stockA ? -1 : 1; // Stock first
+                });
+
+                return sortedSections.map((section, index) => (
+                    <React.Fragment key={section.id}>
+                        {section.items.length > 0 && section.render()}
+                        {index === 0 && sortedSections.length > 1 && sortedSections[1].items.length > 0 && sortedSections[0].items.length > 0 && (
+                            <div className="border-t border-stone-100 my-16"></div>
+                        )}
+                    </React.Fragment>
+                ));
+            })()}
 
             {filteredPerfumes.length === 0 && (
                 <div className="text-center py-24 bg-stone-50 rounded-2xl border border-dashed border-stone-200">

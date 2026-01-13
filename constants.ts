@@ -2,6 +2,7 @@ import { Perfume, Service, Review } from './types';
 
 export const PHONE_NUMBER = "56984524774";
 export const EMAIL_ADDRESS = "contacto@tus3b.cl";
+export const INSTAGRAM_URL = "https://www.instagram.com/tus3bstyle/?igsh=MWtnc2R5MjQ0c21kOQ%3D%3D#";
 
 export const SERVICES: Service[] = [
   {
