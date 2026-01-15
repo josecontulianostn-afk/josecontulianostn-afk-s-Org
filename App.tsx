@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, Link, useNavigate } from 'react-router-dom';
 import { ViewState, BookingData } from './types';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -56,12 +56,12 @@ const App: React.FC = () => {
                 Desde cortes de puntas esenciales hasta cambios de look completos con coloración. Descubre nuestros nuevos servicios de verano 2026.
               </p>
               <div className="flex items-center space-x-4 pt-2">
-                <a
-                  href="/gallery"
+                <Link
+                  to="/gallery"
                   className="px-6 py-2 bg-stone-100 text-stone-900 rounded-full font-bold text-sm hover:bg-stone-200 transition no-underline flex items-center justify-center"
                 >
                   Ver Galería
-                </a>
+                </Link>
                 <div className="flex items-center space-x-2 text-stone-900 font-medium">
                   <Scissors size={20} />
                   <span>Desde $7.000</span>
@@ -81,12 +81,12 @@ const App: React.FC = () => {
           <p className="text-stone-300 max-w-lg mx-auto mb-8">
             Revisa tus puntos acumulados y descubre cuánto te falta para tu **Descuento de la 5ta Visita**.
           </p>
-          <a
-            href="/loyalty"
+          <Link
+            to="/loyalty"
             className="inline-block bg-white text-stone-900 px-8 py-3 rounded-full font-bold hover:bg-amber-50 transition shadow-lg no-underline"
           >
             Revisar mis Puntos
-          </a>
+          </Link>
         </div>
       </section>
 
@@ -103,12 +103,12 @@ const App: React.FC = () => {
                 <ShoppingBag size={20} />
                 <span>100% Originales</span>
               </div>
-              <a
-                href="/perfum"
+              <Link
+                to="/perfum"
                 className="inline-flex items-center text-stone-900 border-b border-stone-900 pb-1 hover:text-stone-600 hover:border-stone-600 transition mt-4 no-underline"
               >
                 Explorar Catálogo <ArrowRight size={16} className="ml-2" />
-              </a>
+              </Link>
             </div>
             <div className="order-1 md:order-2">
               <img
@@ -145,9 +145,9 @@ const App: React.FC = () => {
 
       {/* Admin Footer Link */}
       <div className="bg-white py-4 text-center">
-        <a href="/admin" className="text-[10px] text-stone-300 hover:text-stone-500 flex items-center justify-center gap-1 mx-auto transition no-underline">
+        <Link to="/admin" className="text-[10px] text-stone-300 hover:text-stone-500 flex items-center justify-center gap-1 mx-auto transition no-underline">
           <ShieldCheck size={10} /> Admin
-        </a>
+        </Link>
       </div>
     </>
   );
