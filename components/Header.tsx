@@ -88,13 +88,13 @@ const Header: React.FC<HeaderProps> = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-12 items-center">
-            <Link to="/" className={linkClass('/')}>Inicio</Link>
-            <Link to="/" className={linkClass('/booking')}>Servicios</Link>
+            <Link to="/style" className={linkClass('/style')}>Style (Inicio)</Link>
+            <Link to="/booking" className={linkClass('/booking')}>Servicios</Link>
             <Link to="/perfum" className={linkClass('/perfum')}>Perfumes (Decants)</Link>
             <Link to="/regalos" className={linkClass('/regalos')}>Regalos</Link>
 
             <button
-              onClick={() => handleNavClick('/')} // Assuming booking is on home for now or separate page
+              onClick={() => handleNavClick('/booking')} // Assuming booking is on home for now or separate page
               className="bg-stone-900 text-white px-6 py-2 rounded-full text-sm uppercase tracking-wider hover:bg-stone-800 transition shadow-lg"
             >
               Reservar
@@ -113,7 +113,7 @@ const Header: React.FC<HeaderProps> = () => {
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 top-16 bg-white z-40 flex flex-col p-6 space-y-8 animate-in slide-in-from-right-10">
-          <button onClick={() => handleNavClick('/')} className="flex items-center space-x-4 text-xl font-medium text-stone-700 p-2 active:bg-stone-50 rounded-lg">
+          <button onClick={() => handleNavClick('/style')} className="flex items-center space-x-4 text-xl font-medium text-stone-700 p-2 active:bg-stone-50 rounded-lg">
             <Scissors size={24} />
             <span>Style (Inicio)</span>
           </button>
@@ -128,7 +128,7 @@ const Header: React.FC<HeaderProps> = () => {
 
           <div className="mt-auto pb-8">
             <button
-              onClick={() => handleNavClick('/')}
+              onClick={() => handleNavClick('/booking')}
               className="w-full bg-stone-900 text-white py-4 rounded-xl text-center uppercase tracking-widest font-bold shadow-lg active:scale-95 transition-transform"
             >
               Agendar Cita

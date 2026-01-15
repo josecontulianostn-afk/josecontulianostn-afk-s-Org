@@ -12,7 +12,8 @@ import Reviews from './components/Reviews';
 import LoyaltyCheck from './components/LoyaltyCheck';
 import AdminPanel from './components/AdminPanel';
 import Gallery from './components/Gallery';
-import GiftZone from './components/GiftZone'; // Import GiftZone
+import GiftZone from './components/GiftZone';
+import HomeSelection from './components/HomeSelection';
 import { Scissors, ShoppingBag, ArrowRight, Gift, ShieldCheck } from 'lucide-react';
 
 const ScrollToTop = () => {
@@ -160,7 +161,8 @@ const App: React.FC = () => {
 
         <main className="flex-grow pt-16 md:pt-0">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<HomeSelection />} />
+            <Route path="/style" element={<Home />} />
 
             <Route path="/perfum" element={
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
