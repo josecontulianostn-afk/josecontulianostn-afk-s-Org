@@ -60,25 +60,40 @@ const LoyaltyCheck: React.FC = () => {
             }
 
             if (data) {
+                // Logic based on User Request (Three Tiers):
+                // Bronce: 0-4 visits
+                // Plata: 5-9 visits
+                // Gold: 10+ visits
+                const currentVisits = data.visits || 0;
+                let calculatedTier: 'Bronce' | 'Plata' | 'Gold' = 'Bronce';
+
+                if (currentVisits >= 10) {
+                    calculatedTier = 'Gold';
+                } else if (currentVisits >= 5) {
+                    calculatedTier = 'Plata';
+                }
+
                 setStats({
-                    visits: data.visits,
+                    name: data.name,
+                    visits: currentVisits,
                     referrals: data.referrals,
-                    nextReward: 5,
+                    nextReward: currentVisits < 5 ? 5 : (currentVisits < 10 ? 10 : 15),
                     token: data.member_token,
-                    tier: data.tier,
+                    tier: calculatedTier,
                     // Hair Mapping
                     hair_service_count: data.hair_service_count || 0,
                     discount_5th_visit_available: data.discount_5th_visit_available,
                     free_cut_available: data.free_cut_available
                 });
             } else if (!tokenParam) {
-                // Only show "new client" for phone search, not invalid token
+                // New Client Default
                 setStats({
+                    name: 'Nuevo Cliente',
                     visits: 0,
                     referrals: 0,
                     nextReward: 5,
                     token: 'new-client',
-                    tier: 'Silver',
+                    tier: 'Bronce',
                     hair_service_count: 0
                 });
             }
@@ -99,157 +114,76 @@ const LoyaltyCheck: React.FC = () => {
     }, []);
 
     return (
-        <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
-            {/* Background Decorations */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-purple-500 rounded-full blur-[60px] opacity-30"></div>
-            <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-amber-500 rounded-full blur-[60px] opacity-30"></div>
+        <div className="bg-stone-950 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl min-h-[600px] flex flex-col items-center">
+            {/* Soft Ambient Light */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px]"></div>
 
-            <div className="relative z-10 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-2xl mb-6 backdrop-blur-sm border border-white/10">
-                    <Gift size={32} className="text-amber-400" />
+            <div className="relative z-10 w-full max-w-md">
+
+                <div className="text-center mb-8">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-amber-500 font-bold">Bienvenida a tu</span>
+                    <h3 className="serif text-4xl mt-2 text-white">Wallet Clientes</h3>
                 </div>
 
-                <h3 className="serif text-3xl mb-2">Club Fidelidad</h3>
-                <p className="text-stone-300 font-light mb-8 max-w-sm mx-auto">
-                    Tu preferencia tiene recompensas. Acumula visitas y gana descuentos exclusivos.
-                </p>
-
                 {!stats ? (
-                    <form onSubmit={checkLoyalty} className="max-w-xs mx-auto">
-                        <div className="relative">
-                            <input
-                                type="tel"
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                placeholder="Ingresa tu teléfono..."
-                                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pl-10 text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
-                            />
-                            <Search size={18} className="absolute left-3 top-3.5 text-stone-400" />
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={loading || phone.length < 8}
-                            className="w-full mt-4 bg-white text-stone-900 font-bold py-3 rounded-xl hover:bg-amber-50 transition flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {loading ? <Loader2 className="animate-spin" /> : 'Consultar Puntos'}
-                        </button>
-                    </form>
-                ) : (
-                    <div className="animate-in fade-in zoom-in-95 duration-500 mb-8">
-                        <DigitalCard
-                            clientName={stats.name || "Miembro Exclusivo"}
-                            token={stats.token || "pending-token"}
-                            visits={stats.visits}
-                            nextReward={5}
-                            tier={stats.tier}
-                        />
-
-                        <div className="text-center mt-6">
-                            {/* HAIR SERVICE PROGRESS */}
-                            <div className="mb-6 bg-white/5 p-4 rounded-xl border border-purple-500/20">
-                                <h4 className="text-purple-300 font-bold mb-3 flex items-center justify-center gap-2">
-                                    <Scissors size={18} />
-                                    Peluquería & Estilo
-                                </h4>
-
-                                {/* 5th Visit Discount */}
-                                <div className="mb-4">
-                                    <div className="flex justify-between text-xs mb-1">
-                                        <span className="text-stone-300">Desc. 10% (Cada 5)</span>
-                                        <span className={stats.discount_5th_visit_available ? "text-green-400 font-bold" : "text-stone-400"}>
-                                            {stats.discount_5th_visit_available ? "¡DISPONIBLE!" : `${(stats.hair_service_count || 0) % 5} / 5`}
-                                        </span>
-                                    </div>
-                                    <div className="h-2 bg-stone-700 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full ${stats.discount_5th_visit_available ? "bg-green-500" : "bg-purple-500"}`}
-                                            style={{ width: stats.discount_5th_visit_available ? '100%' : `${((stats.hair_service_count || 0) % 5) * 20}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                {/* 10th Service Free Cut */}
-                                <div>
-                                    <div className="flex justify-between text-xs mb-1">
-                                        <span className="text-stone-300">Corte Gratis (Cada 10)</span>
-                                        <span className={stats.free_cut_available ? "text-amber-400 font-bold" : "text-stone-400"}>
-                                            {stats.free_cut_available ? "¡CANJEAR!" : `${(stats.hair_service_count || 0) % 10} / 10`}
-                                        </span>
-                                    </div>
-                                    <div className="h-2 bg-stone-700 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full ${stats.free_cut_available ? "bg-amber-500" : "bg-purple-400/60"}`}
-                                            style={{ width: stats.free_cut_available ? '100%' : `${((stats.hair_service_count || 0) % 10) * 10}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
+                    <div className="bg-stone-900/50 backdrop-blur-md p-8 rounded-2xl border border-white/5 shadow-xl">
+                        <p className="text-stone-400 text-center mb-6 text-sm">
+                            Consulta tus puntos, beneficios y acceso a tu tarjeta digital.
+                        </p>
+                        <form onSubmit={checkLoyalty} className="space-y-4">
+                            <div className="relative group">
+                                <input
+                                    type="tel"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="Ingresa tu teléfono..."
+                                    className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-4 pl-12 text-white placeholder-stone-600 focus:outline-none focus:border-amber-500/50 transition duration-300"
+                                />
+                                <Search size={18} className="absolute left-4 top-4.5 text-stone-600 group-focus-within:text-amber-500 transition-colors" />
                             </div>
+                            <button
+                                type="submit"
+                                disabled={loading || phone.length < 8}
+                                className="w-full bg-gradient-to-r from-amber-200 to-amber-500 text-stone-900 font-bold py-4 rounded-xl hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? <Loader2 className="animate-spin" /> : 'Abrir mi Wallet'}
+                            </button>
+                        </form>
+                        <p className="text-[10px] text-stone-600 text-center mt-6">
+                            Al consultar aceptas nuestros términos de fidelización.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="animate-in fade-in zoom-in-95 duration-700">
+                        {/* THE WALLET CARD */}
+                        <div className="mb-8 transform hover:scale-[1.02] transition-transform duration-500">
+                            <DigitalCard
+                                clientName={stats.name || "Miembro Exclusivo"}
+                                token={stats.token || "pending-token"}
+                                visits={stats.visits}
+                                nextReward={5}
+                                tier={stats.tier}
+                            />
+                        </div>
 
-                            <p className="text-sm text-stone-300 mb-4">
+                        {/* Actions Below Card */}
+                        <div className="text-center space-y-4">
+                            <p className="text-sm text-stone-400">
                                 {stats.visits >= 5
-                                    ? "¡Felicidades! Tienes un descuento disponible."
-                                    : `Te faltan ${5 - stats.visits} visitas para tu recompensa.`
+                                    ? "✨ Tienes una recompensa disponible"
+                                    : "Sigue sumando para desbloquear beneficios"
                                 }
                             </p>
+
                             <button
                                 onClick={() => setStats(null)}
-                                className="text-sm text-stone-400 hover:text-white underline decoration-stone-600 underline-offset-4"
+                                className="text-xs text-stone-500 hover:text-stone-300 transition"
                             >
-                                Consultar otro número
+                                Cerrar sesión
                             </button>
                         </div>
                     </div>
                 )}
-
-                <div className="mt-8 pt-8 border-t border-white/10 text-left space-y-3">
-                    <h3 className="serif text-xl mb-4 text-center">Canjes Disponibles</h3>
-                    <div className="grid grid-cols-1 gap-3">
-                        {rewards.length > 0 ? (
-                            rewards.map((reward) => {
-                                const isRestricted = reward.allowed_perfume_segment === 'arab';
-                                const canAfford = (stats?.visits || 0) >= reward.cost_visits;
-
-                                return (
-                                    <div key={reward.id} className={`bg-white/5 p-4 rounded-xl border ${canAfford ? 'border-amber-500/50' : 'border-white/5'} relative`}>
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h4 className="font-bold text-white text-sm flex items-center gap-1">
-                                                    {reward.name}
-                                                    {isRestricted && <span className="text-amber-400 text-xs">*</span>}
-                                                </h4>
-                                                <p className="text-xs text-stone-400 mt-0.5">{reward.description}</p>
-                                                {isRestricted && (
-                                                    <p className="text-[10px] text-amber-500/80 italic mt-1">* Válido solo para perfumería árabe</p>
-                                                )}
-                                            </div>
-                                            <div className="text-right">
-                                                <span className={`block font-mono font-bold ${canAfford ? 'text-amber-400' : 'text-stone-500'}`}>
-                                                    {reward.cost_visits} PTS
-                                                </span>
-                                                {canAfford && (
-                                                    <button className="text-[10px] bg-amber-500 text-stone-900 px-2 py-0.5 rounded mt-1 font-bold hover:bg-amber-400 transition" onClick={() => alert("Solicita este canje en caja mostrando tu QR")}>
-                                                        CANJEAR
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        ) : (
-                            // Fallback if no rewards loaded yet (or table empty)
-                            <div className="flex items-start gap-4">
-                                <div className="bg-amber-500/20 p-2 rounded-lg text-amber-400 mt-1">
-                                    <Star size={16} />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white text-sm">5ta Visita con Descuento</h4>
-                                    <p className="text-xs text-stone-400 mt-0.5">Completa 4 visitas y la 5ta tiene un precio especial.</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
             </div>
         </div>
     );

@@ -42,7 +42,7 @@ export interface Client {
   last_visit?: string;
   created_at: string;
   member_token?: string;
-  tier?: 'Silver' | 'Gold' | 'Diamante';
+  tier?: 'Bronce' | 'Plata' | 'Gold';
   // Hair Loyalty
   hair_service_count?: number;
   discount_5th_visit_available?: boolean;
