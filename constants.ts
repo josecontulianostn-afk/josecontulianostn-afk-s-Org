@@ -440,3 +440,24 @@ export const REVIEWS: Review[] = [
     date: 'Hace 1 mes'
   }
 ];
+
+export const GIFTS = [
+  {
+    id: 'gift-1',
+    name: 'Regalito A',
+    price: 19990,
+    includes: ['Perfume 10ml', 'Chocolates Ferrero', 'Tarjeta Personalizada']
+  },
+  {
+    id: 'gift-2',
+    name: 'Regalito B',
+    price: 29990,
+    includes: ['Perfume 10ml', 'Crema de Manos', 'Chocolates Finos', 'Globo Corazón']
+  },
+  {
+    id: 'gift-custom',
+    name: 'Arma tu regalito',
+    price: 0,
+    includes: ['Chocolates Ferrero Roche', 'Los Perfumes en Stock', 'Globo de corazón', 'Y mucho más...']
+  }
+];
