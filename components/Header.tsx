@@ -45,7 +45,7 @@ const Header: React.FC<HeaderProps> = () => {
           <span className={`serif text-4xl font-bold tracking-tight text-amber-500`}>
             Perfum
           </span>
-          <span className="text-stone-500 text-xs font-light tracking-[0.2em] ml-1 uppercase">
+          <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] ml-1 uppercase">
             by tus3b
           </span>
         </div>
@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = () => {
           <span className={`serif text-3xl font-bold tracking-tight text-stone-900`}>
             Regala Amor
           </span>
-          <span className="text-stone-500 text-xs font-light tracking-[0.2em] ml-1 uppercase">
+          <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] ml-1 uppercase">
             by tus3b
           </span>
         </div>
@@ -68,7 +68,7 @@ const Header: React.FC<HeaderProps> = () => {
           <span className={`serif text-4xl font-bold italic tracking-tighter ${isScrolled ? 'text-stone-900' : 'text-stone-900'}`}>
             Style
           </span>
-          <span className="text-stone-500 text-xs font-light tracking-[0.2em] ml-1 uppercase">
+          <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] ml-1 uppercase">
             by tus3b
           </span>
         </div>
