@@ -285,8 +285,27 @@ const PerfumeCatalog: React.FC = () => {
 
                 const sections = [
                     {
+                        id: 'arab',
+                        hasStock: getStockStatus(arabs),
+                        items: arabs,
+                        render: () => (
+                            <section key="arab">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <div className="bg-purple-100 p-2 rounded-full">
+                                        <Sparkles size={24} className="text-purple-600" />
+                                    </div>
+                                    <div>
+                                        <h2 className="serif text-3xl text-stone-900">Joyas Árabes</h2>
+                                        <p className="text-sm text-stone-500 uppercase tracking-widest font-bold mt-1">Virales del Momento</p>
+                                    </div>
+                                </div>
+                                {renderGrid(arabs)}
+                            </section>
+                        )
+                    },
+                    {
                         id: 'classic',
-                        originalIndex: 0,
+                        hasStock: getStockStatus(classics),
                         items: classics,
                         render: () => (
                             <section key="classic">
@@ -302,33 +321,17 @@ const PerfumeCatalog: React.FC = () => {
                                 {renderGrid(classics)}
                             </section>
                         )
-                    },
-                    {
-                        id: 'arab',
-                        originalIndex: 1,
-                        items: arabs,
-                        render: () => (
-                            <section key="arab">
-                                <div className="flex items-center gap-3 mb-8">
-                                    <div className="bg-amber-50 p-2 rounded-full">
-                                        <Sparkles size={24} className="text-amber-600" />
-                                    </div>
-                                    <div>
-                                        <h2 className="serif text-3xl text-stone-900">Tendencia Árabe</h2>
-                                        <p className="text-sm text-amber-600/80 uppercase tracking-widest font-bold mt-1">Exclusividad & Notas Gourmand</p>
-                                    </div>
-                                </div>
-                                {renderGrid(arabs)}
-                            </section>
-                        )
                     }
                 ];
 
+                // Sort sections: Sections with stock appear first
                 const sortedSections = sections.sort((a, b) => {
-                    const stockA = getStockStatus(a.items);
-                    const stockB = getStockStatus(b.items);
-                    if (stockA === stockB) return a.originalIndex - b.originalIndex; // Stable sort
-                    return stockA ? -1 : 1; // Stock first
+                    if (a.hasStock === b.hasStock) {
+                        // Fallback to specific preferred order if stock status is equal
+                        // Prefer Arab first if both have stock or both don't (trend)
+                        return a.id === 'arab' ? -1 : 1;
+                    }
+                    return a.hasStock ? -1 : 1;
                 });
 
                 return sortedSections.map((section, index) => (

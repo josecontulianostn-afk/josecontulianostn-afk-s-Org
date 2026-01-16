@@ -76,7 +76,7 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/la-vie-est-belle.png',
     notes: ['Iris', 'Vainilla', 'Praliné'],
     category: 'classic',
-    stock: true,
+    stock: false,
     priceFullBottle: 89990
   },
   {
@@ -91,7 +91,7 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/good-girl.png',
     notes: ['Tuberosa', 'Jazmín', 'Cacao'],
     category: 'classic',
-    stock: true,
+    stock: false,
     priceFullBottle: 94990
   },
   {
@@ -106,7 +106,7 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/idole.png',
     notes: ['Rosa', 'Jazmín', 'Chipre Blanco'],
     category: 'classic',
-    stock: true,
+    stock: false,
     priceFullBottle: 84990
   },
   {
@@ -121,7 +121,7 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/acqua-di-gioia.png',
     notes: ['Limón', 'Menta', 'Jazmín de Agua'],
     category: 'classic',
-    stock: true,
+    stock: false,
     priceFullBottle: 79990
   },
   {
@@ -136,7 +136,7 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/black-opium.png',
     notes: ['Café', 'Vainilla', 'Flores Blancas'],
     category: 'classic',
-    stock: true,
+    stock: false,
     priceFullBottle: 92990
   },
   {
@@ -151,7 +151,7 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/light-blue.png',
     notes: ['Limón Siciliano', 'Manzana', 'Cedro'],
     category: 'classic',
-    stock: true,
+    stock: false,
     priceFullBottle: 74990
   },
 

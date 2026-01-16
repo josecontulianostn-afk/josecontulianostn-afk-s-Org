@@ -97,22 +97,13 @@ const HomeSelection: React.FC = () => {
 
                 {/* 4. MAIN CTA - BOOKING */}
                 <div className="w-full pt-4">
-                    <a
-                        href="#booking-section"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            // Logic to navigate to booking or scroll if on home
-                            // Since this IS home now, we might want to navigate to a dedicated booking page
-                            // or keep the behavior. Let's redirect to /style for now if that's where booking lives
-                            // or open the booking modal.
-                            // For this iteration, let's treat 'Style' as home/booking mix.
-                            window.location.href = "/"; // Temporary, usually opens booking
-                        }}
+                    <Link
+                        to="/booking"
                         className="w-full block bg-white text-stone-950 font-bold py-4 rounded-xl text-center hover:bg-stone-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2"
                     >
                         <Calendar size={18} />
                         AGENDAR CITA
-                    </a>
+                    </Link>
                     <p className="text-center text-[10px] text-stone-600 mt-3">
                         Reserva tu hora en pocos segundos
                     </p>
