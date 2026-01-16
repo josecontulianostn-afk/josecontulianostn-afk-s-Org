@@ -71,12 +71,33 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     const [scanResult, setScanResult] = useState<string | null>(null);
 
     // Hair Service State
-    const [activeTab, setActiveTab] = useState<'loyalty' | 'hair' | 'inventory'>('loyalty');
+    const [activeTab, setActiveTab] = useState<'loyalty' | 'hair' | 'inventory' | 'agenda'>('loyalty');
     const [serviceType, setServiceType] = useState('Corte');
     const [servicePrice, setServicePrice] = useState('7000');
     const [visitAmount, setVisitAmount] = useState('0'); // New: Amount for loyalty visits
+    const [bookings, setBookings] = useState<any[]>([]); // New: Agendas
 
     const [client, setClient] = useState<any>(null);
+
+    useEffect(() => {
+        if (activeTab === 'agenda') {
+            fetchBookings();
+        }
+    }, [activeTab]);
+
+    const fetchBookings = async () => {
+        const today = new Date().toISOString().split('T')[0];
+        // Fetch bookings from today onwards
+        const { data, error } = await supabase
+            .from('bookings')
+            .select('*')
+            .gte('date', today)
+            .order('date', { ascending: true })
+            .order('time', { ascending: true });
+
+        if (error) console.error('Error fetching bookings:', error);
+        else setBookings(data || []);
+    };
 
     useEffect(() => {
         if (scannerActive && !scanResult) {
@@ -297,12 +318,18 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                         >
                             Inventario
                         </button>
+                        <button
+                            onClick={() => setActiveTab('agenda')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'agenda' ? 'bg-pink-500 text-white' : 'text-stone-400 hover:text-white'}`}
+                        >
+                            Agenda
+                        </button>
                     </div>
                 </div>
 
                 <div className="bg-stone-800 p-6 rounded-2xl shadow-xl border border-white/5">
                     <h3 className="serif text-xl mb-4 text-center text-white">
-                        {activeTab === 'loyalty' ? 'Registrar Visita' : activeTab === 'hair' ? 'Registrar Servicio Peluquería' : 'Gestión de Inventario'}
+                        {activeTab === 'loyalty' ? 'Registrar Visita' : activeTab === 'hair' ? 'Registrar Servicio Peluquería' : activeTab === 'inventory' ? 'Gestión de Inventario' : 'Agenda Semanal'}
                     </h3>
 
                     {activeTab === 'inventory' && (
@@ -326,6 +353,49 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                     })}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+
+                    {activeTab === 'agenda' && (
+                        <div className="overflow-x-auto">
+                            {bookings.length === 0 ? (
+                                <p className="text-center text-stone-400 py-8">No hay horas agendadas próximas.</p>
+                            ) : (
+                                <table className="w-full text-xs text-left text-stone-300">
+                                    <thead className="text-xs text-stone-400 uppercase bg-stone-700/50">
+                                        <tr>
+                                            <th className="px-3 py-2">Fecha/Hora</th>
+                                            <th className="px-3 py-2">Cliente</th>
+                                            <th className="px-3 py-2">Servicio</th>
+                                            <th className="px-3 py-2">Contacto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {bookings.map((b) => (
+                                            <tr key={b.id} className="border-b border-stone-700 hover:bg-stone-700/20">
+                                                <td className="px-3 py-2">
+                                                    <div className="font-bold text-white">{b.date}</div>
+                                                    <div className="text-amber-400">{b.time}</div>
+                                                </td>
+                                                <td className="px-3 py-2 font-medium text-white">{b.name}</td>
+                                                <td className="px-3 py-2">
+                                                    {b.is_home_service ? (
+                                                        <span className="text-blue-400 flex items-center gap-1"><span className="text-[10px]">🏠</span> Domicilio</span>
+                                                    ) : (
+                                                        <span className="text-purple-400">Salon</span>
+                                                    )}
+                                                    {b.address && <div className="text-[10px] text-stone-500 truncate max-w-[100px]">{b.address}</div>}
+                                                </td>
+                                                <td className="px-3 py-2">
+                                                    <a href={`https://wa.me/${b.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-green-400 hover:underline flex items-center gap-1">
+                                                        {b.phone}
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
                     )}
 
