@@ -39,14 +39,30 @@ const Header: React.FC<HeaderProps> = () => {
   const getLogoContent = () => {
     const path = location.pathname;
 
-    if (path === '/') {
-      // On Hub, maybe show nothing or simple text since the page has big branding
-      return (
-        <span className="serif text-xl font-bold tracking-tighter text-stone-900">
-          Tus3B
-        </span>
-      );
-    }
+    // On Hub, show all 3 brands
+    return (
+      <div className="flex items-center gap-4 md:gap-6">
+        {/* Style Logo */}
+        <div className="flex flex-col items-center leading-none">
+          <span className="serif text-lg md:text-xl font-bold italic tracking-tighter text-stone-900">Style</span>
+          <span className="text-[8px] text-stone-500 uppercase tracking-wider">by Tus3B</span>
+        </div>
+        {/* Divider */}
+        <div className="h-6 w-px bg-stone-200 hidden md:block"></div>
+        {/* Perfum Logo */}
+        <div className="flex flex-col items-center leading-none">
+          <span className="serif text-lg md:text-xl font-bold tracking-tight text-amber-500">Perfum</span>
+          <span className="text-[8px] text-amber-600/70 uppercase tracking-wider">by Tus3B</span>
+        </div>
+        {/* Divider */}
+        <div className="h-6 w-px bg-stone-200 hidden md:block"></div>
+        {/* Amor Amor Logo */}
+        <div className="flex flex-col items-center leading-none">
+          <span className="serif text-lg md:text-xl font-bold tracking-tight text-rose-500">Amor Amor</span>
+          <span className="text-[8px] text-rose-600/70 uppercase tracking-wider">by Tus3B</span>
+        </div>
+      </div>
+    );
 
     if (path.startsWith('/perfum')) {
       return (

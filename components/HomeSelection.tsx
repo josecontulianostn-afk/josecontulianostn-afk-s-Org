@@ -95,17 +95,10 @@ const HomeSelection: React.FC = () => {
                     </Link>
                 </div>
 
-                {/* 4. MAIN CTA - BOOKING */}
+                {/* 4. MAIN CTA - REMOVED AS REQUESTED */}
                 <div className="w-full pt-4">
-                    <Link
-                        to="/booking"
-                        className="w-full block bg-white text-stone-950 font-bold py-4 rounded-xl text-center hover:bg-stone-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2"
-                    >
-                        <Calendar size={18} />
-                        AGENDAR CITA
-                    </Link>
                     <p className="text-center text-[10px] text-stone-600 mt-3">
-                        Reserva tu hora en pocos segundos
+                        Toca una categoría para explorar
                     </p>
                 </div>
 
