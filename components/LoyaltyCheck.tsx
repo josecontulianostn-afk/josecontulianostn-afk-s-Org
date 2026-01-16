@@ -166,7 +166,7 @@ const LoyaltyCheck: React.FC = () => {
                                     onChange={handlePhoneChange}
                                     placeholder="87654321"
                                     maxLength={8}
-                                    className="w-full bg-stone-950 border border-stone-800 rounded-xl py-4 pl-24 pr-12 text-white placeholder-stone-600 focus:outline-none focus:border-amber-500/50 transition duration-300 font-mono tracking-widest text-lg"
+                                    className="w-full bg-stone-950 border border-stone-800 rounded-xl py-4 pl-[5.5rem] pr-12 text-white placeholder-stone-600 focus:outline-none focus:border-amber-500/50 transition duration-300 font-mono tracking-normal md:tracking-widest text-lg"
                                 />
                                 <Search size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-600 group-focus-within:text-amber-500 transition-colors pointer-events-none" />
                             </div>

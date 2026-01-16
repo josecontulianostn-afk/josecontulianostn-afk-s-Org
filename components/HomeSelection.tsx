@@ -18,7 +18,7 @@ const HomeSelection: React.FC = () => {
                         Tus3B <span className="text-amber-500">Hub</span>
                     </h1>
                     <p className="text-stone-400 text-[10px] uppercase tracking-[0.4em] font-medium">
-                        Belleza &bull; Aroma &bull; Amor
+                        Belleza &bull; Aroma &bull; Regalos
                     </p>
                 </div>
 

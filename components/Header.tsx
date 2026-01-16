@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navClass = `fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-2' : 'bg-transparent py-4'
+  const navClass = `fixed w-full z-50 transition-all duration-300 ${(isScrolled || location.pathname === '/') ? 'bg-white/90 backdrop-blur-md shadow-sm py-2' : 'bg-transparent py-4'
     }`;
 
   const linkClass = (path: string) => `cursor-pointer font-medium tracking-wide transition-colors ${location.pathname === path
