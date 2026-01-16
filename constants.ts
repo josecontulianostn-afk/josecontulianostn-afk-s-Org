@@ -76,7 +76,8 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/la-vie-est-belle.png',
     notes: ['Iris', 'Vainilla', 'Praliné'],
     category: 'classic',
-    stock: false
+    stock: true,
+    priceFullBottle: 89990
   },
   {
     id: 'l2',
@@ -90,7 +91,8 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/good-girl.png',
     notes: ['Tuberosa', 'Jazmín', 'Cacao'],
     category: 'classic',
-    stock: false
+    stock: true,
+    priceFullBottle: 94990
   },
   {
     id: 'l3',
@@ -104,7 +106,8 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/idole.png',
     notes: ['Rosa', 'Jazmín', 'Chipre Blanco'],
     category: 'classic',
-    stock: false
+    stock: true,
+    priceFullBottle: 84990
   },
   {
     id: 'l4',
@@ -118,7 +121,8 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/acqua-di-gioia.png',
     notes: ['Limón', 'Menta', 'Jazmín de Agua'],
     category: 'classic',
-    stock: false
+    stock: true,
+    priceFullBottle: 79990
   },
   {
     id: 'l5',
@@ -132,7 +136,8 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/black-opium.png',
     notes: ['Café', 'Vainilla', 'Flores Blancas'],
     category: 'classic',
-    stock: false
+    stock: true,
+    priceFullBottle: 92990
   },
   {
     id: 'l6',
@@ -146,7 +151,8 @@ export const PERFUMES: Perfume[] = [
     image: '/images/perfumes/light-blue.png',
     notes: ['Limón Siciliano', 'Manzana', 'Cedro'],
     category: 'classic',
-    stock: false
+    stock: true,
+    priceFullBottle: 74990
   },
 
   // --- ÁRABES ---
@@ -160,7 +166,7 @@ export const PERFUMES: Perfume[] = [
     margin5ml: 2803,
     margin10ml: 4616,
     stock: true,
-    priceFullBottle: 29990,
+    priceFullBottle: 32990,
     image: '/images/perfumes/lattafa-yara-rosa.png',
     secondaryImage: '/images/perfumes/yara-rosa-notes.jpg',
     notes: ['Orquídea', 'Heliotropo', 'Frutas Tropicales'],
@@ -176,7 +182,7 @@ export const PERFUMES: Perfume[] = [
     margin5ml: 2850,
     margin10ml: 4711,
     stock: true,
-    priceFullBottle: 29990,
+    priceFullBottle: 32990,
     image: '/images/perfumes/lattafa-yara-tous.png',
     secondaryImage: '/images/perfumes/yara-tous-notes.jpg',
     notes: ['Mango', 'Coco', 'Vainilla'],
@@ -207,7 +213,7 @@ export const PERFUMES: Perfume[] = [
     margin5ml: 2898,
     margin10ml: 4806,
     stock: true,
-    priceFullBottle: 29990,
+    priceFullBottle: 34990,
     image: '/images/perfumes/fw-valentia-rome.png',
     notes: ['Jazmín', 'Grosella Negra', 'Vainilla Bourbon'],
     category: 'arab'
@@ -222,7 +228,7 @@ export const PERFUMES: Perfume[] = [
     margin5ml: 2183,
     margin10ml: 3376,
     stock: true,
-    priceFullBottle: 27990,
+    priceFullBottle: 31990,
     image: '/images/perfumes/maison-alhambra-leonie.png',
     notes: ['Floral', 'Ámbar', 'Vainilla'],
     category: 'arab'
@@ -237,7 +243,7 @@ export const PERFUMES: Perfume[] = [
     margin5ml: 3487,
     margin10ml: 4983,
     stock: true,
-    priceFullBottle: 29990,
+    priceFullBottle: 32990,
     image: '/images/perfumes/lattafa-ana-abiyedh.png',
     notes: ['Almizcle Blanco', 'Pera', 'Bergamota'],
     category: 'arab'
@@ -252,7 +258,7 @@ export const PERFUMES: Perfume[] = [
     margin5ml: 2135,
     margin10ml: 3281,
     stock: true,
-    priceFullBottle: 27990,
+    priceFullBottle: 31990,
     image: '/images/perfumes/maison-alhambra-bad-femme.png',
     notes: ['Tuberosa', 'Jazmín', 'Cacao'],
     category: 'arab'

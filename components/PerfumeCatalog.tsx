@@ -225,6 +225,61 @@ const PerfumeCatalog: React.FC = () => {
                 </div>
             </div>
 
+            {/* Value Proposition: Why Decants? */}
+            <section className="bg-stone-50 rounded-3xl p-8 md:p-12 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-100 rounded-full blur-[80px] opacity-60 mix-blend-multiply"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-100 rounded-full blur-[60px] opacity-60 mix-blend-multiply"></div>
+
+                <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div className="space-y-6">
+                        <span className="inline-block px-3 py-1 bg-stone-900 text-white text-[10px] font-bold uppercase tracking-widest rounded-full">Sabías que...</span>
+                        <h3 className="serif text-3xl md:text-4xl text-stone-900 leading-tight">
+                            ¿Por qué elegir <span className="italic text-stone-500">Decants</span>?
+                        </h3>
+                        <p className="text-stone-600 text-lg font-light leading-relaxed">
+                            No necesitas gastar una fortuna para oler increíble. Los decants son la forma inteligente de construir tu colección de perfumes.
+                        </p>
+                        <ul className="space-y-4 pt-2">
+                            <li className="flex items-start gap-3">
+                                <div className="bg-white p-1.5 rounded-full shadow-sm mt-0.5">
+                                    <Check size={14} className="text-green-500" />
+                                </div>
+                                <span className="text-stone-700 text-sm"><strong className="text-stone-900">Variedad vs. Monotonía:</strong> Por el precio de 1 botella llena, puedes tener 5 fragancias diferentes para cada ocasión.</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <div className="bg-white p-1.5 rounded-full shadow-sm mt-0.5">
+                                    <Check size={14} className="text-green-500" />
+                                </div>
+                                <span className="text-stone-700 text-sm"><strong className="text-stone-900">Portabilidad Total:</strong> Llévalos en tu cartera, auto o viaje. El formato perfecto para reaplicar durante el día.</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <div className="bg-white p-1.5 rounded-full shadow-sm mt-0.5">
+                                    <Check size={14} className="text-green-500" />
+                                </div>
+                                <span className="text-stone-700 text-sm"><strong className="text-stone-900">Prueba Real:</strong> Úsalo por semanas antes de comprometerte con la botella grande (¡que también vendemos!).</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div className="relative">
+                        <img
+                            src="/images/perfumes/decant-showcase.png"
+                            alt="Colección de Decants"
+                            className="rounded-2xl shadow-xl w-full object-cover h-80 rotate-2 hover:rotate-0 transition-transform duration-500"
+                            onError={(e) => (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592914610354-fd354ea45e48?auto=format&fit=crop&q=80&w=800'}
+                        />
+                        <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-xl shadow-lg border border-stone-100 max-w-[200px]">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Star fill="#fbbf24" className="text-amber-400" size={16} />
+                                <span className="text-xs font-bold text-stone-900">100% Originales</span>
+                            </div>
+                            <p className="text-[10px] text-stone-500 leading-tight">
+                                Nunca rellenamos con imitaciones. Solo extraemos el perfume directo de la botella original.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {(() => {
                 const getStockStatus = (items: Perfume[]) => items.some(p => inventory[p.id] !== undefined ? inventory[p.id] > 0 : p.stock);
 

@@ -39,7 +39,16 @@ const Header: React.FC<HeaderProps> = () => {
   const getLogoContent = () => {
     const path = location.pathname;
 
-    if (path === '/perfum') {
+    if (path === '/') {
+      // On Hub, maybe show nothing or simple text since the page has big branding
+      return (
+        <span className="serif text-xl font-bold tracking-tighter text-stone-900">
+          Tus3B
+        </span>
+      );
+    }
+
+    if (path.startsWith('/perfum')) {
       return (
         <div className="flex flex-col items-start leading-none">
           <span className={`serif text-4xl font-bold tracking-tight text-amber-500`}>
@@ -50,11 +59,11 @@ const Header: React.FC<HeaderProps> = () => {
           </span>
         </div>
       );
-    } else if (path === '/regalos') {
+    } else if (path.startsWith('/regalos')) {
       return (
         <div className="flex flex-col items-start leading-none">
-          <span className={`serif text-3xl font-bold tracking-tight text-stone-900`}>
-            Regala Amor
+          <span className={`serif text-3xl font-bold tracking-tight text-rose-500`}>
+            Amor Amor
           </span>
           <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] ml-1 uppercase">
             by tus3b
@@ -62,10 +71,10 @@ const Header: React.FC<HeaderProps> = () => {
         </div>
       );
     } else {
-      // Default / Layout "Style"
+      // Default / Layout "Style" (for /style, /gallery, /booking etc)
       return (
         <div className="flex flex-col items-start leading-none">
-          <span className={`serif text-4xl font-bold italic tracking-tighter ${isScrolled ? 'text-stone-900' : 'text-stone-900'}`}>
+          <span className={`serif text-4xl font-bold italic tracking-tighter text-stone-900`}>
             Style
           </span>
           <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] ml-1 uppercase">
@@ -82,19 +91,35 @@ const Header: React.FC<HeaderProps> = () => {
         <div className="flex justify-between items-center h-16">
 
           {/* Logo (Dynamic) */}
-          <Link to="/" className="flex-shrink-0 flex items-center cursor-pointer no-underline group">
-            {getLogoContent()}
-          </Link>
+          <div className="flex items-center gap-4">
+            {location.pathname !== '/' && (
+              <Link to="/" className="text-white bg-stone-900 p-2 rounded-full hover:bg-stone-700 transition" title="Volver al Hub">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+              </Link>
+            )}
+            <Link to={location.pathname === '/' ? '/' : '/style'} className="flex-shrink-0 flex items-center cursor-pointer no-underline group">
+              {getLogoContent()}
+            </Link>
+          </div>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-12 items-center">
-            <Link to="/style" className={linkClass('/style')}>Style (Inicio)</Link>
-            <Link to="/booking" className={linkClass('/booking')}>Servicios</Link>
-            <Link to="/perfum" className={linkClass('/perfum')}>Perfumes (Decants)</Link>
-            <Link to="/regalos" className={linkClass('/regalos')}>Regalos</Link>
+          <div className="hidden md:flex space-x-8 items-center">
+            {location.pathname !== '/' && (
+              <>
+                <Link to="/style" className={linkClass('/style')}>Style</Link>
+                <Link to="/perfum" className={linkClass('/perfum')}>Perfum</Link>
+                <Link to="/regalos" className={linkClass('/regalos')}>Amor Amor</Link>
+              </>
+            )}
 
             <button
-              onClick={() => handleNavClick('/booking')} // Assuming booking is on home for now or separate page
+              onClick={() => {
+                if (location.pathname === '/style') {
+                  document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  navigate('/style');
+                }
+              }}
               className="bg-stone-900 text-white px-6 py-2 rounded-full text-sm uppercase tracking-wider hover:bg-stone-800 transition shadow-lg"
             >
               Reservar

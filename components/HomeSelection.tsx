@@ -26,7 +26,7 @@ const HomeSelection: React.FC = () => {
                 <div className="w-full space-y-4">
 
                     {/* STYLE PILLAR */}
-                    <Link to="/booking" className="group block relative overflow-hidden rounded-2xl border border-stone-800 bg-stone-900/40 hover:bg-stone-900/60 transition-all duration-300">
+                    <Link to="/style" className="group block relative overflow-hidden rounded-2xl border border-stone-800 bg-stone-900/40 hover:bg-stone-900/60 transition-all duration-300">
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
                         <div className="p-6 flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -66,7 +66,7 @@ const HomeSelection: React.FC = () => {
                                     <Gift size={24} />
                                 </div>
                                 <div>
-                                    <h2 className="font-serif text-2xl text-rose-400">Regala Amor</h2>
+                                    <h2 className="font-serif text-2xl text-rose-400">Amor Amor</h2>
                                     <p className="text-[10px] text-rose-800/80 uppercase tracking-widest">Detalles Especiales</p>
                                 </div>
                             </div>

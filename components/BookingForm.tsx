@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BookingData } from '../types';
 import { SERVICES, HOME_SERVICE_FEE, HOME_SERVICE_EXTRA_MINUTES, COVERAGE_AREAS, PHONE_NUMBER, EMAIL_ADDRESS } from '../constants';
 import { Calendar as CalendarIcon, MapPin, Clock, CheckCircle, Smartphone, AlertCircle, Loader2, Info, UserPlus } from 'lucide-react';
@@ -274,6 +275,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
     };
 
 
+    const navigate = useNavigate();
+
     const handleBooking = async (method: 'whatsapp' | 'email') => {
         if (!validateForm()) {
             return;
@@ -309,6 +312,16 @@ Espero su confirmación final. Gracias.
             onSuccess(formData);
         }
 
+        // Navigate to confirmation page with state
+        navigate('/confirmation', {
+            state: {
+                booking: formData,
+                totalPrice: totalPrice,
+                duration: currentDuration
+            }
+        });
+
+        // Open External Link (WhatsApp/Email)
         if (method === 'whatsapp') {
             const url = `https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(messageBody)}`;
             window.open(url, '_blank');

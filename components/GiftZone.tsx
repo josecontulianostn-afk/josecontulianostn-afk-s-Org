@@ -12,7 +12,7 @@ const GiftZone: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 min-h-[60vh]">
             <div className="text-center mb-16">
                 <span className="text-sm font-bold tracking-widest text-stone-500 uppercase">Detalles con Amor</span>
-                <h2 className="serif text-4xl md:text-5xl mt-3 text-stone-900">Zona de Regalitos</h2>
+                <h2 className="serif text-4xl md:text-5xl mt-3 text-rose-500">Amor Amor</h2>
                 <p className="text-stone-500 mt-4 max-w-2xl mx-auto">
                     Sorprende a quien más quieres con nuestra selección exclusiva.
                 </p>
