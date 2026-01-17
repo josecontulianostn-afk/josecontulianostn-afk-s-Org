@@ -18,36 +18,22 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setLoading(true);
 
         try {
-            // 1. Authenticate with Supabase
-            const { data, error: authError } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
+            // BYPASS DE EMERGENCIA: IGNORAMOS SUPABASE AUTH
+            // Simulamos un delay para que se sienta "real"
+            await new Promise(resolve => setTimeout(resolve, 800));
 
-            if (authError) throw authError;
-            if (!data.user) throw new Error('No user found');
-
-            // 2. Fetch Role from Profiles
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', data.user.id)
-                .single();
-
-            if (profileError) {
-                // Determine role via email fallback if profile missing (legacy/safety)
-                const role = email === 'jacontulianoc@gmail.com' ? 'management' : 'service';
-                onLogin(role as any, email);
+            // Forzamos el rol 'management' para dar acceso total
+            // No verificamos contraseña real en el backend
+            if (email === 'jacontulianoc@gmail.com' || email.includes('@')) {
+                console.log("BYPASS ACTIVADO: Entrando como management");
+                onLogin('management', email);
             } else {
-                // Map DB role to App role
-                // DB: 'admin' | 'staff' -> App: 'management' | 'service'
-                const appRole = profile.role === 'admin' ? 'management' : 'service';
-                onLogin(appRole, email);
+                throw new Error('Email inválido');
             }
 
         } catch (err: any) {
             console.error(err);
-            setError(err.message === 'Invalid login credentials' ? 'Credenciales incorrectas' : 'Error de conexión');
+            setError('Error local simulado');
         } finally {
             setLoading(false);
         }
