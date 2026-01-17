@@ -27,8 +27,7 @@ export const SERVICES: Service[] = [
     description: 'Lavado profesional refrescante.',
     price: 5000,
     durationMin: 20,
-    includes: ['Shampoo profesional', 'Acondicionador'],
-    homeServiceOnly: true
+    includes: ['Shampoo profesional', 'Acondicionador']
   },
   {
     id: 'massage-1',
@@ -52,8 +51,7 @@ export const SERVICES: Service[] = [
     description: 'Aplicación profesional de tu color (tintura no incluida).',
     price: 10000,
     durationMin: 60,
-    includes: ['Aplicación uniforme', 'Lavado final'],
-    homeServiceOnly: true
+    includes: ['Aplicación uniforme', 'Lavado final']
   }
 ];
 

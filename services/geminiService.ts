@@ -37,7 +37,7 @@ export const sendMessageToGemini = async (message: string, history: string[]): P
       return "Nuestros cortes parten desde $19.990. Los decants de perfumes tienen precios variados, por ejemplo Good Girl 5ml a $8.990. ¿Te gustaría ver el catálogo completo?";
     }
     if (message.toLowerCase().includes('domicilio') || message.toLowerCase().includes('casa')) {
-      return "¡Sí! Vamos a tu domicilio en Santiago Centro y Ñuñoa por un recargo de $3.000 adicional. Llevamos todo lo necesario para tu cambio de look.";
+      return "¡Sí! Atendemos principalmente en nuestro Studio, pero también vamos a domicilio en Santiago Centro y Ñuñoa por un recargo de $3.000 adicional.";
     }
     if (message.toLowerCase().includes('hola') || message.toLowerCase().includes('buenos')) {
       return "¡Hola! Bienvenid@ a Tus3B Style. Soy tu asistente virtual (Modo Demo). Puedo ayudarte con precios, zonas de cobertura y recomendaciones de perfumes.";
@@ -86,9 +86,10 @@ export const sendMessageToGemini = async (message: string, history: string[]): P
 
     Tono y Estilo:
     - Eres cercana, experta y entusiasta (usa emojis con moderación ✨).
+    - Si te preguntan "dónde atienden": "Nuestra atención principal es en nuestro exclusivo **Studio** (Sector Santiago Centro/Ñuñoa). Es un espacio acondicionado especial para ti."
+    - Si insisten por domicilio: "Sí, también vamos a domicilio en Santiago y Ñuñoa por un recargo de $3.000 adicional."
     - Si te preguntan "qué me recomiendas", no des una lista larga. Céntrate en tus 2 mejores cartas.
     - Responde siempre en español de Chile.
-    - Si preguntan por delivery/domicilio: $3.000 recargo en Stgo Centro y Ñuñoa.
   `;
 
   try {
@@ -104,5 +105,34 @@ export const sendMessageToGemini = async (message: string, history: string[]): P
   } catch (error) {
     console.error("Error calling Gemini:", error);
     return "Hubo un error al conectar con el asistente. Por favor intenta más tarde.";
+  }
+};
+
+export const classifyExpense = async (description: string): Promise<string> => {
+  if (!ai) return "Otros"; // Fallback if no API key
+
+  const validCategories = ['Materiales', 'Herramientas', 'Mobiliario', 'Insumos Recepción', 'Otros'];
+  const prompt = `
+    Clasifica la siguiente compra/gasto en EXACTAMENTE una de estas categorías: ${validCategories.join(', ')}.
+    
+    Descripción del gasto: "${description}"
+    
+    Responde SOLAMENTE con el nombre de la categoría, sin texto adicional. Si no estás seguro o no encaja, responde "Otros".
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+    });
+
+    const text = response.text?.trim();
+    if (text && validCategories.includes(text)) {
+      return text;
+    }
+    return "Otros";
+  } catch (error) {
+    console.error("Error classifying expense:", error);
+    return "Otros";
   }
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Search, QrCode, X, Scissors, PlusCircle, Save } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
+import { classifyExpense } from '../../services/geminiService';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { PERFUMES } from '../../constants';
 
@@ -71,7 +72,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     const [scanResult, setScanResult] = useState<string | null>(null);
 
     // Hair Service State
-    const [activeTab, setActiveTab] = useState<'loyalty' | 'hair' | 'inventory' | 'agenda'>('loyalty');
+    const [activeTab, setActiveTab] = useState<'loyalty' | 'hair' | 'inventory' | 'agenda' | 'clients' | 'expenses'>('loyalty');
     const [serviceType, setServiceType] = useState('Corte');
     const [servicePrice, setServicePrice] = useState('7000');
     const [visitAmount, setVisitAmount] = useState('0'); // New: Amount for loyalty visits
@@ -85,6 +86,69 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
         }
     }, [activeTab]);
 
+    const [clients, setClients] = useState<any[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Expenses State
+    const [expenses, setExpenses] = useState<any[]>([]);
+    const [expenseDesc, setExpenseDesc] = useState('');
+    const [expenseAmount, setExpenseAmount] = useState('');
+    const [expensesLoading, setExpensesLoading] = useState(false);
+
+    useEffect(() => {
+        if (activeTab === 'agenda') {
+            fetchBookings();
+        } else if (activeTab === 'clients') {
+            fetchClients();
+        } else if (activeTab === 'expenses') {
+            fetchExpenses();
+        }
+    }, [activeTab]);
+
+    const fetchExpenses = async () => {
+        const { data, error } = await supabase.from('expenses').select('*').order('date', { ascending: false }).order('created_at', { ascending: false });
+        if (error) console.error('Error fetching expenses:', error);
+        else setExpenses(data || []);
+    };
+
+    const handleAddExpense = async () => {
+        if (!expenseDesc || !expenseAmount) {
+            alert("Ingrese descripción y monto");
+            return;
+        }
+
+        setExpensesLoading(true);
+        try {
+            // 1. Auto Classify
+            const category = await classifyExpense(expenseDesc);
+
+            // 2. Save
+            const { error } = await supabase.from('expenses').insert({
+                description: expenseDesc,
+                amount: parseInt(expenseAmount),
+                category: category,
+                date: new Date()
+            });
+
+            if (error) throw error;
+
+            alert(`Gasto registrado como: ${category}`);
+            setExpenseDesc('');
+            setExpenseAmount('');
+            fetchExpenses();
+        } catch (err: any) {
+            alert("Error: " + err.message);
+        } finally {
+            setExpensesLoading(false);
+        }
+    };
+
+    const handleDeleteExpense = async (id: string) => {
+        if (!window.confirm("¿Eliminar este gasto?")) return;
+        const { error } = await supabase.from('expenses').delete().eq('id', id);
+        if (!error) fetchExpenses();
+    };
+
     const fetchBookings = async () => {
         const today = new Date().toISOString().split('T')[0];
         // Fetch bookings from today onwards
@@ -97,6 +161,45 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
 
         if (error) console.error('Error fetching bookings:', error);
         else setBookings(data || []);
+    };
+
+    const fetchClients = async () => {
+        let query = supabase.from('clients').select('*').order('created_at', { ascending: false }).limit(50);
+
+        if (searchTerm) {
+            query = query.ilike('phone', `%${searchTerm}%`);
+        }
+
+        const { data, error } = await query;
+        if (error) console.error('Error fetching clients:', error);
+        else setClients(data || []);
+    };
+
+    useEffect(() => {
+        if (activeTab === 'clients') {
+            const delayDebounceFn = setTimeout(() => {
+                fetchClients();
+            }, 500);
+            return () => clearTimeout(delayDebounceFn);
+        }
+    }, [searchTerm]);
+
+    const handleDeleteClient = async (id: string, phone: string) => {
+        if (!window.confirm(`¿ESTÁS SEGURO? Esto eliminará al cliente ${phone} y todo su historial. Esta acción no se puede deshacer.`)) return;
+
+        // Verify cascading deletes or manually delete related
+        // Assuming cascade is NOT reliable without checking schema, let's try direct delete. 
+        // If it fails due to FK, we'd need to delete children first.
+        // But for "User Request: simple delete", let's try standard delete and catch error.
+
+        const { error } = await supabase.from('clients').delete().eq('id', id);
+
+        if (error) {
+            alert('Error al eliminar: ' + error.message);
+        } else {
+            alert('Cliente eliminado correctamente.');
+            fetchClients();
+        }
     };
 
     useEffect(() => {
@@ -209,50 +312,70 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     };
 
     const handleAddVisit = async () => {
-        if (phone.length < 8) return;
+        if (phone.length < 8) {
+            alert("Ingrese un número válido (ej: +569...)");
+            return;
+        }
 
         try {
-            const { data: existingClient, error: fetchError } = await supabase
-                .from('clients')
-                .select('*')
-                .eq('phone', phone)
-                .single();
+            setMessage("Procesando...");
 
-            if (fetchError && fetchError.code !== 'PGRST116') {
-                alert("Error al buscar cliente");
-                return;
+            if (activeTab === 'hair') {
+                // Use new specific RPC for Hair Service Manual Entry
+                const price = parseInt(servicePrice) || 0;
+                const { data, error } = await supabase.rpc('add_hair_service_by_phone', {
+                    phone_input: phone,
+                    service_type: serviceType,
+                    service_price: price,
+                    notes_input: 'Ingreso Manual desde Admin'
+                });
+
+                if (error) throw error;
+
+                if (data.success) {
+                    setMessage(`✅ Servicio registrado. Total: ${data.new_total_services}. ${data.discount_5th_unlocked ? '¡DESCUENTO 10% DESBLOQUEADO!' : ''} ${data.free_cut_unlocked ? '¡CORTE GRATIS DESBLOQUEADO!' : ''}`);
+                    setPhone('');
+                } else {
+                    setMessage('Error: ' + data.message);
+                }
+
+            } else {
+                // Legacy / Generic Visits Logic
+                const { data: existingClient, error: fetchError } = await supabase
+                    .from('clients')
+                    .select('*')
+                    .eq('phone', phone)
+                    .single();
+
+                // If not found, create new (simple logic for now, or rely on upsert)
+                let currentVisits = 0;
+                if (existingClient) currentVisits = existingClient.visits;
+
+                const newVisits = currentVisits + 1;
+
+                const { data: upsertData, error: upsertError } = await supabase
+                    .from('clients')
+                    .upsert({
+                        phone: phone,
+                        visits: newVisits,
+                        last_visit: new Date().toISOString()
+                    }, { onConflict: 'phone' })
+                    .select()
+                    .single();
+
+                if (upsertError) throw upsertError;
+
+                // Record Transaction
+                const amount = (parseInt(visitAmount) || 0);
+                await recordTransaction(upsertData.id, amount, 'service', 'Manual: Visita');
+
+                setMessage('Visita registrada para ' + phone + '. Total: ' + newVisits);
+                setPhone('');
             }
 
-            const currentVisits = existingClient ? existingClient.visits : 0;
-            const newVisits = currentVisits + 1;
-
-            const { data: upsertData, error: upsertError } = await supabase
-                .from('clients')
-                .upsert({
-                    phone: phone,
-                    visits: newVisits,
-                    last_visit: new Date().toISOString()
-                }, { onConflict: 'phone' })
-                .select()
-                .single();
-
-            if (upsertError) {
-                console.error(upsertError);
-                alert("Error al actualizar visita");
-                return;
-            }
-
-            // Record Transaction
-            const amount = activeTab === 'hair' ? (parseInt(servicePrice) || 0) : (parseInt(visitAmount) || 0);
-            await recordTransaction(upsertData.id, amount, 'service', activeTab === 'hair' ? `Manual: ${serviceType}` : 'Manual: Visita');
-
-            setClient(upsertData);
-            setMessage('Visita registrada para ' + phone + '. Total: ' + newVisits);
-            setPhone('');
-
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            alert("Error de conexión");
+            setMessage("Error: " + (err.message || "Error desconocido"));
         }
     };
 
@@ -324,13 +447,146 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                         >
                             Agenda
                         </button>
+                        <button
+                            onClick={() => setActiveTab('clients')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'clients' ? 'bg-red-500 text-white' : 'text-stone-400 hover:text-white'}`}
+                        >
+                            Clientes
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('expenses')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'expenses' ? 'bg-emerald-600 text-white' : 'text-stone-400 hover:text-white'}`}
+                        >
+                            Compras
+                        </button>
                     </div>
                 </div>
 
                 <div className="bg-stone-800 p-6 rounded-2xl shadow-xl border border-white/5">
                     <h3 className="serif text-xl mb-4 text-center text-white">
-                        {activeTab === 'loyalty' ? 'Registrar Visita' : activeTab === 'hair' ? 'Registrar Servicio Peluquería' : activeTab === 'inventory' ? 'Gestión de Inventario' : 'Agenda Semanal'}
+                        {activeTab === 'loyalty' ? 'Registrar Visita' : activeTab === 'hair' ? 'Registrar Servicio Peluquería' : activeTab === 'inventory' ? 'Gestión de Inventario' : activeTab === 'clients' ? 'Gestión de Clientes' : activeTab === 'expenses' ? 'Control de Inversión y Compras' : 'Agenda Semanal'}
                     </h3>
+
+                    {activeTab === 'expenses' && (
+                        <div className="space-y-6">
+                            {/* Input Form */}
+                            <div className="bg-stone-700/50 p-4 rounded-xl space-y-3">
+                                <h4 className="text-white font-bold text-sm">Registrar Nueva Compra</h4>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={expenseDesc}
+                                        onChange={(e) => setExpenseDesc(e.target.value)}
+                                        placeholder="Descripción (ej: Tijeras, Sillas...)"
+                                        className="flex-1 bg-stone-900 border border-white/10 rounded px-3 py-2 text-white text-sm"
+                                    />
+                                    <input
+                                        type="number"
+                                        value={expenseAmount}
+                                        onChange={(e) => setExpenseAmount(e.target.value)}
+                                        placeholder="Monto"
+                                        className="w-24 bg-stone-900 border border-white/10 rounded px-3 py-2 text-white text-sm"
+                                    />
+                                    <button
+                                        onClick={handleAddExpense}
+                                        disabled={expensesLoading}
+                                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold text-sm disabled:opacity-50"
+                                    >
+                                        {expensesLoading ? '...' : 'Guardar'}
+                                    </button>
+                                </div>
+                                <p className="text-[10px] text-stone-400 italic">* La categoría se asigna automáticamente con IA.</p>
+                            </div>
+
+                            {/* Investment Summary */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {['Materiales', 'Herramientas', 'Mobiliario', 'Insumos Recepción', 'Otros'].map(cat => { // Explicit order
+                                    const total = expenses.filter(e => e.category === cat).reduce((sum, e) => sum + e.amount, 0);
+                                    return (
+                                        <div key={cat} className="bg-stone-900 p-3 rounded-lg border border-white/5">
+                                            <div className="text-stone-400 text-[10px] uppercase font-bold">{cat}</div>
+                                            <div className="text-emerald-400 font-mono text-lg font-bold">${total.toLocaleString()}</div>
+                                        </div>
+                                    );
+                                })}
+                                <div className="bg-emerald-900/30 p-3 rounded-lg border border-emerald-500/30 col-span-2">
+                                    <div className="text-emerald-200 text-xs uppercase font-bold">Inversión Total</div>
+                                    <div className="text-white font-mono text-2xl font-bold">
+                                        ${expenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Recent List */}
+                            <div className="max-h-60 overflow-y-auto">
+                                <table className="w-full text-xs text-left text-stone-300">
+                                    <thead className="sticky top-0 bg-stone-800">
+                                        <tr className="text-stone-500 border-b border-stone-700">
+                                            <th className="pb-2">Desc</th>
+                                            <th className="pb-2">Cat</th>
+                                            <th className="pb-2 text-right">Monto</th>
+                                            <th className="pb-2 w-8"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-stone-700">
+                                        {expenses.map(e => (
+                                            <tr key={e.id}>
+                                                <td className="py-2">{e.description}</td>
+                                                <td className="py-2"><span className="bg-stone-700 px-1 rounded text-[10px]">{e.category}</span></td>
+                                                <td className="py-2 text-right text-emerald-400">${e.amount.toLocaleString()}</td>
+                                                <td className="py-2 text-right">
+                                                    <button onClick={() => handleDeleteExpense(e.id)} className="text-red-500 hover:text-red-400"><X size={12} /></button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'clients' && (
+                        <div className="space-y-4">
+                            <input
+                                type="text"
+                                placeholder="Buscar por teléfono..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full bg-stone-900 border border-white/10 rounded-lg px-4 py-2 text-white"
+                            />
+                            <div className="overflow-x-auto max-h-96">
+                                <table className="w-full text-xs text-left text-stone-300">
+                                    <thead className="text-xs text-stone-400 uppercase bg-stone-700/50 sticky top-0">
+                                        <tr>
+                                            <th className="px-3 py-2">Teléfono</th>
+                                            <th className="px-3 py-2 text-center">Visitas</th>
+                                            <th className="px-3 py-2 text-center">Peluquería</th>
+                                            <th className="px-3 py-2 text-right">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {clients.map((c) => (
+                                            <tr key={c.id} className="border-b border-stone-700 hover:bg-stone-700/20">
+                                                <td className="px-3 py-2 text-white font-mono">{c.phone}</td>
+                                                <td className="px-3 py-2 text-center">{c.visits}</td>
+                                                <td className="px-3 py-2 text-center text-purple-400 font-bold">{c.hair_service_count || 0}</td>
+                                                <td className="px-3 py-2 text-right">
+                                                    <button
+                                                        onClick={() => handleDeleteClient(c.id, c.phone)}
+                                                        className="bg-red-600/20 hover:bg-red-600 hover:text-white text-red-500 p-1.5 rounded transition"
+                                                        title="Eliminar Cliente"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                {clients.length === 0 && <p className="text-center text-stone-500 py-4">No se encontraron clientes.</p>}
+                            </div>
+                        </div>
+                    )}
 
                     {activeTab === 'inventory' && (
                         <div className="overflow-x-auto">
@@ -421,7 +677,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                         </div>
                     )}
 
-                    {activeTab !== 'inventory' && (
+                    {activeTab !== 'inventory' && activeTab !== 'clients' && activeTab !== 'expenses' && (
                         <button
                             onClick={() => setScannerActive(true)}
                             className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg transition ${activeTab === 'hair' ? 'bg-purple-600 hover:bg-purple-500 text-white' : 'bg-amber-500 hover:bg-amber-400 text-stone-900'}`}
