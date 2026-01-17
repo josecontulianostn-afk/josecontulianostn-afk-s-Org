@@ -43,6 +43,11 @@ const Header: React.FC<HeaderProps> = () => {
     if (path === '/') {
       return (
         <div className="flex items-center gap-4 md:gap-6">
+          {/* Main Logo Image */}
+          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-lg shrink-0">
+            <img src="/images/logo-hub.jpg" alt="Logo" className="w-full h-full object-cover rounded-full border-2 border-white/10" />
+          </div>
+
           {/* Style Logo */}
           <Link to="/style" className="flex flex-col items-center leading-none hover:opacity-70 transition-opacity cursor-pointer">
             <span className="serif text-lg md:text-xl font-bold italic tracking-tighter text-stone-900">Style</span>
