@@ -23,10 +23,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             await new Promise(resolve => setTimeout(resolve, 800));
 
             // Forzamos el rol 'management' para dar acceso total
-            // No verificamos contraseña real en el backend
-            if (email === 'jacontulianoc@gmail.com' || email.includes('@')) {
-                console.log("BYPASS ACTIVADO: Entrando como management");
-                onLogin('management', email);
+            // TEMPORAL: Validación de contraseña en cliente (Hardcoded)
+            // Esto protege el acceso mientras Supabase repara el Error 500
+            if (email === 'jacontulianoc@gmail.com') {
+                if (password === 'Chile2026#') {
+                    console.log("ACCESO AUTORIZADO: Credenciales válidas");
+                    onLogin('management', email);
+                } else {
+                    throw new Error('Invalid login credentials');
+                }
+            } else if (email.includes('@')) {
+                // Para otros usuarios (pruebas), pedimos una clave genérica o lo bloqueamos
+                // Por seguridad, bloqueamos a otros por ahora
+                throw new Error('Usuario no autorizado para bypass');
             } else {
                 throw new Error('Email inválido');
             }
