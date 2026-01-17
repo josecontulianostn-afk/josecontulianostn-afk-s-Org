@@ -68,37 +68,37 @@ const Header: React.FC<HeaderProps> = () => {
 
     if (path.startsWith('/perfum')) {
       return (
-        <div className="flex flex-col items-center leading-none">
+        <Link to="/perfum" className="flex flex-col items-center leading-none hover:opacity-80 transition-opacity">
           <span className={`serif text-3xl md:text-4xl font-bold tracking-tight text-amber-500`}>
             Perfum
           </span>
           <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] uppercase mt-1">
             by tus3b
           </span>
-        </div>
+        </Link>
       );
     } else if (path.startsWith('/regalos')) {
       return (
-        <div className="flex flex-col items-center leading-none">
+        <Link to="/regalos" className="flex flex-col items-center leading-none hover:opacity-80 transition-opacity">
           <span className={`serif text-2xl md:text-3xl font-bold tracking-tight text-rose-500`}>
             Amor Amor
           </span>
           <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] uppercase mt-1">
             by tus3b
           </span>
-        </div>
+        </Link>
       );
     } else {
       // Default / Layout "Style" (for /style, /gallery, /booking etc)
       return (
-        <div className="flex flex-col items-center leading-none">
+        <Link to="/style" className="flex flex-col items-center leading-none hover:opacity-80 transition-opacity">
           <span className={`serif text-3xl md:text-4xl font-bold italic tracking-tighter text-stone-900`}>
             Style
           </span>
           <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] uppercase mt-1">
             by tus3b
           </span>
-        </div>
+        </Link>
       );
     }
   };
@@ -111,13 +111,15 @@ const Header: React.FC<HeaderProps> = () => {
           {/* Logo (Dynamic) */}
           <div className="flex items-center gap-4">
             {location.pathname !== '/' && (
-              <Link to="/" className="text-white bg-stone-900 p-2 rounded-full hover:bg-stone-700 transition" title="Volver al Hub">
+              <Link to="/" className="text-white bg-stone-900 p-2 rounded-full hover:bg-stone-700 transition z-10" title="Volver al Hub">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
               </Link>
             )}
-            <Link to={location.pathname === '/' ? '/' : '/style'} className="flex-shrink-0 flex items-center cursor-pointer no-underline group">
+
+            {/* Centered Logo Container */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               {getLogoContent()}
-            </Link>
+            </div>
           </div>
 
           {/* Desktop Menu */}
