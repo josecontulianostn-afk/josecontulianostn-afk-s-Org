@@ -13,13 +13,14 @@ const HomeSelection: React.FC = () => {
             <div className="flex-grow flex flex-col items-center justify-center px-4 py-8 max-w-lg mx-auto w-full z-10 space-y-8">
 
                 {/* 1. BRAND HEADER */}
-                <div className="text-center space-y-2 mb-4">
-                    <h1 className="font-serif italic text-5xl md:text-6xl text-white tracking-tighter">
-                        Tus3B <span className="text-amber-500">Hub</span>
-                    </h1>
-                    <p className="text-stone-400 text-[10px] uppercase tracking-[0.4em] font-medium">
-                        Belleza &bull; Aroma &bull; Regalos
-                    </p>
+                <div className="flex justify-center mb-6">
+                    <div className="relative w-40 h-40 md:w-52 md:h-52 rounded-full p-1 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-2xl shadow-rose-900/20">
+                        <img
+                            src="/images/logo-hub.jpg"
+                            alt="Tus3B Hub Logo"
+                            className="w-full h-full object-cover rounded-full border-4 border-white/10"
+                        />
+                    </div>
                 </div>
 
                 {/* 2. THE 3 PILLARS (Category Cards) */}
