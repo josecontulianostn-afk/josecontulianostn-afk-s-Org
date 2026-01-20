@@ -40,32 +40,30 @@ const Header: React.FC<HeaderProps> = () => {
     const path = location.pathname;
 
     // On Hub, show all 3 brands
+    // On Hub, show all 3 brands
     if (path === '/') {
       return (
-        <div className="flex items-center gap-4 md:gap-6">
+        <div className="flex items-center gap-2 md:gap-6">
           {/* Main Logo Image */}
-          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-lg shrink-0">
+          <div className="w-10 h-10 md:w-16 md:h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-lg shrink-0">
             <img src="/images/logo-hub.jpg" alt="Logo" className="w-full h-full object-cover rounded-full border-2 border-white/10" />
           </div>
 
           {/* Style Logo */}
           <Link to="/style" className="flex flex-col items-center leading-none hover:opacity-70 transition-opacity cursor-pointer">
-            <span className="serif text-lg md:text-xl font-bold italic tracking-tighter text-stone-900">Style</span>
-            <span className="text-[8px] text-stone-500 uppercase tracking-wider">by Tus3B</span>
+            <span className="serif text-base md:text-xl font-bold italic tracking-tighter text-stone-900 whitespace-nowrap">Style</span>
           </Link>
           {/* Divider */}
-          <div className="h-6 w-px bg-stone-200 hidden md:block"></div>
+          <div className="h-4 w-px bg-stone-200 block md:h-6"></div>
           {/* Perfum Logo */}
           <Link to="/perfum" className="flex flex-col items-center leading-none hover:opacity-70 transition-opacity cursor-pointer">
-            <span className="serif text-lg md:text-xl font-bold tracking-tight text-amber-500">Perfum</span>
-            <span className="text-[8px] text-amber-600/70 uppercase tracking-wider">by Tus3B</span>
+            <span className="serif text-base md:text-xl font-bold tracking-tight text-amber-500 whitespace-nowrap">Perfum</span>
           </Link>
           {/* Divider */}
-          <div className="h-6 w-px bg-stone-200 hidden md:block"></div>
+          <div className="h-4 w-px bg-stone-200 block md:h-6"></div>
           {/* Amor Amor Logo */}
           <Link to="/regalos" className="flex flex-col items-center leading-none hover:opacity-70 transition-opacity cursor-pointer">
-            <span className="serif text-lg md:text-xl font-bold tracking-tight text-rose-500">Amor Amor</span>
-            <span className="text-[8px] text-rose-600/70 uppercase tracking-wider">by Tus3B</span>
+            <span className="serif text-base md:text-xl font-bold tracking-tight text-rose-500 whitespace-nowrap">Amor Amor</span>
           </Link>
         </div>
       );
@@ -73,8 +71,8 @@ const Header: React.FC<HeaderProps> = () => {
 
     if (path.startsWith('/perfum')) {
       return (
-        <Link to="/perfum" className="flex flex-col items-center leading-none hover:opacity-80 transition-opacity">
-          <span className={`serif text-3xl md:text-4xl font-bold tracking-tight text-amber-500`}>
+        <Link to="/perfum" className="flex flex-col items-start leading-none hover:opacity-80 transition-opacity">
+          <span className={`serif text-2xl md:text-4xl font-bold tracking-tight text-amber-500`}>
             Perfum
           </span>
           <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] uppercase mt-1">
@@ -84,7 +82,7 @@ const Header: React.FC<HeaderProps> = () => {
       );
     } else if (path.startsWith('/regalos')) {
       return (
-        <Link to="/regalos" className="flex flex-col items-center leading-none hover:opacity-80 transition-opacity">
+        <Link to="/regalos" className="flex flex-col items-start leading-none hover:opacity-80 transition-opacity">
           <span className={`serif text-2xl md:text-3xl font-bold tracking-tight text-rose-500`}>
             Amor Amor
           </span>
@@ -96,8 +94,8 @@ const Header: React.FC<HeaderProps> = () => {
     } else {
       // Default / Layout "Style" (for /style, /gallery, /booking etc)
       return (
-        <Link to="/style" className="flex flex-col items-center leading-none hover:opacity-80 transition-opacity">
-          <span className={`serif text-3xl md:text-4xl font-bold italic tracking-tighter text-stone-900`}>
+        <Link to="/style" className="flex flex-col items-start leading-none hover:opacity-80 transition-opacity">
+          <span className={`serif text-2xl md:text-4xl font-bold italic tracking-tighter text-stone-900`}>
             Style
           </span>
           <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] uppercase mt-1">
@@ -114,15 +112,15 @@ const Header: React.FC<HeaderProps> = () => {
         <div className="flex justify-between items-center h-16">
 
           {/* Logo (Dynamic) */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {location.pathname !== '/' && (
-              <Link to="/" className="text-white bg-stone-900 p-2 rounded-full hover:bg-stone-700 transition z-10" title="Volver al Hub">
+              <Link to="/" className="text-white bg-stone-900 p-2 rounded-full hover:bg-stone-700 transition z-10 shrink-0" title="Volver al Hub">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
               </Link>
             )}
 
-            {/* Centered Logo Container */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            {/* Aligned Logo Container */}
+            <div className="flex items-center">
               {getLogoContent()}
             </div>
           </div>

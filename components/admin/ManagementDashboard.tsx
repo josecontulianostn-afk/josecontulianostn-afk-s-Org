@@ -54,7 +54,7 @@ const InventoryEditRow: React.FC<{ perfume: any }> = ({ perfume }) => {
             product_id: perfume.id,
             quantity: newQty,
             updated_at: new Date().toISOString()
-        });
+        }, { onConflict: 'product_id' });
         if (error) alert("Error: " + error.message);
         else setQuantity(newQty);
         setLoading(false);
