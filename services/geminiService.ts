@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PERFUMES, SERVICES } from '../constants';
 
 // Acceso seguro a la API Key usando Vite env vars
@@ -15,11 +15,11 @@ const getApiKey = () => {
 };
 
 const apiKey = getApiKey();
-let ai: GoogleGenAI | null = null;
+let genAI: GoogleGenerativeAI | null = null;
 
 if (apiKey) {
   try {
-    ai = new GoogleGenAI({ apiKey });
+    genAI = new GoogleGenerativeAI(apiKey);
   } catch (e) {
     console.error("Error initializing Gemini:", e);
   }
@@ -29,7 +29,7 @@ if (apiKey) {
 
 export const sendMessageToGemini = async (message: string, history: string[]): Promise<string> => {
   // MODO DEMO / FALLBACK si no hay API Key
-  if (!ai) {
+  if (!genAI) {
     // Simular un pequeño delay para naturalidad
     await new Promise(resolve => setTimeout(resolve, 800));
 
@@ -93,15 +93,39 @@ export const sendMessageToGemini = async (message: string, history: string[]): P
   `;
 
   try {
-    const model = 'gemini-1.5-flash'; // Updated to a more standard model name if 2.5 isn't available public yet or stick to safe defaults
-    const response = await ai.models.generateContent({
-      model,
-      contents: [
-        { role: 'user', parts: [{ text: systemInstruction + "\n\n Historial de chat:\n" + history.join('\n') + "\n\nUsuario: " + message }] }
-      ]
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const chat = model.startChat({
+      history: history.map(h => ({
+        role: "user", // Simplification: treating all history as user context for now, ideally should parse
+        parts: [{ text: h }],
+      })),
+      generationConfig: {
+        maxOutputTokens: 1000,
+      },
+      systemInstruction: {
+        role: "model",
+        parts: [{ text: systemInstruction }]
+      } // systemInstruction is supported in newer SDKs but let's stick to prepending for safety if needed, BUT 0.11.0 supports it. Wait, verify 0.11.0. 
+      // Actually, for safety and 1.5-flash, passing system instruction as argument to getGenerativeModel is better.
     });
 
-    return response.text || "Lo siento, no pude procesar tu solicitud.";
+    // Re-doing the model init properly for system instruction
+    const modelWithSystem = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      systemInstruction: systemInstruction
+    });
+
+    const chatSession = modelWithSystem.startChat({
+      history: [], // We will just send the history as context if needed, or rely on the single turn for now to keep it simple as the previous code did a single generateContent call mostly.
+      // Actually the previous code did: system + history + message.
+      // Let's replicate that behavior using generateContent for stateless simplicity similar to before, OR use startChat correctly.
+      // Given the 'history' array passed in is just strings, it's safer to do single-turn generation with context.
+    });
+
+    const result = await modelWithSystem.generateContent(`${history.join('\n')}\nUser: ${message}`);
+    const response = await result.response;
+    return response.text();
   } catch (error) {
     console.error("Error calling Gemini:", error);
     return "Hubo un error al conectar con el asistente. Por favor intenta más tarde.";
@@ -109,7 +133,7 @@ export const sendMessageToGemini = async (message: string, history: string[]): P
 };
 
 export const classifyExpense = async (description: string): Promise<string> => {
-  if (!ai) return "Otros"; // Fallback if no API key
+  if (!genAI) return "Otros"; // Fallback if no API key
 
   const validCategories = ['Materiales', 'Herramientas', 'Mobiliario', 'Insumos Recepción', 'Otros'];
   const prompt = `
@@ -121,12 +145,11 @@ export const classifyExpense = async (description: string): Promise<string> => {
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text().trim();
 
-    const text = response.text?.trim();
     if (text && validCategories.includes(text)) {
       return text;
     }
