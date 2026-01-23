@@ -93,37 +93,13 @@ export const sendMessageToGemini = async (message: string, history: string[]): P
   `;
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-    const chat = model.startChat({
-      history: history.map(h => ({
-        role: "user", // Simplification: treating all history as user context for now, ideally should parse
-        parts: [{ text: h }],
-      })),
-      generationConfig: {
-        maxOutputTokens: 1000,
-      },
-      systemInstruction: {
-        role: "model",
-        parts: [{ text: systemInstruction }]
-      } // systemInstruction is supported in newer SDKs but let's stick to prepending for safety if needed, BUT 0.11.0 supports it. Wait, verify 0.11.0. 
-      // Actually, for safety and 1.5-flash, passing system instruction as argument to getGenerativeModel is better.
-    });
-
-    // Re-doing the model init properly for system instruction
-    const modelWithSystem = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
       systemInstruction: systemInstruction
     });
 
-    const chatSession = modelWithSystem.startChat({
-      history: [], // We will just send the history as context if needed, or rely on the single turn for now to keep it simple as the previous code did a single generateContent call mostly.
-      // Actually the previous code did: system + history + message.
-      // Let's replicate that behavior using generateContent for stateless simplicity similar to before, OR use startChat correctly.
-      // Given the 'history' array passed in is just strings, it's safer to do single-turn generation with context.
-    });
-
-    const result = await modelWithSystem.generateContent(`${history.join('\n')}\nUser: ${message}`);
+    // Generate content using the single turn approach with history + new message
+    const result = await model.generateContent(`${history.join('\n')}\nUser: ${message}`);
     const response = await result.response;
     return response.text();
   } catch (error) {
