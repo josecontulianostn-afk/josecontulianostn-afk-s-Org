@@ -36,19 +36,22 @@ interface ProductBCG {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
-const InventoryEditRow: React.FC<{ perfume: any, onUpdate: () => void }> = ({ perfume, onUpdate }) => {
-    const [quantity, setQuantity] = useState<number | null>(null);
+const InventoryEditRow: React.FC<{
+    perfume: any,
+    inventoryItem: any,
+    onRefresh: () => void
+}> = ({ perfume, inventoryItem, onRefresh }) => {
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        fetchQty();
-    }, []);
+    // Derived values from props
+    const quantity = inventoryItem?.quantity || 0;
+    const cost = inventoryItem?.last_purchase_price || 0;
 
-    const fetchQty = async () => {
-        const { data } = await supabase.from('inventory').select('quantity').eq('product_id', perfume.id).single();
-        if (data) setQuantity(data.quantity);
-        else setQuantity(0);
-    };
+    let days: number | null = null;
+    if (inventoryItem?.last_purchase_date) {
+        const diff = new Date().getTime() - new Date(inventoryItem.last_purchase_date).getTime();
+        days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    }
 
     const handleUpdate = async (change: number) => {
         setLoading(true);
@@ -61,24 +64,27 @@ const InventoryEditRow: React.FC<{ perfume: any, onUpdate: () => void }> = ({ pe
 
         if (error) {
             alert("Error: " + error.message);
+        } else if (!data.success) {
+            alert("Error: " + data.message);
         } else {
-            if (data.success) {
-                setQuantity(data.new_quantity);
-                onUpdate(); // Trigger refresh of logs if needed
-            } else {
-                alert("Error: " + data.message);
-            }
+            onRefresh(); // Trigger parent refresh to update totals
         }
         setLoading(false);
     };
 
     return (
         <tr className="border-b border-stone-100">
-            <td className="px-4 py-2">{perfume.name}</td>
+            <td className="px-4 py-2">
+                <div className="font-medium text-stone-800">{perfume.name}</div>
+                <div className="text-[10px] text-stone-400">Costo: ${cost.toLocaleString()}</div>
+            </td>
             <td className="px-4 py-2 text-center">
-                <span className={`font-bold ${quantity !== null && quantity > 2 ? 'text-green-600' : 'text-red-500'}`}>
-                    {quantity !== null ? quantity : '...'}
+                <span className={`font-bold ${quantity > 2 ? 'text-green-600' : 'text-red-500'}`}>
+                    {quantity}
                 </span>
+            </td>
+            <td className="px-4 py-2 text-center text-stone-500">
+                {days !== null ? `${days}d` : '-'}
             </td>
             <td className="px-4 py-2 text-right flex justify-end gap-1">
                 <button
@@ -90,7 +96,7 @@ const InventoryEditRow: React.FC<{ perfume: any, onUpdate: () => void }> = ({ pe
                 </button>
                 <button
                     onClick={() => handleUpdate(-1)}
-                    disabled={loading || (quantity || 0) <= 0}
+                    disabled={loading || quantity <= 0}
                     className="bg-stone-200 text-stone-800 px-2 py-1 rounded text-xs font-bold hover:bg-stone-300"
                 >
                     -
@@ -207,6 +213,11 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [pendingVisits, setPendingVisits] = useState<VisitRegistration[]>([]);
     const [visitToValidate, setVisitToValidate] = useState<VisitRegistration | null>(null);
 
+    // Inventory Data Hoisted
+    const [inventoryMap, setInventoryMap] = useState<Map<string, any>>(new Map());
+    const [totalInventoryValue, setTotalInventoryValue] = useState(0);
+    const [totalInventoryItems, setTotalInventoryItems] = useState(0);
+
     // Inventory History
     const [showInventoryHistory, setShowInventoryHistory] = useState(false);
 
@@ -219,6 +230,9 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
         } else if (activeTab === 'validaciones') {
             fetchPendingVisits();
         }
+        // Always fetch inventory for the side panel if needed, or lazy load? 
+        // For now, let's fetch it on mount or when dashboard active to ensure totals are ready
+        fetchInventory();
     }, [activeTab, timeRange]);
 
     const fetchDashboardData = async () => {
@@ -357,6 +371,26 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
         }
     };
 
+    const fetchInventory = async () => {
+        const { data, error } = await supabase.from('inventory').select('*');
+        if (data) {
+            const map = new Map();
+            let totalVal = 0;
+            let totalItems = 0;
+
+            data.forEach(item => {
+                map.set(item.product_id, item);
+                totalVal += (item.quantity * (item.last_purchase_price || 0));
+                totalItems += item.quantity;
+            });
+
+            setInventoryMap(map);
+            setTotalInventoryValue(totalVal);
+            setTotalInventoryItems(totalItems);
+        }
+        if (error) console.error("Error fetching inventory", error);
+    };
+
     const fetchClients = async () => {
         setLoading(true);
         const { data, error } = await supabase
@@ -410,11 +444,19 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const handleDeleteClient = async (id: string) => {
         if (!window.confirm("¿Estás seguro de eliminar este cliente? Esta acción no se puede deshacer y borrará su historial.")) return;
 
-        const { error } = await supabase.from('clients').delete().eq('id', id);
-        if (error) {
-            alert("Error al eliminar: " + error.message);
-        } else {
+        try {
+            // Delete related records manually to avoid FK constraints
+            await supabase.from('hair_service_log').delete().eq('client_id', id);
+            await supabase.from('transactions').delete().eq('client_id', id);
+            await supabase.from('visit_registrations').delete().eq('client_id', id);
+
+            const { error } = await supabase.from('clients').delete().eq('id', id);
+
+            if (error) throw error;
+
             fetchClients();
+        } catch (error: any) {
+            alert("Error al eliminar: " + error.message);
         }
     };
 
@@ -436,7 +478,7 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-4 py-8">
+        <div className="max-w-6xl mx-auto p-4 py-8 md:pt-24">
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold text-stone-900 serif">Panel de Gestión</h1>
                 <div className="flex gap-4">
@@ -739,14 +781,30 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                         <tr>
                                             <th className="px-4 py-2">Producto</th>
                                             <th className="px-4 py-2 text-center">Stock Real</th>
+                                            <th className="px-4 py-2 text-center">Días en Inv.</th>
                                             <th className="px-4 py-2 text-right">Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {PERFUMES.map((p) => (
-                                            <InventoryEditRow key={p.id} perfume={p} onUpdate={() => { }} />
+                                            <InventoryEditRow
+                                                key={p.id}
+                                                perfume={p}
+                                                inventoryItem={inventoryMap.get(p.id)}
+                                                onRefresh={fetchInventory}
+                                            />
                                         ))}
                                     </tbody>
+                                    <tfoot className="bg-stone-100 font-bold text-stone-800 border-t-2 border-stone-200">
+                                        <tr>
+                                            <td className="px-4 py-3">TOTALES</td>
+                                            <td className="px-4 py-3 text-center">{totalInventoryItems} un.</td>
+                                            <td className="px-4 py-3 text-center text-xs text-stone-500"></td>
+                                            <td className="px-4 py-3 text-right text-green-700">
+                                                Inv: ${totalInventoryValue.toLocaleString()}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                         </div>

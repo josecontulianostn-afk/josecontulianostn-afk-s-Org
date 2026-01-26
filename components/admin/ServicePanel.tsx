@@ -189,18 +189,20 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     const handleDeleteClient = async (id: string, phone: string) => {
         if (!window.confirm(`¿ESTÁS SEGURO? Esto eliminará al cliente ${phone} y todo su historial. Esta acción no se puede deshacer.`)) return;
 
-        // Verify cascading deletes or manually delete related
-        // Assuming cascade is NOT reliable without checking schema, let's try direct delete. 
-        // If it fails due to FK, we'd need to delete children first.
-        // But for "User Request: simple delete", let's try standard delete and catch error.
+        try {
+            // Manual Cascade Delete
+            await supabase.from('hair_service_log').delete().eq('client_id', id);
+            await supabase.from('transactions').delete().eq('client_id', id);
+            await supabase.from('visit_registrations').delete().eq('client_id', id);
 
-        const { error } = await supabase.from('clients').delete().eq('id', id);
+            const { error } = await supabase.from('clients').delete().eq('id', id);
 
-        if (error) {
-            alert('Error al eliminar: ' + error.message);
-        } else {
+            if (error) throw error;
+
             alert('Cliente eliminado correctamente.');
             fetchClients();
+        } catch (error: any) {
+            alert('Error al eliminar: ' + error.message);
         }
     };
 
@@ -382,7 +384,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto p-4 py-12">
+        <div className="max-w-2xl mx-auto p-4 py-12 md:pt-24">
             <h2 className="text-3xl serif text-stone-900 mb-8 border-b pb-4 flex justify-between items-center">
                 <span>Panel de Atención</span>
                 <button onClick={onLogout} className="text-sm bg-stone-200 px-3 py-1 rounded hover:bg-stone-300 transition">Salir</button>

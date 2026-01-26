@@ -294,6 +294,22 @@ export const PERFUMES: Perfume[] = [
     notes: ['Piña', 'Musgo', 'Azafrán'],
     category: 'arab'
   },
+  {
+    id: 'd3',
+    brand: 'Lattafa',
+    name: 'Lattafa Yara Tous Spray 200 ML',
+    description: 'El complemento tropical para tu perfume Yara Tous.',
+    price5ml: 0,
+    price10ml: 0,
+    margin5ml: 0,
+    margin10ml: 0,
+    stock: true,
+    priceFullBottle: 5990,
+    isSpray: true,
+    image: '/images/perfumes/lattafa-yara-tous.png', // Using EDP image as placeholder
+    notes: ['Mango', 'Coco', 'Vainilla'],
+    category: 'arab'
+  },
   // --- RESTO SIN STOCK ---
   {
     id: 'a8',
