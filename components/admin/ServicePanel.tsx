@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Search, QrCode, X, Scissors, PlusCircle, Save } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
-import { classifyExpense } from '../../services/geminiService';
+import { classifyExpenseStatic } from '../../services/staticChatService';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { PERFUMES } from '../../constants';
 
@@ -25,18 +25,20 @@ const InventoryRow: React.FC<{ perfume: any, onSell: (amount: number, desc: stri
     const handleSell = async () => {
         if (!window.confirm(`¿Confirmar venta de ${perfume.name}?`)) return;
 
-        // 1. Decrement Stock
-        const { data, error } = await supabase.rpc('sell_product', { p_id: perfume.id, qty: 1 });
+        // 1. Decrement Stock using centralized RPC
+        const { data, error } = await supabase.rpc('adjust_inventory', {
+            p_product_id: perfume.id,
+            p_delta: -1,
+            p_reason: 'sale'
+        });
 
         if (error) {
             alert('Error: ' + error.message);
         } else if (data.success) {
-            setStock(data.new_stock);
-            // 2. Record Transaction (Assuming 10ml price for simplicity or ask?)
-            // For rapid prototype, let's assume 10ml price is the standard "unit" sale or maybe full bottle?
-            // "Vender" implies selling a unit. Usually decants. Let's use price10ml as default value.
-            onSell(perfume.price10ml, `Venta: ${perfume.name} (10ml)`);
-            alert('Venta exitosa. Nuevo stock: ' + data.new_stock);
+            setStock(data.new_quantity);
+            // 2. Record Transaction
+            onSell(perfume.price10ml, `Venta: ${perfume.name}`);
+            alert('Venta exitosa. Nuevo stock: ' + data.new_quantity);
         } else {
             alert('Error: ' + data.message);
         }
@@ -120,7 +122,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
         setExpensesLoading(true);
         try {
             // 1. Auto Classify
-            const category = await classifyExpense(expenseDesc);
+            const category = classifyExpenseStatic(expenseDesc);
 
             // 2. Save
             const { error } = await supabase.from('expenses').insert({

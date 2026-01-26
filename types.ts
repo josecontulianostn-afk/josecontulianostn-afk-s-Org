@@ -36,6 +36,7 @@ export interface LoyaltyProfile {
 
 export interface Client {
   id: string;
+  name: string;
   phone: string;
   visits: number;
   referrals: number;
@@ -89,4 +90,23 @@ export interface Review {
   rating: number;
   comment: string;
   date: string;
+}
+
+export interface InventoryLog {
+  id: string;
+  product_id: string;
+  change_amount: number;
+  new_quantity: number;
+  reason: string;
+  created_at: string;
+}
+
+export interface VisitRegistration {
+  id: string;
+  client_id: string;
+  check_in_time: string;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_notes?: string;
+  validated_at?: string;
+  client?: Client; // Joined data
 }

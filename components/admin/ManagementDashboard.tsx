@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { PERFUMES, SERVICES } from '../../constants';
-import { Download, TrendingUp, Users, DollarSign, Package, PieChart, BarChart as BarChartIcon, ScatterChart as ScatterChartIcon } from 'lucide-react';
+import { VisitRegistration, InventoryLog } from '../../types';
+import VisitValidationModal from './VisitValidationModal';
+import { QRCodeSVG } from 'qrcode.react';
+import { Download, TrendingUp, Users, DollarSign, Package, PieChart, BarChart as BarChartIcon, ScatterChart as ScatterChartIcon, QrCode, ClipboardCheck, History } from 'lucide-react';
 import {
     PieChart as RechartsPie, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -33,7 +36,7 @@ interface ProductBCG {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
-const InventoryEditRow: React.FC<{ perfume: any }> = ({ perfume }) => {
+const InventoryEditRow: React.FC<{ perfume: any, onUpdate: () => void }> = ({ perfume, onUpdate }) => {
     const [quantity, setQuantity] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -47,16 +50,25 @@ const InventoryEditRow: React.FC<{ perfume: any }> = ({ perfume }) => {
         else setQuantity(0);
     };
 
-    const handleUpdate = async (newQty: number) => {
-        if (newQty < 0) return;
+    const handleUpdate = async (change: number) => {
         setLoading(true);
-        const { error } = await supabase.from('inventory').upsert({
-            product_id: perfume.id,
-            quantity: newQty,
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'product_id' });
-        if (error) alert("Error: " + error.message);
-        else setQuantity(newQty);
+        // Use RPC to adjust inventory and log the change
+        const { data, error } = await supabase.rpc('adjust_inventory', {
+            p_product_id: perfume.id,
+            p_delta: change,
+            p_reason: 'manual_adjustment'
+        });
+
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            if (data.success) {
+                setQuantity(data.new_quantity);
+                onUpdate(); // Trigger refresh of logs if needed
+            } else {
+                alert("Error: " + data.message);
+            }
+        }
         setLoading(false);
     };
 
@@ -70,14 +82,14 @@ const InventoryEditRow: React.FC<{ perfume: any }> = ({ perfume }) => {
             </td>
             <td className="px-4 py-2 text-right flex justify-end gap-1">
                 <button
-                    onClick={() => handleUpdate((quantity || 0) + 1)}
+                    onClick={() => handleUpdate(1)}
                     disabled={loading}
                     className="bg-stone-200 text-stone-800 px-2 py-1 rounded text-xs font-bold hover:bg-stone-300"
                 >
                     +
                 </button>
                 <button
-                    onClick={() => handleUpdate((quantity || 0) - 1)}
+                    onClick={() => handleUpdate(-1)}
                     disabled={loading || (quantity || 0) <= 0}
                     className="bg-stone-200 text-stone-800 px-2 py-1 rounded text-xs font-bold hover:bg-stone-300"
                 >
@@ -85,6 +97,90 @@ const InventoryEditRow: React.FC<{ perfume: any }> = ({ perfume }) => {
                 </button>
             </td>
         </tr>
+    );
+};
+
+const InventoryHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+    const [logs, setLogs] = useState<InventoryLog[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchLogs = async () => {
+            const { data, error } = await supabase
+                .from('inventory_logs')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) console.error("Error fetching logs:", error);
+            else setLogs(data || []);
+            setLoading(false);
+        };
+        fetchLogs();
+    }, []);
+
+    const getProductName = (id: string) => {
+        const p = PERFUMES.find(p => p.id === id);
+        return p ? p.name : id;
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white p-6 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                        <History /> Historial de Movimientos
+                    </h3>
+                    <button onClick={onClose} className="text-stone-400 hover:text-stone-600 font-bold text-xl">&times;</button>
+                </div>
+
+                <div className="overflow-y-auto flex-1">
+                    {loading ? (
+                        <p className="text-center py-8 text-stone-400">Cargando historial...</p>
+                    ) : (
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs uppercase bg-stone-50 text-stone-500 sticky top-0">
+                                <tr>
+                                    <th className="px-4 py-2">Fecha</th>
+                                    <th className="px-4 py-2">Producto</th>
+                                    <th className="px-4 py-2 text-right">Cambio</th>
+                                    <th className="px-4 py-2 text-right">Stock Final</th>
+                                    <th className="px-4 py-2">Motivo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {logs.map((log) => (
+                                    <tr key={log.id} className="border-b border-stone-100">
+                                        <td className="px-4 py-2 text-stone-500 text-xs">
+                                            {new Date(log.created_at).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 font-medium">
+                                            {getProductName(log.product_id)}
+                                        </td>
+                                        <td className={`px-4 py-2 text-right font-bold ${log.change_amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                            {log.change_amount > 0 ? '+' : ''}{log.change_amount}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-stone-600">
+                                            {log.new_quantity}
+                                        </td>
+                                        <td className="px-4 py-2 text-stone-500 text-xs">
+                                            {log.reason === 'manual_adjustment' ? 'Ajuste Manual' : log.reason}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {logs.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="px-4 py-8 text-center text-stone-400">
+                                            No hay movimientos registrados.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -103,9 +199,16 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [topProducts, setTopProducts] = useState<any[]>([]);
     const [bcgMatrix, setBcgMatrix] = useState<ProductBCG[]>([]);
 
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'clients'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'validaciones'>('dashboard');
     const [clients, setClients] = useState<any[]>([]);
     const [editingClient, setEditingClient] = useState<any>(null);
+
+    // QR Validation Data
+    const [pendingVisits, setPendingVisits] = useState<VisitRegistration[]>([]);
+    const [visitToValidate, setVisitToValidate] = useState<VisitRegistration | null>(null);
+
+    // Inventory History
+    const [showInventoryHistory, setShowInventoryHistory] = useState(false);
 
     // Refresh data when tab changes or time range changes
     useEffect(() => {
@@ -113,6 +216,8 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             fetchDashboardData();
         } else if (activeTab === 'clients') {
             fetchClients();
+        } else if (activeTab === 'validaciones') {
+            fetchPendingVisits();
         }
     }, [activeTab, timeRange]);
 
@@ -261,6 +366,24 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
 
         if (error) console.error("Error fetching clients", error);
         else setClients(data || []);
+        if (error) console.error("Error fetching clients", error);
+        else setClients(data || []);
+        setLoading(false);
+    };
+
+    const fetchPendingVisits = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('visit_registrations')
+            .select(`
+                *,
+                client:clients(name, phone)
+            `)
+            .eq('status', 'pending')
+            .order('check_in_time', { ascending: true });
+
+        if (error) console.error("Error fetching visits", error);
+        else setPendingVisits(data as VisitRegistration[] || []);
         setLoading(false);
     };
 
@@ -346,7 +469,87 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                 >
                     Clientes
                 </button>
+                <button
+                    onClick={() => setActiveTab('validaciones')}
+                    className={`px-4 py-2 font-bold transition ${activeTab === 'validaciones' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}
+                >
+                    Validaciones QR
+                    {pendingVisits.length > 0 && (
+                        <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full align-top">
+                            {pendingVisits.length}
+                        </span>
+                    )}
+                </button>
             </div>
+
+            {activeTab === 'validaciones' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* QR Code Card */}
+                    <div className="md:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-stone-100 flex flex-col items-center text-center">
+                        <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                            <QrCode /> QR de Llegada
+                        </h3>
+                        <p className="text-stone-500 text-xs mb-6">
+                            Imprime este código y pégalo en la entrada.
+                        </p>
+
+                        <div className="bg-white p-4 rounded-xl border-2 border-stone-900 mb-4">
+                            <QRCodeSVG
+                                value="https://tus3b.cl/#/checkin"
+                                size={200}
+                                level="H"
+                            />
+                        </div>
+                        <p className="font-mono text-xs text-stone-400 mb-4">tus3b.cl/#/checkin</p>
+
+                        <button
+                            onClick={() => window.print()}
+                            className="w-full py-2 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 text-sm font-bold flex items-center justify-center gap-2"
+                        >
+                            <Download size={14} /> Imprimir QR
+                        </button>
+                    </div>
+
+                    {/* Pending List */}
+                    <div className="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
+                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <ClipboardCheck /> Visitas Pendientes
+                        </h3>
+
+                        {pendingVisits.length === 0 ? (
+                            <div className="py-12 text-center text-stone-400 bg-stone-50 rounded-lg border-2 border-dashed border-stone-100">
+                                <p>No hay clientes esperando validación.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {pendingVisits.map((visit) => (
+                                    <div key={visit.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-stone-50 border border-stone-100 rounded-xl hover:border-amber-200 transition">
+                                        <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                                            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-800 font-bold text-lg">
+                                                {visit.client?.name?.charAt(0) || '?'}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-stone-900">{visit.client?.name || 'Cliente'}</h4>
+                                                <p className="text-sm text-stone-500">{visit.client?.phone}</p>
+                                                <p className="text-xs text-stone-400 mt-1">
+                                                    Llegó: {new Date(visit.check_in_time).toLocaleTimeString()}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => setVisitToValidate(visit)}
+                                            className="w-full sm:w-auto px-6 py-2 bg-stone-900 text-white font-bold rounded-lg shadow hover:bg-stone-800 transition"
+                                        >
+                                            Validar Visita
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {activeTab === 'dashboard' ? (
                 <>
@@ -518,9 +721,17 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                 <h3 className="text-xl font-bold flex items-center gap-2">
                                     <Package size={20} /> Inventario Perfumes
                                 </h3>
-                                <button onClick={downloadCSV} className="text-sm text-blue-600 font-bold hover:underline flex items-center gap-1">
-                                    <Download size={14} /> Exportar CSV
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setShowInventoryHistory(true)}
+                                        className="text-sm text-stone-500 hover:text-stone-800 font-bold flex items-center gap-1 bg-stone-100 px-2 py-1 rounded"
+                                    >
+                                        <History size={14} /> Historial
+                                    </button>
+                                    <button onClick={downloadCSV} className="text-sm text-blue-600 font-bold hover:underline flex items-center gap-1">
+                                        <Download size={14} /> Exportar CSV
+                                    </button>
+                                </div>
                             </div>
                             <div className="overflow-y-auto max-h-[300px]">
                                 <table className="w-full text-xs text-left">
@@ -533,7 +744,7 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                     </thead>
                                     <tbody>
                                         {PERFUMES.map((p) => (
-                                            <InventoryEditRow key={p.id} perfume={p} />
+                                            <InventoryEditRow key={p.id} perfume={p} onUpdate={() => { }} />
                                         ))}
                                     </tbody>
                                 </table>
@@ -627,6 +838,17 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                         </form>
                     </div>
                 </div>
+            )}
+            {visitToValidate && (
+                <VisitValidationModal
+                    visit={visitToValidate}
+                    onClose={() => setVisitToValidate(null)}
+                    onSuccess={fetchPendingVisits}
+                />
+            )}
+
+            {showInventoryHistory && (
+                <InventoryHistoryModal onClose={() => setShowInventoryHistory(false)} />
             )}
         </div>
     );

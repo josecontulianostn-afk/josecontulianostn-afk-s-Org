@@ -13,6 +13,7 @@ import LoyaltyCheck from './components/LoyaltyCheck';
 import AdminPanel from './components/AdminPanel';
 import Gallery from './components/Gallery';
 import GiftZone from './components/GiftZone';
+import CheckInPage from './components/CheckInPage';
 import HomeSelection from './components/HomeSelection';
 import HairTips from './components/blog/HairTips';
 import { SERVICES } from './constants';
@@ -172,6 +173,7 @@ const App: React.FC = () => {
             } />
 
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/checkin" element={<CheckInPage />} />
 
             {/* 
                Note: The BookingForm inside Home handles success by calling the prop. 
