@@ -46,6 +46,17 @@ const InventoryEditRow: React.FC<{
     // Derived values from props
     const quantity = inventoryItem?.quantity || 0;
     const cost = inventoryItem?.last_purchase_price || 0;
+    const itemsRefPrice = perfume.priceFullBottle || 0;
+
+    // Calculate Margins
+    // Assuming 'stock' refers to Bottles, and Cost is per bottle.
+    // Selling price used for comparison is Full Bottle Price to be apples-to-apples.
+    // Note: If user sells Decants primarily, this margin is theoretical for "Whole Bottle Sales".
+
+    const margin = itemsRefPrice - cost;
+    const marginPercent = cost > 0 ? (margin / cost) * 100 : 0;
+
+    // Also calculating 10ml average yield might be useful but sticking to Bottle Unit for now as requested "Unitario" matches Stock Unit.
 
     let days: number | null = null;
     if (inventoryItem?.last_purchase_date) {
@@ -76,7 +87,20 @@ const InventoryEditRow: React.FC<{
         <tr className="border-b border-stone-100">
             <td className="px-4 py-2">
                 <div className="font-medium text-stone-800">{perfume.name}</div>
-                <div className="text-[10px] text-stone-400">Costo: ${cost.toLocaleString()}</div>
+            </td>
+            <td className="px-4 py-2 text-center text-stone-600">
+                ${cost.toLocaleString()}
+            </td>
+            <td className="px-4 py-2 text-center text-stone-600">
+                ${itemsRefPrice.toLocaleString()}
+            </td>
+            <td className="px-4 py-2 text-center">
+                <div className={`text-xs font-bold ${margin >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    ${margin.toLocaleString()}
+                </div>
+                <div className={`text-[10px] ${margin >= 0 ? 'text-green-500' : 'text-red-400'}`}>
+                    {marginPercent.toFixed(1)}%
+                </div>
             </td>
             <td className="px-4 py-2 text-center">
                 <span className={`font-bold ${quantity > 2 ? 'text-green-600' : 'text-red-500'}`}>
@@ -777,11 +801,14 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                             </div>
                             <div className="overflow-y-auto max-h-[300px]">
                                 <table className="w-full text-xs text-left">
-                                    <thead className="text-xs uppercase bg-stone-50 text-stone-500 sticky top-0">
-                                        <tr>
-                                            <th className="px-4 py-2">Producto</th>
-                                            <th className="px-4 py-2 text-center">Stock Real</th>
-                                            <th className="px-4 py-2 text-center">Días en Inv.</th>
+                                    <thead>
+                                        <tr className="text-stone-500 border-b border-stone-200">
+                                            <th className="px-4 py-2 text-left">Producto</th>
+                                            <th className="px-4 py-2 text-center">Costo</th>
+                                            <th className="px-4 py-2 text-center">Precio Vta</th>
+                                            <th className="px-4 py-2 text-center">Margen</th>
+                                            <th className="px-4 py-2 text-center">Stock</th>
+                                            <th className="px-4 py-2 text-center">Días</th>
                                             <th className="px-4 py-2 text-right">Acción</th>
                                         </tr>
                                     </thead>
@@ -798,6 +825,9 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                     <tfoot className="bg-stone-100 font-bold text-stone-800 border-t-2 border-stone-200">
                                         <tr>
                                             <td className="px-4 py-3">TOTALES</td>
+                                            <td className="px-4 py-3"></td>
+                                            <td className="px-4 py-3"></td>
+                                            <td className="px-4 py-3"></td>
                                             <td className="px-4 py-3 text-center">{totalInventoryItems} un.</td>
                                             <td className="px-4 py-3 text-center text-xs text-stone-500"></td>
                                             <td className="px-4 py-3 text-right text-green-700">
