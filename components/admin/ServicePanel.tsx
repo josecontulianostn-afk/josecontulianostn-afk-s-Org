@@ -3,7 +3,7 @@ import { Shield, Search, QrCode, X, Scissors, PlusCircle, Save } from 'lucide-re
 import { supabase } from '../../services/supabaseClient';
 import { classifyExpenseStatic } from '../../services/staticChatService';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
-import { PERFUMES } from '../../constants';
+import { PERFUMES, GIFTS } from '../../constants';
 
 interface ServicePanelProps {
     onLogout: () => void;
@@ -74,7 +74,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     const [scanResult, setScanResult] = useState<string | null>(null);
 
     // Hair Service State
-    const [activeTab, setActiveTab] = useState<'loyalty' | 'hair' | 'inventory' | 'agenda' | 'clients' | 'expenses'>('loyalty');
+    const [activeTab, setActiveTab] = useState<'loyalty' | 'hair' | 'inventory' | 'agenda' | 'clients' | 'expenses' | 'ventas'>('loyalty');
     const [serviceType, setServiceType] = useState('Corte');
     const [servicePrice, setServicePrice] = useState('7000');
     const [extraCost, setExtraCost] = useState(''); // Costos adicionales (luz, insumos, etc)
@@ -98,6 +98,86 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     const [expenseDesc, setExpenseDesc] = useState('');
     const [expenseAmount, setExpenseAmount] = useState('');
     const [expensesLoading, setExpensesLoading] = useState(false);
+
+    // POS State
+    const [cart, setCart] = useState<any[]>([]);
+    const [posClient, setPosClient] = useState<any>(null);
+    const [posSearchTerm, setPosSearchTerm] = useState('');
+    const [posProductSearch, setPosProductSearch] = useState('');
+    const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+
+    const addToCart = (product: any, type: 'product' | 'gift') => {
+        const existing = cart.find(item => item.id === product.id && item.type === type);
+        if (existing) {
+            setCart(cart.map(item => item.id === product.id && item.type === type ? { ...item, qty: item.qty + 1 } : item));
+        } else {
+            // Determine price
+            let price = 0;
+            if (type === 'product') price = product.price10ml || 0; // Default to 10ml for now or add 5ml selector later
+            if (type === 'gift') price = product.price || 0;
+
+            setCart([...cart, { ...product, type, qty: 1, price, variant: type === 'product' ? '10ml' : 'standard' }]);
+        }
+    };
+
+    const removeFromCart = (id: string) => {
+        setCart(cart.filter(item => item.id !== id));
+    };
+
+    const updateCartQty = (id: string, qty: number) => {
+        if (qty < 1) return;
+        setCart(cart.map(item => item.id === id ? { ...item, qty } : item));
+    };
+
+    const handleCheckout = async () => {
+        if (cart.length === 0) return alert("El carrito está vacío");
+        if (!window.confirm(`¿Confirmar venta por $${cart.reduce((sum, item) => sum + (item.price * item.qty), 0).toLocaleString()}?`)) return;
+
+        setIsCheckoutLoading(true);
+        try {
+            const clientId = posClient ? posClient.id : null;
+            // Note: If transactions require client_id, sure to handle nullable or specific ID.
+
+            for (const item of cart) {
+                // 1. Inventory Logic (if product/perfume)
+                if (item.type === 'product' && item.stock !== false) { // stock: false means no tracking needed? check constant
+                    const { error: invError } = await supabase.rpc('adjust_inventory', {
+                        p_product_id: item.id,
+                        p_delta: -item.qty,
+                        p_reason: 'sale_pos'
+                    });
+                    if (invError) console.error("Inventory error", invError);
+                }
+
+                // 2. Transaction Logic
+                // We'll insert one transaction per line item for better tracking for now, or aggregate?
+                // Per item allows detailed analysis.
+                const { error: txError } = await supabase.from('transactions').insert({
+                    client_id: clientId, // nullable?
+                    amount: item.price * item.qty,
+                    type: item.type === 'service' ? 'service' : 'product',
+                    description: `POS: ${item.name} (${item.variant}) x${item.qty}`,
+                    additional_cost: 0
+                });
+
+                if (txError) {
+                    console.error("Tx Error", txError);
+                    // If client_id is mandatory and we sent null, this will fail.
+                    // We might need a catch here to alert.
+                    throw txError;
+                }
+            }
+
+            alert("✅ Venta registrada con éxito!");
+            setCart([]);
+            setPosClient(null);
+            setPosSearchTerm('');
+        } catch (err: any) {
+            alert("Error procesando venta: " + err.message);
+        } finally {
+            setIsCheckoutLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (activeTab === 'agenda') {
@@ -263,6 +343,12 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                     const { data: clientData } = await supabase.from('clients').select('id').eq('member_token', decodedText).single();
                     if (clientData) {
                         await recordTransaction(clientData.id, price, 'service', `Servicio: ${serviceType}`);
+                    }
+                } else if (activeTab === 'ventas') {
+                    const { data: clientData } = await supabase.from('clients').select('*').eq('member_token', decodedText).single();
+                    if (clientData) {
+                        setPosClient(clientData);
+                        // alert(`Cliente seleccionado: ${clientData.name || clientData.phone}`); // Optional feedback
                     }
                 }
             } else {
@@ -494,12 +580,18 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                         >
                             Compras
                         </button>
+                        <button
+                            onClick={() => setActiveTab('ventas')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'ventas' ? 'bg-indigo-600 text-white' : 'text-stone-400 hover:text-white'}`}
+                        >
+                            Ventas (POS)
+                        </button>
                     </div>
                 </div>
 
                 <div className="bg-stone-800 p-6 rounded-2xl shadow-xl border border-white/5">
                     <h3 className="serif text-xl mb-4 text-center text-white">
-                        {activeTab === 'loyalty' ? 'Registrar Visita' : activeTab === 'hair' ? 'Registrar Servicio Peluquería' : activeTab === 'inventory' ? 'Gestión de Inventario' : activeTab === 'clients' ? 'Gestión de Clientes' : activeTab === 'expenses' ? 'Control de Inversión y Compras' : 'Agenda Semanal'}
+                        {activeTab === 'loyalty' ? 'Registrar Visita' : activeTab === 'hair' ? 'Registrar Servicio Peluquería' : activeTab === 'inventory' ? 'Gestión de Inventario' : activeTab === 'clients' ? 'Gestión de Clientes' : activeTab === 'expenses' ? 'Control de Inversión y Compras' : activeTab === 'ventas' ? 'Punto de Venta' : 'Agenda Semanal'}
                     </h3>
 
                     {activeTab === 'expenses' && (
@@ -726,6 +818,130 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                     placeholder="Detalle (ej: Luz, Café)"
                                     className="w-2/3 bg-stone-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
                                 />
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'ventas' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Left Col: Catalog */}
+                            <div className="space-y-4">
+                                {/* Product Search */}
+                                <div className="bg-stone-700/30 p-3 rounded-xl border border-white/5">
+                                    <h4 className="text-stone-400 text-xs font-bold uppercase mb-2">Catálogo</h4>
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar producto..."
+                                        className="w-full bg-stone-900 border border-white/10 rounded px-3 py-2 text-white text-sm mb-3"
+                                        value={posProductSearch}
+                                        onChange={e => setPosProductSearch(e.target.value)}
+                                    />
+                                    <div className="h-64 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                                        {/* Perfumes */}
+                                        {PERFUMES.filter(p => p.name.toLowerCase().includes(posProductSearch.toLowerCase())).map(p => (
+                                            <div key={p.id} className="flex items-center justify-between bg-stone-800 p-2 rounded hover:bg-stone-700 cursor-pointer" onClick={() => addToCart(p, 'product')}>
+                                                <div>
+                                                    <div className="text-white text-sm font-medium">{p.name}</div>
+                                                    <div className="text-stone-400 text-[10px]">${p.price10ml.toLocaleString()} (10ml)</div>
+                                                </div>
+                                                <button className="text-green-400 hover:text-green-300"><PlusCircle size={16} /></button>
+                                            </div>
+                                        ))}
+                                        {/* Gifts */}
+                                        {GIFTS.filter(g => g.name.toLowerCase().includes(posProductSearch.toLowerCase())).map(g => (
+                                            <div key={g.id} className="flex items-center justify-between bg-stone-800 p-2 rounded hover:bg-stone-700 cursor-pointer" onClick={() => addToCart(g, 'gift')}>
+                                                <div>
+                                                    <div className="text-white text-sm font-medium">{g.name}</div>
+                                                    <div className="text-stone-400 text-[10px]">${g.price.toLocaleString()}</div>
+                                                </div>
+                                                <button className="text-green-400 hover:text-green-300"><PlusCircle size={16} /></button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Col: Cart & Client */}
+                            <div className="space-y-4">
+                                {/* Client Selection */}
+                                <div className="bg-stone-700/30 p-3 rounded-xl border border-white/5">
+                                    <h4 className="text-stone-400 text-xs font-bold uppercase mb-2">Cliente</h4>
+                                    {posClient ? (
+                                        <div className="flex justify-between items-center bg-green-500/20 text-green-400 p-2 rounded">
+                                            <span className="font-bold">{posClient.name || posClient.phone}</span>
+                                            <button onClick={() => setPosClient(null)} className="text-red-400 hover:text-red-300"><X size={14} /></button>
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="Buscar cliente (Tel o Nombre)..."
+                                                className="w-full bg-stone-900 border border-white/10 rounded px-3 py-2 text-white text-sm"
+                                                value={posSearchTerm}
+                                                onChange={e => setPosSearchTerm(e.target.value)}
+                                            />
+                                            {/* Minimal dropdown results */}
+                                            {posSearchTerm.length > 2 && (
+                                                <div className="absolute top-full left-0 right-0 bg-stone-800 border border-stone-600 rounded-b shadow-xl z-10 max-h-40 overflow-y-auto">
+                                                    {clients.filter(c => c.phone.includes(posSearchTerm) || (c.name && c.name.toLowerCase().includes(posSearchTerm.toLowerCase()))).map(c => (
+                                                        <div
+                                                            key={c.id}
+                                                            className="p-2 hover:bg-stone-700 cursor-pointer text-sm text-white"
+                                                            onClick={() => { setPosClient(c); setPosSearchTerm(''); }}
+                                                        >
+                                                            {c.name ? `${c.name} (${c.phone})` : c.phone}
+                                                        </div>
+                                                    ))}
+                                                    {clients.filter(c => c.phone.includes(posSearchTerm) || (c.name && c.name.toLowerCase().includes(posSearchTerm.toLowerCase()))).length === 0 && (
+                                                        <div className="p-2 text-stone-500 text-xs">No encontrado</div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Cart */}
+                                <div className="bg-white p-3 rounded-xl shadow-lg">
+                                    <h4 className="text-stone-900 text-xs font-bold uppercase mb-2 border-b pb-1">Carrito de Compras</h4>
+                                    {cart.length === 0 ? (
+                                        <div className="text-center text-stone-400 py-6 text-sm">Carrito Vacío</div>
+                                    ) : (
+                                        <div className="space-y-2 mb-4">
+                                            {cart.map((item, idx) => (
+                                                <div key={idx} className="flex justify-between items-center text-sm border-b border-stone-100 pb-2">
+                                                    <div className="flex-1">
+                                                        <div className="font-bold text-stone-800">{item.name}</div>
+                                                        <div className="text-xs text-stone-500">${item.price.toLocaleString()} x {item.qty}</div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="font-bold text-stone-900">${(item.price * item.qty).toLocaleString()}</div>
+                                                        <button onClick={() => removeFromCart(item.id)} className="text-red-500 hover:bg-red-50 p-1 rounded"><X size={14} /></button>
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            <div className="flex justify-between items-center pt-2 border-t border-stone-200 mt-2">
+                                                <span className="font-bold text-stone-900 text-lg">Total</span>
+                                                <span className="font-bold text-green-600 text-xl">
+                                                    ${cart.reduce((sum, i) => sum + (i.price * i.qty), 0).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={handleCheckout}
+                                        disabled={isCheckoutLoading || cart.length === 0}
+                                        className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition flex justify-center items-center gap-2"
+                                    >
+                                        {isCheckoutLoading ? 'Procesando...' : (
+                                            <>
+                                                <Save size={18} /> Confirmar Venta
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
