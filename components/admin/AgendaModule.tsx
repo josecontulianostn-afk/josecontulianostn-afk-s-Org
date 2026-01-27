@@ -13,6 +13,7 @@ const AgendaModule: React.FC = () => {
     const [manualBookingPhone, setManualBookingPhone] = useState('');
     const [manualBookingService, setManualBookingService] = useState('Corte');
     const [manualBookingType, setManualBookingType] = useState<'salon' | 'domicilio' | 'bloqueo'>('salon');
+    const [manualBookingDuration, setManualBookingDuration] = useState<number>(1); // Duration in hours
     const [loading, setLoading] = useState(false);
 
     // Quick Block State
@@ -101,6 +102,7 @@ const AgendaModule: React.FC = () => {
             setManualBookingType('salon'); // Reset
             setManualBookingName('');
             setManualBookingPhone('');
+            setManualBookingDuration(1); // Reset duration
             setIsBookingModalOpen(true);
         }
     };
@@ -113,25 +115,50 @@ const AgendaModule: React.FC = () => {
 
         if (!name && !isBlock) return alert("Ingrese nombre");
 
+        setLoading(true);
         try {
-            const { error } = await supabase.from('bookings').insert({
-                date: selectedSlot.date,
-                time: selectedSlot.time,
-                name: name,
-                phone: manualBookingPhone || '00000000',
-                email: 'manual@admin.com',
-                service_name: isBlock ? 'Bloqueo' : manualBookingService,
-                is_home_service: manualBookingType === 'domicilio',
-                created_at: new Date().toISOString()
-            });
+            // Generate slots based on duration
+            const startHour = parseInt(selectedSlot.time.split(':')[0]);
+            const slots = [];
+
+            for (let i = 0; i < manualBookingDuration; i++) {
+                const slotHour = startHour + i;
+                if (slotHour > 21) break; // Don't exceed business hours
+
+                const slotTime = `${slotHour}:00`;
+
+                // Check if slot is already occupied
+                const existingBooking = bookings.find(b => b.date === selectedSlot.date && b.time === slotTime);
+                if (existingBooking) {
+                    alert(`El horario ${slotTime} ya está ocupado`);
+                    setLoading(false);
+                    return;
+                }
+
+                slots.push({
+                    date: selectedSlot.date,
+                    time: slotTime,
+                    name: name,
+                    phone: manualBookingPhone || '00000000',
+                    email: 'manual@admin.com',
+                    service_name: isBlock ? 'Bloqueo' : `${manualBookingService} (${manualBookingDuration}h)`,
+                    is_home_service: manualBookingType === 'domicilio',
+                    created_at: new Date().toISOString()
+                });
+            }
+
+            const { error } = await supabase.from('bookings').insert(slots);
 
             if (error) throw error;
 
-            alert(isBlock ? "Bloqueo registrado" : "Reserva creada");
+            const slotsText = manualBookingDuration > 1 ? ` (${manualBookingDuration} horas)` : '';
+            alert(isBlock ? "Bloqueo registrado" + slotsText : "Reserva creada" + slotsText);
             setIsBookingModalOpen(false);
             fetchBookings();
         } catch (err: any) {
             alert("Error: " + err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -433,11 +460,28 @@ const AgendaModule: React.FC = () => {
                                 </>
                             )}
 
+                            {/* Duration selector - shown for all types */}
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm text-stone-600 whitespace-nowrap">Duración:</label>
+                                <select
+                                    className="flex-1 border border-stone-300 rounded-lg p-2 text-sm"
+                                    value={manualBookingDuration}
+                                    onChange={e => setManualBookingDuration(parseInt(e.target.value))}
+                                >
+                                    <option value={1}>1 hora</option>
+                                    <option value={2}>2 horas</option>
+                                    <option value={3}>3 horas</option>
+                                    <option value={4}>4 horas</option>
+                                    <option value={5}>5 horas</option>
+                                </select>
+                            </div>
+
                             <button
                                 onClick={saveBooking}
-                                className={`w-full py-3 rounded-xl font-bold text-white shadow-lg mt-2 ${manualBookingType === 'bloqueo' ? 'bg-red-600 hover:bg-red-700' : 'bg-stone-900 hover:bg-stone-800'}`}
+                                disabled={loading}
+                                className={`w-full py-3 rounded-xl font-bold text-white shadow-lg mt-2 disabled:opacity-50 ${manualBookingType === 'bloqueo' ? 'bg-red-600 hover:bg-red-700' : 'bg-stone-900 hover:bg-stone-800'}`}
                             >
-                                {manualBookingType === 'bloqueo' ? 'Bloquear Horario' : 'Guardar Reserva'}
+                                {loading ? 'Guardando...' : (manualBookingType === 'bloqueo' ? 'Bloquear Horario' : 'Guardar Reserva')}
                             </button>
                         </div>
                     </div>
