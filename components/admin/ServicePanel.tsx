@@ -92,6 +92,11 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
 
     const [clients, setClients] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    // Client Management State
+    const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+    const [clientFormName, setClientFormName] = useState('');
+    const [clientFormPhone, setClientFormPhone] = useState('');
+    const [editingClient, setEditingClient] = useState<any | null>(null);
 
     // Expenses State
     const [expenses, setExpenses] = useState<any[]>([]);
@@ -429,6 +434,53 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
             fetchClients();
         } catch (error: any) {
             alert('Error al eliminar: ' + error.message);
+        }
+    };
+
+    const openClientModal = (client: any = null) => {
+        if (client) {
+            setEditingClient(client);
+            setClientFormName(client.name || '');
+            setClientFormPhone(client.phone || '');
+        } else {
+            setEditingClient(null);
+            setClientFormName('');
+            setClientFormPhone('');
+        }
+        setIsClientModalOpen(true);
+    };
+
+    const saveClient = async () => {
+        if (!clientFormPhone) return alert("El teléfono es obligatorio");
+
+        // Simple validation or standardizing
+        const phoneClean = clientFormPhone.trim();
+
+        try {
+            if (editingClient) {
+                // Update
+                const { error } = await supabase.from('clients').update({
+                    name: clientFormName,
+                    phone: phoneClean
+                }).eq('id', editingClient.id);
+                if (error) throw error;
+                alert('Cliente actualizado');
+            } else {
+                // Create
+                // Check if exists first to avoid duplicate errors unique violation if needed, but phone should be unique
+                const { error } = await supabase.from('clients').insert({
+                    name: clientFormName,
+                    phone: phoneClean,
+                    member_token: 'manual-' + Date.now(), // Temp token for manual entries
+                    visits: 0
+                });
+                if (error) throw error;
+                alert('Cliente creado');
+            }
+            setIsClientModalOpen(false);
+            fetchClients();
+        } catch (err: any) {
+            alert("Error al guardar cliente: " + err.message);
         }
     };
 
@@ -818,13 +870,18 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
 
                     {activeTab === 'clients' && (
                         <div className="space-y-4">
-                            <input
-                                type="text"
-                                placeholder="Buscar por teléfono..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-stone-900 border border-white/10 rounded-lg px-4 py-2 text-white"
-                            />
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por teléfono..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="flex-1 bg-stone-900 border border-white/10 rounded-lg px-4 py-2 text-white"
+                                />
+                                <button onClick={() => openClientModal()} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                                    <PlusCircle size={16} /> Nuevo
+                                </button>
+                            </div>
                             <div className="overflow-x-auto max-h-96">
                                 <table className="w-full text-xs text-left text-stone-300">
                                     <thead className="text-xs text-stone-400 uppercase bg-stone-700/50 sticky top-0">
@@ -843,7 +900,14 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                                 <td className="px-3 py-2 text-stone-300 font-mono">{c.phone}</td>
                                                 <td className="px-3 py-2 text-center">{c.visits}</td>
                                                 <td className="px-3 py-2 text-center text-purple-400 font-bold">{c.hair_service_count || 0}</td>
-                                                <td className="px-3 py-2 text-right">
+                                                <td className="px-3 py-2 text-right flex justify-end gap-1">
+                                                    <button
+                                                        onClick={() => openClientModal(c)}
+                                                        className="bg-blue-600/20 hover:bg-blue-600 hover:text-white text-blue-500 p-1.5 rounded transition"
+                                                        title="Editar Cliente"
+                                                    >
+                                                        <Scissors size={14} className="rotate-90" /> {/* Using scissors as edit icon for style :) or just generic edit */}
+                                                    </button>
                                                     <button
                                                         onClick={() => handleDeleteClient(c.id, c.phone)}
                                                         className="bg-red-600/20 hover:bg-red-600 hover:text-white text-red-500 p-1.5 rounded transition"
@@ -858,6 +922,43 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                 </table>
                                 {clients.length === 0 && <p className="text-center text-stone-500 py-4">No se encontraron clientes.</p>}
                             </div>
+
+                            {/* Client Modal */}
+                            {isClientModalOpen && (
+                                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                                    <div className="bg-stone-800 p-6 rounded-2xl w-full max-w-sm border border-stone-600 shadow-2xl">
+                                        <h3 className="text-xl font-bold text-white mb-4">{editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
+
+                                        <div className="space-y-3 mb-6">
+                                            <div>
+                                                <label className="text-xs text-stone-500 mb-1 block">Teléfono (ID único)</label>
+                                                <input
+                                                    className="w-full bg-stone-900 border border-stone-700 rounded p-2 text-white text-sm disabled:opacity-50"
+                                                    placeholder="+569..."
+                                                    value={clientFormPhone}
+                                                    onChange={e => setClientFormPhone(e.target.value)}
+                                                    disabled={!!editingClient} // Disable phone editing if updating to avoid ID issues for now
+                                                />
+                                                {editingClient && <p className="text-[10px] text-stone-500 mt-1">El teléfono no se puede cambiar.</p>}
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-stone-500 mb-1 block">Nombre</label>
+                                                <input
+                                                    className="w-full bg-stone-900 border border-stone-700 rounded p-2 text-white text-sm"
+                                                    placeholder="Nombre Cliente"
+                                                    value={clientFormName}
+                                                    onChange={e => setClientFormName(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setIsClientModalOpen(false)} className="flex-1 py-2 rounded bg-stone-700 text-white text-sm hover:bg-stone-600">Cancelar</button>
+                                            <button onClick={saveClient} className="flex-1 py-2 rounded bg-green-600 text-white font-bold text-sm hover:bg-green-500">Guardar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
