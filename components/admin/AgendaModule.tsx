@@ -15,6 +15,12 @@ const AgendaModule: React.FC = () => {
     const [manualBookingType, setManualBookingType] = useState<'salon' | 'domicilio' | 'bloqueo'>('salon');
     const [loading, setLoading] = useState(false);
 
+    // Quick Block State
+    const [isQuickBlockMode, setIsQuickBlockMode] = useState(false);
+    const [quickBlockStart, setQuickBlockStart] = useState<string>('9:00');
+    const [quickBlockEnd, setQuickBlockEnd] = useState<string>('21:00');
+    const [quickBlockDate, setQuickBlockDate] = useState<string>('');
+
     useEffect(() => {
         fetchBookings();
     }, [weekStart]);
@@ -116,6 +122,82 @@ const AgendaModule: React.FC = () => {
         if (!error) fetchBookings();
     };
 
+    // Quick Block Functions
+    const quickBlockDay = async (dateStr: string) => {
+        if (!window.confirm(`¿Bloquear todo el día ${dateStr}?`)) return;
+        setLoading(true);
+        const blocks = HOURS.map(time => ({
+            date: dateStr,
+            time: time,
+            name: 'BLOQUEADO',
+            phone: '00000000',
+            email: 'block@admin.com',
+            service_id: 'block',
+            service_name: 'Bloqueo',
+            is_home_service: false,
+            created_at: new Date().toISOString()
+        }));
+
+        // Filter out already booked slots
+        const existingSlots = bookings.filter(b => b.date === dateStr).map(b => b.time);
+        const newBlocks = blocks.filter(b => !existingSlots.includes(b.time));
+
+        if (newBlocks.length > 0) {
+            const { error } = await supabase.from('bookings').insert(newBlocks);
+            if (error) alert('Error: ' + error.message);
+            else fetchBookings();
+        }
+        setLoading(false);
+    };
+
+    const quickBlockRange = async () => {
+        if (!quickBlockDate) return alert('Selecciona una fecha');
+        const startIdx = HOURS.indexOf(quickBlockStart);
+        const endIdx = HOURS.indexOf(quickBlockEnd);
+        if (startIdx > endIdx) return alert('Hora inicio debe ser menor que fin');
+
+        const hoursToBlock = HOURS.slice(startIdx, endIdx + 1);
+        const existingSlots = bookings.filter(b => b.date === quickBlockDate).map(b => b.time);
+
+        const blocks = hoursToBlock
+            .filter(time => !existingSlots.includes(time))
+            .map(time => ({
+                date: quickBlockDate,
+                time: time,
+                name: 'BLOQUEADO',
+                phone: '00000000',
+                email: 'block@admin.com',
+                service_id: 'block',
+                service_name: 'Bloqueo',
+                is_home_service: false,
+                created_at: new Date().toISOString()
+            }));
+
+        if (blocks.length === 0) return alert('Todos esos horarios ya están ocupados');
+
+        setLoading(true);
+        const { error } = await supabase.from('bookings').insert(blocks);
+        if (error) alert('Error: ' + error.message);
+        else {
+            alert(`${blocks.length} horarios bloqueados`);
+            setIsQuickBlockMode(false);
+            fetchBookings();
+        }
+        setLoading(false);
+    };
+
+    const unblockDay = async (dateStr: string) => {
+        if (!window.confirm(`¿Desbloquear todo el día ${dateStr}?`)) return;
+        setLoading(true);
+        const { error } = await supabase
+            .from('bookings')
+            .delete()
+            .eq('date', dateStr)
+            .eq('name', 'BLOQUEADO');
+        if (!error) fetchBookings();
+        setLoading(false);
+    };
+
     return (
         <div className="bg-white p-4 rounded-xl shadow-sm border border-stone-200 h-[80vh] flex flex-col">
             {/* Header */}
@@ -132,12 +214,85 @@ const AgendaModule: React.FC = () => {
                         <button onClick={handleNextWeek} className="p-1 hover:bg-stone-200 rounded"><ChevronRight size={20} /></button>
                     </div>
                 </div>
-                <div className="flex gap-2 text-xs">
+                <div className="flex gap-2 text-xs items-center">
+                    <button
+                        onClick={() => setIsQuickBlockMode(!isQuickBlockMode)}
+                        className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition ${isQuickBlockMode ? 'bg-red-600 text-white' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
+                    >
+                        <Lock size={14} /> {isQuickBlockMode ? 'Cerrar' : 'Bloqueo Rápido'}
+                    </button>
                     <div className="flex items-center gap-1"><div className="w-3 h-3 bg-purple-100 border border-purple-300 rounded"></div> Salón</div>
                     <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></div> Domicilio</div>
                     <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div> Bloqueado</div>
                 </div>
             </div>
+
+            {/* Quick Block Panel */}
+            {isQuickBlockMode && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 animate-in slide-in-from-top duration-200">
+                    <div className="flex flex-wrap gap-4 items-end">
+                        <div>
+                            <label className="text-xs text-red-600 font-bold block mb-1">Fecha</label>
+                            <select
+                                value={quickBlockDate}
+                                onChange={e => setQuickBlockDate(e.target.value)}
+                                className="border border-red-300 rounded px-2 py-1 text-sm"
+                            >
+                                <option value="">Seleccionar...</option>
+                                {weekDays.map(d => (
+                                    <option key={d.toISOString()} value={d.toISOString().split('T')[0]}>
+                                        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][d.getDay()]} {d.getDate()}/{d.getMonth() + 1}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-xs text-red-600 font-bold block mb-1">Desde</label>
+                            <select
+                                value={quickBlockStart}
+                                onChange={e => setQuickBlockStart(e.target.value)}
+                                className="border border-red-300 rounded px-2 py-1 text-sm"
+                            >
+                                {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-xs text-red-600 font-bold block mb-1">Hasta</label>
+                            <select
+                                value={quickBlockEnd}
+                                onChange={e => setQuickBlockEnd(e.target.value)}
+                                className="border border-red-300 rounded px-2 py-1 text-sm"
+                            >
+                                {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
+                            </select>
+                        </div>
+                        <button
+                            onClick={quickBlockRange}
+                            disabled={loading || !quickBlockDate}
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded font-bold text-sm disabled:opacity-50"
+                        >
+                            {loading ? 'Bloqueando...' : 'Bloquear Rango'}
+                        </button>
+                        <div className="border-l border-red-300 pl-4 ml-2">
+                            <span className="text-xs text-red-600 mr-2">Día completo:</span>
+                            {weekDays.map(d => {
+                                const dateStr = d.toISOString().split('T')[0];
+                                const hasBlocks = bookings.some(b => b.date === dateStr && b.name === 'BLOQUEADO');
+                                return (
+                                    <button
+                                        key={dateStr}
+                                        onClick={() => hasBlocks ? unblockDay(dateStr) : quickBlockDay(dateStr)}
+                                        className={`px-2 py-0.5 mx-0.5 rounded text-xs font-bold ${hasBlocks ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-red-600 text-white hover:bg-red-700'}`}
+                                        title={hasBlocks ? 'Desbloquear día' : 'Bloquear día'}
+                                    >
+                                        {['D', 'L', 'M', 'X', 'J', 'V', 'S'][d.getDay()]}{d.getDate()}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Grid */}
             <div className="flex-1 overflow-auto border border-stone-200 rounded-lg">
