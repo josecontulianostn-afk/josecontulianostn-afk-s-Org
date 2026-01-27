@@ -77,6 +77,8 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     const [activeTab, setActiveTab] = useState<'loyalty' | 'hair' | 'inventory' | 'agenda' | 'clients' | 'expenses'>('loyalty');
     const [serviceType, setServiceType] = useState('Corte');
     const [servicePrice, setServicePrice] = useState('7000');
+    const [extraCost, setExtraCost] = useState(''); // Costos adicionales (luz, insumos, etc)
+    const [extraCostDetail, setExtraCostDetail] = useState('');
     const [visitAmount, setVisitAmount] = useState('0'); // New: Amount for loyalty visits
     const [bookings, setBookings] = useState<any[]>([]); // New: Agendas
 
@@ -327,18 +329,47 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
             if (activeTab === 'hair') {
                 // Use new specific RPC for Hair Service Manual Entry
                 const price = parseInt(servicePrice) || 0;
+                const cost = parseInt(extraCost) || 0;
+
+                // Note: RPC might need update to accept extra costs, or we update transaction after?
+                // For now, let's update the transaction immediately after if RPC returns success/transaction_id
+                // OR better: Just rely on recording transaction separately if RPC doesn't handle it fully?
+                // Actually, add_hair_service_by_phone creates a 'hair_service_log' entry but maybe not 'transactions'?
+                // Checking previous code: we rely on separate transaction recording usually?
+                // Wait, in handleAddVisit for 'hair' tab, we called the RPC.
+                // Let's check if the RPC creates a transaction. If not, we do it here.
+
+                // Assuming we want to record the transaction with details:
+
                 const { data, error } = await supabase.rpc('add_hair_service_by_phone', {
                     phone_input: phone,
                     service_type: serviceType,
                     service_price: price,
-                    notes_input: 'Ingreso Manual desde Admin'
+                    notes_input: `Ingreso Manual. Extras: ${extraCostDetail} ($${cost})`
                 });
 
                 if (error) throw error;
 
                 if (data.success) {
+                    // Record financial transaction separately to ensure costs are tracked
+                    // First get client ID from phone (RPC should ideally return it or we fetch)
+                    const { data: clientData } = await supabase.from('clients').select('id').eq('phone', phone).single();
+
+                    if (clientData) {
+                        await supabase.from('transactions').insert({
+                            client_id: clientData.id,
+                            amount: price,
+                            type: 'service',
+                            description: `Servicio: ${serviceType}`,
+                            additional_cost: cost,
+                            additional_cost_detail: extraCostDetail
+                        });
+                    }
+
                     setMessage(`✅ Servicio registrado. Total: ${data.new_total_services}. ${data.discount_5th_unlocked ? '¡DESCUENTO 10% DESBLOQUEADO!' : ''} ${data.free_cut_unlocked ? '¡CORTE GRATIS DESBLOQUEADO!' : ''}`);
                     setPhone('');
+                    setExtraCost('');
+                    setExtraCostDetail('');
                 } else {
                     setMessage('Error: ' + data.message);
                 }
@@ -678,6 +709,22 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                 placeholder="Precio Real"
                                 className="w-full bg-stone-900 border border-white/10 rounded-lg px-3 py-2 text-white"
                             />
+                            <div className="flex gap-2">
+                                <input
+                                    type="number"
+                                    value={extraCost}
+                                    onChange={(e) => setExtraCost(e.target.value)}
+                                    placeholder="Costo Extra ($)"
+                                    className="w-1/3 bg-stone-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+                                />
+                                <input
+                                    type="text"
+                                    value={extraCostDetail}
+                                    onChange={(e) => setExtraCostDetail(e.target.value)}
+                                    placeholder="Detalle (ej: Luz, Café)"
+                                    className="w-2/3 bg-stone-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+                                />
+                            </div>
                         </div>
                     )}
 

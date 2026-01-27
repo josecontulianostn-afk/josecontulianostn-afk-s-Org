@@ -3,6 +3,7 @@ import { supabase } from '../../services/supabaseClient';
 import { PERFUMES, SERVICES } from '../../constants';
 import { VisitRegistration, InventoryLog } from '../../types';
 import VisitValidationModal from './VisitValidationModal';
+import FinancialDashboard from './FinancialDashboard';
 import { QRCodeSVG } from 'qrcode.react';
 import { Download, TrendingUp, Users, DollarSign, Package, PieChart, BarChart as BarChartIcon, ScatterChart as ScatterChartIcon, QrCode, ClipboardCheck, History } from 'lucide-react';
 import {
@@ -217,7 +218,7 @@ const InventoryHistoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
 const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
-    const [timeRange, setTimeRange] = useState<'week' | 'month'>('month');
+    const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('month');
 
     // KPIs
     const [totalNet, setTotalNet] = useState(0);
@@ -229,7 +230,7 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [topProducts, setTopProducts] = useState<any[]>([]);
     const [bcgMatrix, setBcgMatrix] = useState<ProductBCG[]>([]);
 
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'validaciones'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'validaciones' | 'finanzas'>('dashboard');
     const [clients, setClients] = useState<any[]>([]);
     const [editingClient, setEditingClient] = useState<any>(null);
 
@@ -242,13 +243,17 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [totalInventoryValue, setTotalInventoryValue] = useState(0);
     const [totalInventoryItems, setTotalInventoryItems] = useState(0);
 
+    // Expenses Data for Financial Dashboard
+    const [expenses, setExpenses] = useState<any[]>([]);
+
     // Inventory History
     const [showInventoryHistory, setShowInventoryHistory] = useState(false);
 
     // Refresh data when tab changes or time range changes
     useEffect(() => {
-        if (activeTab === 'dashboard') {
+        if (activeTab === 'dashboard' || activeTab === 'finanzas') {
             fetchDashboardData();
+            if (activeTab === 'finanzas') fetchExpenses();
         } else if (activeTab === 'clients') {
             fetchClients();
         } else if (activeTab === 'validaciones') {
@@ -259,13 +264,19 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
         fetchInventory();
     }, [activeTab, timeRange]);
 
+    const fetchExpenses = async () => {
+        const { data } = await supabase.from('expenses').select('*');
+        if (data) setExpenses(data);
+    };
+
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
             // 1. Fetch Transactions (Current Period)
             const rangeDate = new Date();
             if (timeRange === 'week') rangeDate.setDate(rangeDate.getDate() - 7);
-            else rangeDate.setDate(rangeDate.getDate() - 30);
+            else if (timeRange === 'month') rangeDate.setDate(rangeDate.getDate() - 30);
+            else rangeDate.setHours(0, 0, 0, 0); // Day = Today from 00:00
 
             const { data: transData, error: transError } = await supabase
                 .from('transactions')
@@ -278,7 +289,8 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             // 2. Fetch Transactions (Previous Period for Growth)
             const prevRangeDate = new Date(rangeDate);
             if (timeRange === 'week') prevRangeDate.setDate(prevRangeDate.getDate() - 7);
-            else prevRangeDate.setDate(prevRangeDate.getDate() - 30);
+            else if (timeRange === 'month') prevRangeDate.setDate(prevRangeDate.getDate() - 30);
+            else prevRangeDate.setDate(prevRangeDate.getDate() - 1); // Previous Day
 
             const { data: prevTransData } = await supabase
                 .from('transactions')
@@ -546,6 +558,12 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                         </span>
                     )}
                 </button>
+                <button
+                    onClick={() => setActiveTab('finanzas')}
+                    className={`px-4 py-2 font-bold transition ${activeTab === 'finanzas' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}
+                >
+                    Finanzas
+                </button>
             </div>
 
             {activeTab === 'validaciones' && (
@@ -615,6 +633,15 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                         )}
                     </div>
                 </div>
+            )}
+
+            {activeTab === 'finanzas' && (
+                <FinancialDashboard
+                    transactions={transactions}
+                    expenses={expenses} // We need to fetch expenses in ManagementDashboard
+                    timeRange={timeRange as any}
+                    onTimeRangeChange={(r) => setTimeRange(r)}
+                />
             )}
 
             {activeTab === 'dashboard' ? (
