@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Search, QrCode, X, Scissors, PlusCircle, Save } from 'lucide-react';
+import { Shield, Search, QrCode, X, Scissors, PlusCircle, Save, ChevronLeft, ChevronRight, Calendar, Trash2 } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 import { classifyExpenseStatic } from '../../services/staticChatService';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
-import { PERFUMES, GIFTS } from '../../constants';
+import { PERFUMES, GIFTS, SERVICES } from '../../constants';
 
 interface ServicePanelProps {
     onLogout: () => void;
@@ -106,7 +106,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     const [posProductSearch, setPosProductSearch] = useState('');
     const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
 
-    const addToCart = (product: any, type: 'product' | 'gift') => {
+    const addToCart = (product: any, type: 'product' | 'gift' | 'service') => {
         const existing = cart.find(item => item.id === product.id && item.type === type);
         if (existing) {
             setCart(cart.map(item => item.id === product.id && item.type === type ? { ...item, qty: item.qty + 1 } : item));
@@ -115,9 +115,39 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
             let price = 0;
             if (type === 'product') price = product.price10ml || 0; // Default to 10ml for now or add 5ml selector later
             if (type === 'gift') price = product.price || 0;
+            if (type === 'service') price = product.price || 0;
 
             setCart([...cart, { ...product, type, qty: 1, price, variant: type === 'product' ? '10ml' : 'standard' }]);
         }
+    };
+
+    // Manual Item State
+    const [manualItemName, setManualItemName] = useState('');
+    const [manualItemPrice, setManualItemPrice] = useState('');
+
+    const addManualItem = () => {
+        if (!manualItemName || !manualItemPrice) return alert("Ingrese nombre y precio");
+        const price = parseInt(manualItemPrice);
+        if (isNaN(price)) return alert("Precio inválido");
+
+        const newItem = {
+            id: 'manual-' + Date.now(),
+            name: manualItemName,
+            price: price,
+            type: 'service', // Treat as service (non-stock)
+            qty: 1,
+            variant: 'manual',
+            stock: false
+        };
+        setCart([...cart, newItem]);
+        setManualItemName('');
+        setManualItemPrice('');
+    };
+
+    const updateCartPrice = (id: string, newPrice: string) => {
+        const price = parseInt(newPrice);
+        if (isNaN(price)) return;
+        setCart(cart.map(item => item.id === id ? { ...item, price } : item));
     };
 
     const removeFromCart = (id: string) => {
@@ -234,17 +264,110 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     };
 
     const fetchBookings = async () => {
-        const today = new Date().toISOString().split('T')[0];
-        // Fetch bookings from today onwards
+        // Fetch all bookings (optimization: fetch only current month/week range in future)
         const { data, error } = await supabase
             .from('bookings')
             .select('*')
-            .gte('date', today)
             .order('date', { ascending: true })
             .order('time', { ascending: true });
 
         if (error) console.error('Error fetching bookings:', error);
         else setBookings(data || []);
+    };
+
+    // Agenda State
+    const [weekStart, setWeekStart] = useState(new Date()); // Should default to current week's Monday
+    const [selectedSlot, setSelectedSlot] = useState<{ date: string, time: string } | null>(null);
+    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+
+    // Manual Booking Form State
+    const [manualBookingName, setManualBookingName] = useState('');
+    const [manualBookingPhone, setManualBookingPhone] = useState('');
+    const [manualBookingService, setManualBookingService] = useState('Corte');
+    const [manualBookingType, setManualBookingType] = useState<'salon' | 'domicilio' | 'bloqueo'>('salon');
+
+    const getWeekDays = (start: Date) => {
+        const days = [];
+        // Adjust to Monday
+        const day = start.getDay();
+        const diff = start.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+        const monday = new Date(start);
+        monday.setDate(diff);
+
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            days.push(d);
+        }
+        return days;
+    };
+
+    const weekDays = getWeekDays(weekStart);
+    const HOURS = Array.from({ length: 13 }, (_, i) => `${i + 9}:00`); // 9:00 to 21:00
+
+    const handlePrevWeek = () => {
+        const newDate = new Date(weekStart);
+        newDate.setDate(weekStart.getDate() - 7);
+        setWeekStart(newDate);
+    };
+
+    const handleNextWeek = () => {
+        const newDate = new Date(weekStart);
+        newDate.setDate(weekStart.getDate() + 7);
+        setWeekStart(newDate);
+    };
+
+    const handleSlotClick = (dateStr: string, time: string) => {
+        // Check if occupied
+        const booking = bookings.find(b => b.date === dateStr && b.time === time);
+        if (booking) {
+            if (window.confirm(`¿${booking.name === 'BLOQUEADO' ? 'Desbloquear' : 'Eliminar reserva de ' + booking.name}?`)) {
+                deleteBooking(booking.id);
+            }
+        } else {
+            // Open Modal
+            setSelectedSlot({ date: dateStr, time });
+            setManualBookingType('salon'); // Reset
+            setManualBookingName('');
+            setManualBookingPhone('');
+            setIsBookingModalOpen(true);
+        }
+    };
+
+    const saveBooking = async () => {
+        if (!selectedSlot) return;
+
+        const isBlock = manualBookingType === 'bloqueo';
+        const name = isBlock ? 'BLOQUEADO' : manualBookingName;
+
+        if (!name && !isBlock) return alert("Ingrese nombre");
+
+        try {
+            const { error } = await supabase.from('bookings').insert({
+                date: selectedSlot.date,
+                time: selectedSlot.time,
+                name: name,
+                phone: manualBookingPhone || '00000000',
+                email: 'manual@admin.com',
+                service_id: isBlock ? 'block' : 'manual',
+                service_name: isBlock ? 'Bloqueo' : manualBookingService,
+                is_home_service: manualBookingType === 'domicilio',
+                created_at: new Date().toISOString()
+            });
+
+            if (error) throw error;
+
+            alert(isBlock ? "Bloqueo registrado" : "Reserva creada");
+            setIsBookingModalOpen(false);
+            fetchBookings();
+        } catch (err: any) {
+            alert("Error: " + err.message);
+        }
+    };
+
+    const deleteBooking = async (id: string) => {
+        const { error } = await supabase.from('bookings').delete().eq('id', id);
+        if (!error) fetchBookings();
     };
 
     const fetchClients = async () => {
@@ -742,44 +865,136 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                     )}
 
                     {activeTab === 'agenda' && (
-                        <div className="overflow-x-auto">
-                            {bookings.length === 0 ? (
-                                <p className="text-center text-stone-400 py-8">No hay horas agendadas próximas.</p>
-                            ) : (
-                                <table className="w-full text-xs text-left text-stone-300">
-                                    <thead className="text-xs text-stone-400 uppercase bg-stone-700/50">
-                                        <tr>
-                                            <th className="px-3 py-2">Fecha/Hora</th>
-                                            <th className="px-3 py-2">Cliente</th>
-                                            <th className="px-3 py-2">Servicio</th>
-                                            <th className="px-3 py-2">Contacto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {bookings.map((b) => (
-                                            <tr key={b.id} className="border-b border-stone-700 hover:bg-stone-700/20">
-                                                <td className="px-3 py-2">
-                                                    <div className="font-bold text-white">{b.date}</div>
-                                                    <div className="text-amber-400">{b.time}</div>
-                                                </td>
-                                                <td className="px-3 py-2 font-medium text-white">{b.name}</td>
-                                                <td className="px-3 py-2">
-                                                    {b.is_home_service ? (
-                                                        <span className="text-blue-400 flex items-center gap-1"><span className="text-[10px]">🏠</span> Domicilio</span>
-                                                    ) : (
-                                                        <span className="text-purple-400">Salon</span>
-                                                    )}
-                                                    {b.address && <div className="text-[10px] text-stone-500 truncate max-w-[100px]">{b.address}</div>}
-                                                </td>
-                                                <td className="px-3 py-2">
-                                                    <a href={`https://wa.me/${b.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-green-400 hover:underline flex items-center gap-1">
-                                                        {b.phone}
-                                                    </a>
-                                                </td>
-                                            </tr>
+                        <div className="space-y-4">
+                            {/* Week Controls */}
+                            <div className="flex items-center justify-between bg-stone-700/50 p-3 rounded-lg">
+                                <button onClick={handlePrevWeek} className="p-2 hover:bg-stone-600 rounded-full"><ChevronLeft size={20} className="text-stone-300" /></button>
+                                <div className="text-center">
+                                    <div className="text-white font-bold">{weekDays[0].toLocaleDateString('es-CL')} - {weekDays[6].toLocaleDateString('es-CL')}</div>
+                                    <div className="text-xs text-stone-400">Semana Actual</div>
+                                </div>
+                                <button onClick={handleNextWeek} className="p-2 hover:bg-stone-600 rounded-full"><ChevronRight size={20} className="text-stone-300" /></button>
+                            </div>
+
+                            {/* Calendar Grid */}
+                            <div className="overflow-x-auto">
+                                <div className="min-w-[800px]">
+                                    {/* Header Days */}
+                                    <div className="grid grid-cols-8 gap-1 mb-1">
+                                        <div className="bg-stone-800 p-2 rounded text-center text-xs font-bold text-stone-500">HORA</div>
+                                        {weekDays.map((d, i) => (
+                                            <div key={i} className={`p-2 rounded text-center text-xs font-bold ${d.toDateString() === new Date().toDateString() ? 'bg-purple-900/50 text-purple-200' : 'bg-stone-800 text-stone-400'}`}>
+                                                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][d.getDay()]} {d.getDate()}
+                                            </div>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </div>
+
+                                    {/* Time Slots */}
+                                    <div className="space-y-1">
+                                        {HOURS.map(hour => (
+                                            <div key={hour} className="grid grid-cols-8 gap-1 h-16">
+                                                {/* Time Label */}
+                                                <div className="bg-stone-800/50 flex items-center justify-center text-xs font-mono text-stone-500 rounded">{hour}</div>
+
+                                                {/* Days Columns */}
+                                                {weekDays.map((day, i) => {
+                                                    const dateStr = day.toISOString().split('T')[0];
+                                                    const booking = bookings.find(b => b.date === dateStr && b.time === hour);
+
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            onClick={() => handleSlotClick(dateStr, hour)}
+                                                            className={`
+                                                                relative rounded p-1 border border-white/5 cursor-pointer transition
+                                                                ${booking
+                                                                    ? (booking.name === 'BLOQUEADO' ? 'bg-red-900/30 border-red-800' : (booking.is_home_service ? 'bg-blue-900/30 border-blue-800' : 'bg-green-900/30 border-green-800'))
+                                                                    : 'bg-stone-900 hover:bg-stone-800'
+                                                                }
+                                                            `}
+                                                        >
+                                                            {booking ? (
+                                                                <div className="h-full flex flex-col justify-center items-center text-center overflow-hidden">
+                                                                    {booking.name === 'BLOQUEADO' ? (
+                                                                        <div className="text-red-400 text-[10px] font-bold flex flex-col items-center">
+                                                                            <Shield size={12} className="mb-1" />
+                                                                            BLOQ
+                                                                        </div>
+                                                                    ) : (
+                                                                        <>
+                                                                            <div className="text-white text-[10px] font-bold truncate w-full">{booking.name}</div>
+                                                                            <div className="text-[9px] text-stone-400 truncate w-full">{booking.service_name || 'Servicio'}</div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="h-full flex items-center justify-center opacity-0 hover:opacity-100">
+                                                                    <PlusCircle size={14} className="text-stone-600" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Booking Modal */}
+                            {isBookingModalOpen && (
+                                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                                    <div className="bg-stone-800 p-6 rounded-2xl w-full max-w-sm border border-stone-600 shadow-2xl">
+                                        <h3 className="text-xl font-bold text-white mb-4">Nueva Reserva</h3>
+                                        <div className="text-stone-400 text-sm mb-4">
+                                            {selectedSlot?.date} - {selectedSlot?.time}
+                                        </div>
+
+                                        <div className="space-y-3 mb-6">
+                                            <div>
+                                                <label className="text-xs text-stone-500 mb-1 block">Tipo</label>
+                                                <div className="flex bg-stone-900 p-1 rounded-lg">
+                                                    <button onClick={() => setManualBookingType('salon')} className={`flex-1 py-1 text-xs rounded ${manualBookingType === 'salon' ? 'bg-stone-700 text-white' : 'text-stone-500'}`}>Salón</button>
+                                                    <button onClick={() => setManualBookingType('domicilio')} className={`flex-1 py-1 text-xs rounded ${manualBookingType === 'domicilio' ? 'bg-stone-700 text-white' : 'text-stone-500'}`}>Domicilio</button>
+                                                    <button onClick={() => setManualBookingType('bloqueo')} className={`flex-1 py-1 text-xs rounded ${manualBookingType === 'bloqueo' ? 'bg-red-900/50 text-red-200' : 'text-stone-500'}`}>Bloquear</button>
+                                                </div>
+                                            </div>
+
+                                            {manualBookingType !== 'bloqueo' && (
+                                                <>
+                                                    <input
+                                                        className="w-full bg-stone-900 border border-stone-700 rounded p-2 text-white text-sm"
+                                                        placeholder="Nombre Cliente"
+                                                        value={manualBookingName}
+                                                        onChange={e => setManualBookingName(e.target.value)}
+                                                    />
+                                                    <input
+                                                        className="w-full bg-stone-900 border border-stone-700 rounded p-2 text-white text-sm"
+                                                        placeholder="Teléfono (Opcional)"
+                                                        value={manualBookingPhone}
+                                                        onChange={e => setManualBookingPhone(e.target.value)}
+                                                    />
+                                                    <select
+                                                        className="w-full bg-stone-900 border border-stone-700 rounded p-2 text-white text-sm"
+                                                        value={manualBookingService}
+                                                        onChange={e => setManualBookingService(e.target.value)}
+                                                    >
+                                                        <option value="Corte">Corte</option>
+                                                        <option value="Color">Color</option>
+                                                        <option value="Alisado">Alisado</option>
+                                                        <option value="Masaje">Masaje</option>
+                                                        <option value="Otro">Otro</option>
+                                                    </select>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setIsBookingModalOpen(false)} className="flex-1 py-2 rounded bg-stone-700 text-white text-sm hover:bg-stone-600">Cancelar</button>
+                                            <button onClick={saveBooking} className="flex-1 py-2 rounded bg-white text-black font-bold text-sm hover:bg-gray-200">Guardar</button>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     )}
@@ -836,8 +1051,42 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                         value={posProductSearch}
                                         onChange={e => setPosProductSearch(e.target.value)}
                                     />
+
+                                    {/* Manual Item Add */}
+                                    <div className="bg-stone-800 p-2 rounded mb-3 flex gap-2">
+                                        <input
+                                            placeholder="Item Manual"
+                                            className="w-1/2 p-2 rounded bg-stone-900 border border-white/10 text-xs text-white"
+                                            value={manualItemName}
+                                            onChange={e => setManualItemName(e.target.value)}
+                                        />
+                                        <input
+                                            placeholder="$"
+                                            type="number"
+                                            className="w-1/4 p-2 rounded bg-stone-900 border border-white/10 text-xs text-white"
+                                            value={manualItemPrice}
+                                            onChange={e => setManualItemPrice(e.target.value)}
+                                        />
+                                        <button onClick={addManualItem} className="w-1/4 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold flex items-center justify-center">
+                                            <PlusCircle size={14} className="mr-1" /> Add
+                                        </button>
+                                    </div>
+
                                     <div className="h-64 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                                        {/* Services */}
+                                        <div className="text-stone-500 text-[10px] uppercase font-bold mt-2 mb-1">Servicios</div>
+                                        {SERVICES.filter(s => s.name.toLowerCase().includes(posProductSearch.toLowerCase())).map(s => (
+                                            <div key={s.id} className="flex items-center justify-between bg-stone-800 p-2 rounded hover:bg-stone-700 cursor-pointer" onClick={() => addToCart(s, 'service')}>
+                                                <div>
+                                                    <div className="text-white text-sm font-medium">{s.name}</div>
+                                                    <div className="text-stone-400 text-[10px]">${s.price.toLocaleString()}</div>
+                                                </div>
+                                                <button className="text-green-400 hover:text-green-300"><PlusCircle size={16} /></button>
+                                            </div>
+                                        ))}
+
                                         {/* Perfumes */}
+                                        <div className="text-stone-500 text-[10px] uppercase font-bold mt-2 mb-1">Perfumes</div>
                                         {PERFUMES.filter(p => p.name.toLowerCase().includes(posProductSearch.toLowerCase())).map(p => (
                                             <div key={p.id} className="flex items-center justify-between bg-stone-800 p-2 rounded hover:bg-stone-700 cursor-pointer" onClick={() => addToCart(p, 'product')}>
                                                 <div>
@@ -848,6 +1097,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                             </div>
                                         ))}
                                         {/* Gifts */}
+                                        <div className="text-stone-500 text-[10px] uppercase font-bold mt-2 mb-1">Regalos</div>
                                         {GIFTS.filter(g => g.name.toLowerCase().includes(posProductSearch.toLowerCase())).map(g => (
                                             <div key={g.id} className="flex items-center justify-between bg-stone-800 p-2 rounded hover:bg-stone-700 cursor-pointer" onClick={() => addToCart(g, 'gift')}>
                                                 <div>
@@ -912,7 +1162,16 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                                 <div key={idx} className="flex justify-between items-center text-sm border-b border-stone-100 pb-2">
                                                     <div className="flex-1">
                                                         <div className="font-bold text-stone-800">{item.name}</div>
-                                                        <div className="text-xs text-stone-500">${item.price.toLocaleString()} x {item.qty}</div>
+                                                        <div className="flex items-center gap-1 text-xs text-stone-500">
+                                                            <span>$</span>
+                                                            <input
+                                                                type="number"
+                                                                value={item.price}
+                                                                onChange={(e) => updateCartPrice(item.id, e.target.value)}
+                                                                className="w-16 bg-stone-50 border rounded px-1 text-xs text-stone-900"
+                                                            />
+                                                            <span>x {item.qty}</span>
+                                                        </div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <div className="font-bold text-stone-900">${(item.price * item.qty).toLocaleString()}</div>
