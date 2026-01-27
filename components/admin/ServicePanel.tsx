@@ -593,6 +593,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                 <table className="w-full text-xs text-left text-stone-300">
                                     <thead className="text-xs text-stone-400 uppercase bg-stone-700/50 sticky top-0">
                                         <tr>
+                                            <th className="px-3 py-2">Nombre</th>
                                             <th className="px-3 py-2">Teléfono</th>
                                             <th className="px-3 py-2 text-center">Visitas</th>
                                             <th className="px-3 py-2 text-center">Peluquería</th>
@@ -602,7 +603,8 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                     <tbody>
                                         {clients.map((c) => (
                                             <tr key={c.id} className="border-b border-stone-700 hover:bg-stone-700/20">
-                                                <td className="px-3 py-2 text-white font-mono">{c.phone}</td>
+                                                <td className="px-3 py-2 text-white font-medium">{c.name || 'Sin nombre'}</td>
+                                                <td className="px-3 py-2 text-stone-300 font-mono">{c.phone}</td>
                                                 <td className="px-3 py-2 text-center">{c.visits}</td>
                                                 <td className="px-3 py-2 text-center text-purple-400 font-bold">{c.hair_service_count || 0}</td>
                                                 <td className="px-3 py-2 text-right">

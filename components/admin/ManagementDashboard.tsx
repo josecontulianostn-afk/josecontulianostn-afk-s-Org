@@ -464,6 +464,7 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
         const { error } = await supabase
             .from('clients')
             .update({
+                name: editingClient.name,
                 phone: editingClient.phone,
                 visits: editingClient.visits
             })
@@ -874,7 +875,8 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                         <table className="w-full text-sm text-left">
                             <thead className="text-xs uppercase bg-stone-50 text-stone-500">
                                 <tr>
-                                    <th className="px-6 py-3">Teléfono / Cliente</th>
+                                    <th className="px-6 py-3">Nombre</th>
+                                    <th className="px-6 py-3">Teléfono</th>
                                     <th className="px-6 py-3 text-center">Visitas (Lealtad)</th>
                                     <th className="px-6 py-3">Última Visita</th>
                                     <th className="px-6 py-3 text-right">Acciones</th>
@@ -883,7 +885,8 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                             <tbody>
                                 {clients.map((c) => (
                                     <tr key={c.id} className="border-b border-stone-100 hover:bg-stone-50">
-                                        <td className="px-6 py-4 font-medium">{c.phone}</td>
+                                        <td className="px-6 py-4 font-bold text-stone-800">{c.name || 'Sin nombre'}</td>
+                                        <td className="px-6 py-4 font-mono text-stone-600">{c.phone}</td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-bold">
                                                 {c.visits}
@@ -917,6 +920,15 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                     <div className="bg-white p-6 rounded-2xl w-full max-w-sm">
                         <h3 className="text-xl font-bold mb-4">Editar Cliente</h3>
                         <form onSubmit={handleUpdateClient} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-stone-700 mb-1">Nombre</label>
+                                <input
+                                    type="text"
+                                    value={editingClient.name || ''}
+                                    onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg"
+                                />
+                            </div>
                             <div>
                                 <label className="block text-sm font-bold text-stone-700 mb-1">Teléfono</label>
                                 <input
