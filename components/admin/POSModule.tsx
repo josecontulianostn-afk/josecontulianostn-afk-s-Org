@@ -172,9 +172,9 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
         }
     };
 
-    const filteredPerfumes = PERFUMES.filter(p => p.name.toLowerCase().includes(posProductSearch.toLowerCase()));
-    const filteredServices = SERVICES.filter(s => s.name.toLowerCase().includes(posProductSearch.toLowerCase()));
-    const filteredInventory = inventoryProducts.filter(p => p.name.toLowerCase().includes(posProductSearch.toLowerCase()));
+    const filteredPerfumes = PERFUMES.filter(p => p.name?.toLowerCase().includes(posProductSearch.toLowerCase()));
+    const filteredServices = SERVICES.filter(s => s.name?.toLowerCase().includes(posProductSearch.toLowerCase()));
+    const filteredInventory = inventoryProducts.filter(p => p.name?.toLowerCase().includes(posProductSearch.toLowerCase()));
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[80vh]">
