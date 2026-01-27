@@ -126,25 +126,46 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     const [manualItemPrice, setManualItemPrice] = useState('');
 
     const addManualItem = () => {
-        if (!manualItemName || !manualItemPrice) return alert("Ingrese nombre y precio");
+        if (!manualItemName || !manualItemPrice) {
+            alert("Por favor ingrese nombre y precio del item.");
+            return;
+        }
         const price = parseInt(manualItemPrice);
-        if (isNaN(price)) return alert("Precio inválido");
+        if (isNaN(price)) {
+            alert("El precio debe ser un número válido.");
+            return;
+        }
 
         const newItem = {
             id: 'manual-' + Date.now(),
             name: manualItemName,
             price: price,
-            type: 'service', // Treat as service (non-stock)
+            type: 'service',
             qty: 1,
             variant: 'manual',
             stock: false
         };
-        setCart([...cart, newItem]);
+
+        // Use functional state update to ensure latest cart
+        setCart(prev => [...prev, newItem]);
+
         setManualItemName('');
         setManualItemPrice('');
+
+        // Optional: Small feedback or scroll to cart? 
+        // For now, simple alert if on mobile might be annoying but clear. 
+        // Better: Use a toast message state?
+        // Reuse 'message' state for feedback
+        setMessage(`Item "${manualItemName}" agregado al carrito ($${price})`);
+        setTimeout(() => setMessage(''), 3000);
     };
 
     const updateCartPrice = (id: string, newPrice: string) => {
+        // Allow empty string to let user clear input
+        if (newPrice === '') {
+            setCart(cart.map(item => item.id === id ? { ...item, price: 0 } : item)); // Set to 0 temporarily
+            return;
+        }
         const price = parseInt(newPrice);
         if (isNaN(price)) return;
         setCart(cart.map(item => item.id === id ? { ...item, price } : item));
