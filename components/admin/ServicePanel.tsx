@@ -192,11 +192,10 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
         setIsCheckoutLoading(true);
         try {
             const clientId = posClient ? posClient.id : null;
-            // Note: If transactions require client_id, sure to handle nullable or specific ID.
 
             for (const item of cart) {
                 // 1. Inventory Logic (if product/perfume)
-                if (item.type === 'product' && item.stock !== false) { // stock: false means no tracking needed? check constant
+                if (item.type === 'product' && item.stock !== false) {
                     const { error: invError } = await supabase.rpc('adjust_inventory', {
                         p_product_id: item.id,
                         p_delta: -item.qty,
@@ -206,10 +205,8 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                 }
 
                 // 2. Transaction Logic
-                // We'll insert one transaction per line item for better tracking for now, or aggregate?
-                // Per item allows detailed analysis.
                 const { error: txError } = await supabase.from('transactions').insert({
-                    client_id: clientId, // nullable?
+                    client_id: clientId,
                     amount: item.price * item.qty,
                     type: item.type === 'service' ? 'service' : 'product',
                     description: `POS: ${item.name} (${item.variant}) x${item.qty}`,
@@ -218,9 +215,30 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
 
                 if (txError) {
                     console.error("Tx Error", txError);
-                    // If client_id is mandatory and we sent null, this will fail.
-                    // We might need a catch here to alert.
                     throw txError;
+                }
+            }
+
+            // 3. Update client visits if a client was selected
+            if (clientId) {
+                const hasService = cart.some(item => item.type === 'service');
+                if (hasService) {
+                    // Increment visits for service sales
+                    const { error: visitError } = await supabase
+                        .from('clients')
+                        .update({
+                            visits: (posClient.visits || 0) + 1,
+                            last_visit: new Date().toISOString()
+                        })
+                        .eq('id', clientId);
+
+                    if (visitError) console.error("Error updating visits:", visitError);
+                } else {
+                    // Just update last_visit for product sales
+                    await supabase
+                        .from('clients')
+                        .update({ last_visit: new Date().toISOString() })
+                        .eq('id', clientId);
                 }
             }
 
