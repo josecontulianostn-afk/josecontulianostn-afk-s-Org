@@ -306,7 +306,7 @@ export const PERFUMES: Perfume[] = [
     stock: true,
     priceFullBottle: 5990,
     isSpray: true,
-    image: '/images/perfumes/lattafa-yara-tous.png', // Using EDP image as placeholder
+    image: '/images/perfumes/lattafa-yara-tous-spray.png',
     notes: ['Mango', 'Coco', 'Vainilla'],
     category: 'arab'
   },
