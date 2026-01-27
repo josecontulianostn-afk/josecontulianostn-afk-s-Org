@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
-import { ChevronLeft, ChevronRight, X, Calendar, Edit2, Trash2, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Calendar, Edit2, Trash2, Lock, Clock } from 'lucide-react';
 
 const AgendaModule: React.FC = () => {
     const [bookings, setBookings] = useState<any[]>([]);
@@ -56,6 +56,25 @@ const AgendaModule: React.FC = () => {
 
     const weekDays = getWeekDays(weekStart);
     const HOURS = Array.from({ length: 13 }, (_, i) => `${i + 9}:00`); // 9:00 to 21:00
+
+    // Helper: Check if a slot time has already passed (for auto-blocking past slots)
+    const isSlotPassed = (dateStr: string, time: string): boolean => {
+        const now = new Date();
+        const slotHour = parseInt(time.split(':')[0]);
+        const slotDate = new Date(dateStr + 'T00:00:00');
+
+        // If the date is in the past
+        if (slotDate.toDateString() < now.toDateString()) {
+            return true;
+        }
+
+        // If it's today, check if the hour has passed
+        if (slotDate.toDateString() === now.toDateString()) {
+            return slotHour <= now.getHours();
+        }
+
+        return false;
+    };
 
     const handlePrevWeek = () => {
         const newDate = new Date(weekStart);
@@ -211,7 +230,7 @@ const AgendaModule: React.FC = () => {
                         <button onClick={handleNextWeek} className="p-1 hover:bg-stone-200 rounded"><ChevronRight size={20} /></button>
                     </div>
                 </div>
-                <div className="flex gap-2 text-xs items-center">
+                <div className="flex gap-2 text-xs items-center flex-wrap">
                     <button
                         onClick={() => setIsQuickBlockMode(!isQuickBlockMode)}
                         className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition ${isQuickBlockMode ? 'bg-red-600 text-white' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
@@ -221,6 +240,7 @@ const AgendaModule: React.FC = () => {
                     <div className="flex items-center gap-1"><div className="w-3 h-3 bg-purple-100 border border-purple-300 rounded"></div> Salón</div>
                     <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></div> Domicilio</div>
                     <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div> Bloqueado</div>
+                    <div className="flex items-center gap-1"><div className="w-3 h-3 bg-stone-200 border border-stone-300 rounded"></div> Expirado</div>
                 </div>
             </div>
 
@@ -314,16 +334,18 @@ const AgendaModule: React.FC = () => {
                             {weekDays.map((day, i) => {
                                 const dateStr = day.toISOString().split('T')[0];
                                 const booking = bookings.find(b => b.date === dateStr && b.time === time);
+                                const slotPassed = isSlotPassed(dateStr, time);
 
-                                let cellClass = "cursor-pointer hover:bg-stone-100 transition p-1 border-r border-stone-100 min-h-[50px]";
+                                let cellClass = "transition p-1 border-r border-stone-100 min-h-[50px]";
                                 let content = null;
+                                let isClickable = true;
 
                                 if (booking) {
                                     if (booking.name === 'BLOQUEADO') {
-                                        cellClass += " bg-red-100 hover:bg-red-200 border-red-200";
+                                        cellClass += " bg-red-100 hover:bg-red-200 border-red-200 cursor-pointer";
                                         content = <div className="flex justify-center items-center h-full text-red-400"><Lock size={16} /></div>;
                                     } else {
-                                        cellClass += booking.is_home_service ? " bg-blue-100 hover:bg-blue-200 border-blue-200" : " bg-purple-100 hover:bg-purple-200 border-purple-200";
+                                        cellClass += booking.is_home_service ? " bg-blue-100 hover:bg-blue-200 border-blue-200 cursor-pointer" : " bg-purple-100 hover:bg-purple-200 border-purple-200 cursor-pointer";
                                         content = (
                                             <div className="text-[10px] leading-tight p-1 h-full overflow-hidden">
                                                 <div className="font-bold truncate">{booking.name}</div>
@@ -331,10 +353,21 @@ const AgendaModule: React.FC = () => {
                                             </div>
                                         );
                                     }
+                                } else if (slotPassed) {
+                                    // Auto-block visual for past slots without bookings
+                                    cellClass += " bg-stone-200/50 cursor-not-allowed";
+                                    content = <div className="flex justify-center items-center h-full text-stone-400"><Clock size={14} className="opacity-50" /></div>;
+                                    isClickable = false;
+                                } else {
+                                    cellClass += " cursor-pointer hover:bg-stone-100";
                                 }
 
                                 return (
-                                    <div key={`${dateStr}-${time}`} className={cellClass} onClick={() => handleSlotClick(dateStr, time)}>
+                                    <div
+                                        key={`${dateStr}-${time}`}
+                                        className={cellClass}
+                                        onClick={() => isClickable && handleSlotClick(dateStr, time)}
+                                    >
                                         {content}
                                     </div>
                                 );
