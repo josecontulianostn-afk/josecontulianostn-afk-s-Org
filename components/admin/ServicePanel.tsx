@@ -759,12 +759,6 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                             Inventario
                         </button>
                         <button
-                            onClick={() => setActiveTab('agenda')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'agenda' ? 'bg-pink-500 text-white' : 'text-stone-400 hover:text-white'}`}
-                        >
-                            Agenda
-                        </button>
-                        <button
                             onClick={() => setActiveTab('clients')}
                             className={`px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'clients' ? 'bg-red-500 text-white' : 'text-stone-400 hover:text-white'}`}
                         >
@@ -776,18 +770,12 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                         >
                             Compras
                         </button>
-                        <button
-                            onClick={() => setActiveTab('ventas')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'ventas' ? 'bg-indigo-600 text-white' : 'text-stone-400 hover:text-white'}`}
-                        >
-                            Ventas (POS)
-                        </button>
                     </div>
                 </div>
 
                 <div className="bg-stone-800 p-6 rounded-2xl shadow-xl border border-white/5">
                     <h3 className="serif text-xl mb-4 text-center text-white">
-                        {activeTab === 'loyalty' ? 'Registrar Visita' : activeTab === 'hair' ? 'Registrar Servicio Peluquería' : activeTab === 'inventory' ? 'Gestión de Inventario' : activeTab === 'clients' ? 'Gestión de Clientes' : activeTab === 'expenses' ? 'Control de Inversión y Compras' : activeTab === 'ventas' ? 'Punto de Venta' : 'Agenda Semanal'}
+                        {activeTab === 'loyalty' ? 'Registrar Visita' : activeTab === 'hair' ? 'Registrar Servicio Peluquería' : activeTab === 'inventory' ? 'Gestión de Inventario' : activeTab === 'clients' ? 'Gestión de Clientes' : 'Control de Inversión y Compras'}
                     </h3>
 
                     {activeTab === 'expenses' && (
@@ -986,140 +974,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                         </div>
                     )}
 
-                    {activeTab === 'agenda' && (
-                        <div className="space-y-4">
-                            {/* Week Controls */}
-                            <div className="flex items-center justify-between bg-stone-700/50 p-3 rounded-lg">
-                                <button onClick={handlePrevWeek} className="p-2 hover:bg-stone-600 rounded-full"><ChevronLeft size={20} className="text-stone-300" /></button>
-                                <div className="text-center">
-                                    <div className="text-white font-bold">{weekDays[0].toLocaleDateString('es-CL')} - {weekDays[6].toLocaleDateString('es-CL')}</div>
-                                    <div className="text-xs text-stone-400">Semana Actual</div>
-                                </div>
-                                <button onClick={handleNextWeek} className="p-2 hover:bg-stone-600 rounded-full"><ChevronRight size={20} className="text-stone-300" /></button>
-                            </div>
 
-                            {/* Calendar Grid */}
-                            <div className="overflow-x-auto">
-                                <div className="min-w-[800px]">
-                                    {/* Header Days */}
-                                    <div className="grid grid-cols-8 gap-1 mb-1">
-                                        <div className="bg-stone-800 p-2 rounded text-center text-xs font-bold text-stone-500">HORA</div>
-                                        {weekDays.map((d, i) => (
-                                            <div key={i} className={`p-2 rounded text-center text-xs font-bold ${d.toDateString() === new Date().toDateString() ? 'bg-purple-900/50 text-purple-200' : 'bg-stone-800 text-stone-400'}`}>
-                                                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][d.getDay()]} {d.getDate()}
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {/* Time Slots */}
-                                    <div className="space-y-1">
-                                        {HOURS.map(hour => (
-                                            <div key={hour} className="grid grid-cols-8 gap-1 h-16">
-                                                {/* Time Label */}
-                                                <div className="bg-stone-800/50 flex items-center justify-center text-xs font-mono text-stone-500 rounded">{hour}</div>
-
-                                                {/* Days Columns */}
-                                                {weekDays.map((day, i) => {
-                                                    const dateStr = day.toISOString().split('T')[0];
-                                                    const booking = bookings.find(b => b.date === dateStr && b.time === hour);
-
-                                                    return (
-                                                        <div
-                                                            key={i}
-                                                            onClick={() => handleSlotClick(dateStr, hour)}
-                                                            className={`
-                                                                relative rounded p-1 border border-white/5 cursor-pointer transition
-                                                                ${booking
-                                                                    ? (booking.name === 'BLOQUEADO' ? 'bg-red-900/30 border-red-800' : (booking.is_home_service ? 'bg-blue-900/30 border-blue-800' : 'bg-green-900/30 border-green-800'))
-                                                                    : 'bg-stone-900 hover:bg-stone-800'
-                                                                }
-                                                            `}
-                                                        >
-                                                            {booking ? (
-                                                                <div className="h-full flex flex-col justify-center items-center text-center overflow-hidden">
-                                                                    {booking.name === 'BLOQUEADO' ? (
-                                                                        <div className="text-red-400 text-[10px] font-bold flex flex-col items-center">
-                                                                            <Shield size={12} className="mb-1" />
-                                                                            BLOQ
-                                                                        </div>
-                                                                    ) : (
-                                                                        <>
-                                                                            <div className="text-white text-[10px] font-bold truncate w-full">{booking.name}</div>
-                                                                            <div className="text-[9px] text-stone-400 truncate w-full">{booking.service_name || 'Servicio'}</div>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="h-full flex items-center justify-center opacity-0 hover:opacity-100">
-                                                                    <PlusCircle size={14} className="text-stone-600" />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Booking Modal */}
-                            {isBookingModalOpen && (
-                                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                                    <div className="bg-stone-800 p-6 rounded-2xl w-full max-w-sm border border-stone-600 shadow-2xl">
-                                        <h3 className="text-xl font-bold text-white mb-4">Nueva Reserva</h3>
-                                        <div className="text-stone-400 text-sm mb-4">
-                                            {selectedSlot?.date} - {selectedSlot?.time}
-                                        </div>
-
-                                        <div className="space-y-3 mb-6">
-                                            <div>
-                                                <label className="text-xs text-stone-500 mb-1 block">Tipo</label>
-                                                <div className="flex bg-stone-900 p-1 rounded-lg">
-                                                    <button onClick={() => setManualBookingType('salon')} className={`flex-1 py-1 text-xs rounded ${manualBookingType === 'salon' ? 'bg-stone-700 text-white' : 'text-stone-500'}`}>Salón</button>
-                                                    <button onClick={() => setManualBookingType('domicilio')} className={`flex-1 py-1 text-xs rounded ${manualBookingType === 'domicilio' ? 'bg-stone-700 text-white' : 'text-stone-500'}`}>Domicilio</button>
-                                                    <button onClick={() => setManualBookingType('bloqueo')} className={`flex-1 py-1 text-xs rounded ${manualBookingType === 'bloqueo' ? 'bg-red-900/50 text-red-200' : 'text-stone-500'}`}>Bloquear</button>
-                                                </div>
-                                            </div>
-
-                                            {manualBookingType !== 'bloqueo' && (
-                                                <>
-                                                    <input
-                                                        className="w-full bg-stone-900 border border-stone-700 rounded p-2 text-white text-sm"
-                                                        placeholder="Nombre Cliente"
-                                                        value={manualBookingName}
-                                                        onChange={e => setManualBookingName(e.target.value)}
-                                                    />
-                                                    <input
-                                                        className="w-full bg-stone-900 border border-stone-700 rounded p-2 text-white text-sm"
-                                                        placeholder="Teléfono (Opcional)"
-                                                        value={manualBookingPhone}
-                                                        onChange={e => setManualBookingPhone(e.target.value)}
-                                                    />
-                                                    <select
-                                                        className="w-full bg-stone-900 border border-stone-700 rounded p-2 text-white text-sm"
-                                                        value={manualBookingService}
-                                                        onChange={e => setManualBookingService(e.target.value)}
-                                                    >
-                                                        <option value="Corte">Corte</option>
-                                                        <option value="Color">Color</option>
-                                                        <option value="Alisado">Alisado</option>
-                                                        <option value="Masaje">Masaje</option>
-                                                        <option value="Otro">Otro</option>
-                                                    </select>
-                                                </>
-                                            )}
-                                        </div>
-
-                                        <div className="flex gap-2">
-                                            <button onClick={() => setIsBookingModalOpen(false)} className="flex-1 py-2 rounded bg-stone-700 text-white text-sm hover:bg-stone-600">Cancelar</button>
-                                            <button onClick={saveBooking} className="flex-1 py-2 rounded bg-white text-black font-bold text-sm hover:bg-gray-200">Guardar</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
 
                     {activeTab === 'hair' && (
                         <div className="mb-4 space-y-3">
@@ -1159,173 +1014,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                         </div>
                     )}
 
-                    {activeTab === 'ventas' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Left Col: Catalog */}
-                            <div className="space-y-4">
-                                {/* Product Search */}
-                                <div className="bg-stone-700/30 p-3 rounded-xl border border-white/5">
-                                    <h4 className="text-stone-400 text-xs font-bold uppercase mb-2">Catálogo</h4>
-                                    <input
-                                        type="text"
-                                        placeholder="Buscar producto..."
-                                        className="w-full bg-stone-900 border border-white/10 rounded px-3 py-2 text-white text-sm mb-3"
-                                        value={posProductSearch}
-                                        onChange={e => setPosProductSearch(e.target.value)}
-                                    />
 
-                                    {/* Manual Item Add */}
-                                    <div className="bg-stone-800 p-2 rounded mb-3 flex gap-2">
-                                        <input
-                                            placeholder="Item Manual"
-                                            className="w-1/2 p-2 rounded bg-stone-900 border border-white/10 text-xs text-white"
-                                            value={manualItemName}
-                                            onChange={e => setManualItemName(e.target.value)}
-                                        />
-                                        <input
-                                            placeholder="$"
-                                            type="number"
-                                            className="w-1/4 p-2 rounded bg-stone-900 border border-white/10 text-xs text-white"
-                                            value={manualItemPrice}
-                                            onChange={e => setManualItemPrice(e.target.value)}
-                                        />
-                                        <button onClick={addManualItem} className="w-1/4 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold flex items-center justify-center">
-                                            <PlusCircle size={14} className="mr-1" /> Add
-                                        </button>
-                                    </div>
-
-                                    <div className="h-64 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                                        {/* Services */}
-                                        <div className="text-stone-500 text-[10px] uppercase font-bold mt-2 mb-1">Servicios</div>
-                                        {SERVICES.filter(s => s.name.toLowerCase().includes(posProductSearch.toLowerCase())).map(s => (
-                                            <div key={s.id} className="flex items-center justify-between bg-stone-800 p-2 rounded hover:bg-stone-700 cursor-pointer" onClick={() => addToCart(s, 'service')}>
-                                                <div>
-                                                    <div className="text-white text-sm font-medium">{s.name}</div>
-                                                    <div className="text-stone-400 text-[10px]">${s.price.toLocaleString()}</div>
-                                                </div>
-                                                <button className="text-green-400 hover:text-green-300"><PlusCircle size={16} /></button>
-                                            </div>
-                                        ))}
-
-                                        {/* Perfumes */}
-                                        <div className="text-stone-500 text-[10px] uppercase font-bold mt-2 mb-1">Perfumes</div>
-                                        {PERFUMES.filter(p => p.name.toLowerCase().includes(posProductSearch.toLowerCase())).map(p => (
-                                            <div key={p.id} className="flex items-center justify-between bg-stone-800 p-2 rounded hover:bg-stone-700 cursor-pointer" onClick={() => addToCart(p, 'product')}>
-                                                <div>
-                                                    <div className="text-white text-sm font-medium">{p.name}</div>
-                                                    <div className="text-stone-400 text-[10px]">${p.price10ml.toLocaleString()} (10ml)</div>
-                                                </div>
-                                                <button className="text-green-400 hover:text-green-300"><PlusCircle size={16} /></button>
-                                            </div>
-                                        ))}
-                                        {/* Gifts */}
-                                        <div className="text-stone-500 text-[10px] uppercase font-bold mt-2 mb-1">Regalos</div>
-                                        {GIFTS.filter(g => g.name.toLowerCase().includes(posProductSearch.toLowerCase())).map(g => (
-                                            <div key={g.id} className="flex items-center justify-between bg-stone-800 p-2 rounded hover:bg-stone-700 cursor-pointer" onClick={() => addToCart(g, 'gift')}>
-                                                <div>
-                                                    <div className="text-white text-sm font-medium">{g.name}</div>
-                                                    <div className="text-stone-400 text-[10px]">${g.price.toLocaleString()}</div>
-                                                </div>
-                                                <button className="text-green-400 hover:text-green-300"><PlusCircle size={16} /></button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Col: Cart & Client */}
-                            <div className="space-y-4">
-                                {/* Client Selection */}
-                                <div className="bg-stone-700/30 p-3 rounded-xl border border-white/5">
-                                    <h4 className="text-stone-400 text-xs font-bold uppercase mb-2">Cliente</h4>
-                                    {posClient ? (
-                                        <div className="flex justify-between items-center bg-green-500/20 text-green-400 p-2 rounded">
-                                            <span className="font-bold">{posClient.name || posClient.phone}</span>
-                                            <button onClick={() => setPosClient(null)} className="text-red-400 hover:text-red-300"><X size={14} /></button>
-                                        </div>
-                                    ) : (
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                placeholder="Buscar cliente (Tel o Nombre)..."
-                                                className="w-full bg-stone-900 border border-white/10 rounded px-3 py-2 text-white text-sm"
-                                                value={posSearchTerm}
-                                                onChange={e => setPosSearchTerm(e.target.value)}
-                                            />
-                                            {/* Minimal dropdown results */}
-                                            {posSearchTerm.length > 2 && (
-                                                <div className="absolute top-full left-0 right-0 bg-stone-800 border border-stone-600 rounded-b shadow-xl z-10 max-h-40 overflow-y-auto">
-                                                    {clients.filter(c => c.phone.includes(posSearchTerm) || (c.name && c.name.toLowerCase().includes(posSearchTerm.toLowerCase()))).map(c => (
-                                                        <div
-                                                            key={c.id}
-                                                            className="p-2 hover:bg-stone-700 cursor-pointer text-sm text-white"
-                                                            onClick={() => { setPosClient(c); setPosSearchTerm(''); }}
-                                                        >
-                                                            {c.name ? `${c.name} (${c.phone})` : c.phone}
-                                                        </div>
-                                                    ))}
-                                                    {clients.filter(c => c.phone.includes(posSearchTerm) || (c.name && c.name.toLowerCase().includes(posSearchTerm.toLowerCase()))).length === 0 && (
-                                                        <div className="p-2 text-stone-500 text-xs">No encontrado</div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Cart */}
-                                <div className="bg-white p-3 rounded-xl shadow-lg">
-                                    <h4 className="text-stone-900 text-xs font-bold uppercase mb-2 border-b pb-1">Carrito de Compras</h4>
-                                    {cart.length === 0 ? (
-                                        <div className="text-center text-stone-400 py-6 text-sm">Carrito Vacío</div>
-                                    ) : (
-                                        <div className="space-y-2 mb-4">
-                                            {cart.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between items-center text-sm border-b border-stone-100 pb-2">
-                                                    <div className="flex-1">
-                                                        <div className="font-bold text-stone-800">{item.name}</div>
-                                                        <div className="flex items-center gap-1 text-xs text-stone-500">
-                                                            <span>$</span>
-                                                            <input
-                                                                type="number"
-                                                                value={item.price}
-                                                                onChange={(e) => updateCartPrice(item.id, e.target.value)}
-                                                                className="w-16 bg-stone-50 border rounded px-1 text-xs text-stone-900"
-                                                            />
-                                                            <span>x {item.qty}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="font-bold text-stone-900">${(item.price * item.qty).toLocaleString()}</div>
-                                                        <button onClick={() => removeFromCart(item.id)} className="text-red-500 hover:bg-red-50 p-1 rounded"><X size={14} /></button>
-                                                    </div>
-                                                </div>
-                                            ))}
-
-                                            <div className="flex justify-between items-center pt-2 border-t border-stone-200 mt-2">
-                                                <span className="font-bold text-stone-900 text-lg">Total</span>
-                                                <span className="font-bold text-green-600 text-xl">
-                                                    ${cart.reduce((sum, i) => sum + (i.price * i.qty), 0).toLocaleString()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <button
-                                        onClick={handleCheckout}
-                                        disabled={isCheckoutLoading || cart.length === 0}
-                                        className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition flex justify-center items-center gap-2"
-                                    >
-                                        {isCheckoutLoading ? 'Procesando...' : (
-                                            <>
-                                                <Save size={18} /> Confirmar Venta
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {activeTab !== 'inventory' && activeTab !== 'clients' && activeTab !== 'expenses' && (
                         <button
@@ -1370,7 +1059,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

@@ -5,7 +5,9 @@ import { VisitRegistration, InventoryLog } from '../../types';
 import VisitValidationModal from './VisitValidationModal';
 import FinancialDashboard from './FinancialDashboard';
 import { QRCodeSVG } from 'qrcode.react';
-import { Download, TrendingUp, Users, DollarSign, Package, PieChart, BarChart as BarChartIcon, ScatterChart as ScatterChartIcon, QrCode, ClipboardCheck, History } from 'lucide-react';
+import { Download, TrendingUp, Users, DollarSign, Package, PieChart, BarChart as BarChartIcon, ScatterChart as ScatterChartIcon, QrCode, ClipboardCheck, History, ShoppingCart, Calendar } from 'lucide-react';
+import POSModule from './POSModule';
+import AgendaModule from './AgendaModule';
 import {
     PieChart as RechartsPie, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -230,9 +232,10 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [topProducts, setTopProducts] = useState<any[]>([]);
     const [bcgMatrix, setBcgMatrix] = useState<ProductBCG[]>([]);
 
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'validaciones' | 'finanzas'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'validaciones' | 'finanzas' | 'ventas' | 'agenda'>('dashboard');
     const [clients, setClients] = useState<any[]>([]);
     const [editingClient, setEditingClient] = useState<any>(null);
+    const [posInitialClient, setPosInitialClient] = useState<any>(null);
 
     // QR Validation Data
     const [pendingVisits, setPendingVisits] = useState<VisitRegistration[]>([]);
@@ -497,6 +500,11 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
         }
     };
 
+    const handleGoToPOS = (client: any) => {
+        setPosInitialClient(client);
+        setActiveTab('ventas');
+    };
+
     const downloadCSV = () => {
         const headers = ['ID Transaccion', 'Fecha', 'Monto', 'Tipo', 'ID Cliente'];
         const rows = transactions.map(t => [t.id, t.created_at, t.amount, t.type, t.client_id || 'Anónimo']);
@@ -564,6 +572,18 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                     className={`px-4 py-2 font-bold transition ${activeTab === 'finanzas' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}
                 >
                     Finanzas
+                </button>
+                <button
+                    onClick={() => setActiveTab('ventas')}
+                    className={`px-4 py-2 font-bold transition ${activeTab === 'ventas' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}
+                >
+                    Ventas (POS)
+                </button>
+                <button
+                    onClick={() => setActiveTab('agenda')}
+                    className={`px-4 py-2 font-bold transition ${activeTab === 'agenda' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}
+                >
+                    Agenda
                 </button>
             </div>
 
@@ -643,6 +663,14 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                     timeRange={timeRange as any}
                     onTimeRangeChange={(r) => setTimeRange(r)}
                 />
+            )}
+
+            {activeTab === 'ventas' && (
+                <POSModule initialClient={posInitialClient} key={posInitialClient ? posInitialClient.id : 'pos-reset'} />
+            )}
+
+            {activeTab === 'agenda' && (
+                <AgendaModule />
             )}
 
             {activeTab === 'dashboard' ? (
@@ -783,6 +811,7 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                             <th className="px-4 py-2">Cliente</th>
                                             <th className="px-4 py-2 text-right">Visitas</th>
                                             <th className="px-4 py-2 text-right">Total Gastado</th>
+                                            <th className="px-4 py-2 text-right">Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -794,6 +823,11 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                                 <td className="px-4 py-3 text-right">{client.visit_count}</td>
                                                 <td className="px-4 py-3 text-right font-bold text-green-600">
                                                     ${client.total_spent.toLocaleString()}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <button onClick={() => handleGoToPOS({ id: client.id, phone: client.phone, name: 'Cliente' })} className="text-xs bg-stone-900 text-white px-2 py-1 rounded hover:bg-stone-700">
+                                                        Vender
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
