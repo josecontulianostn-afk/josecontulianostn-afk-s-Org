@@ -270,7 +270,7 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
                             >
                                 <div className="font-bold text-stone-800 text-sm group-hover:text-blue-600 truncate">{perfume.name}</div>
                                 <div className="text-stone-400 text-[10px] mb-2">{perfume.brand}</div>
-                                <div className="flex gap-1">
+                                <div className="flex flex-wrap gap-1">
                                     <button
                                         onClick={() => addToCart(perfume, 'product', '5ml', perfume.price5ml)}
                                         className="flex-1 bg-blue-500 text-white text-xs py-1 rounded font-bold hover:bg-blue-600"
@@ -283,6 +283,14 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
                                     >
                                         10ml ${perfume.price10ml.toLocaleString()}
                                     </button>
+                                    {perfume.priceFullBottle && (
+                                        <button
+                                            onClick={() => addToCart(perfume, 'product', 'Botella', perfume.priceFullBottle)}
+                                            className="w-full mt-1 bg-amber-600 text-white text-xs py-1 rounded font-bold hover:bg-amber-700"
+                                        >
+                                            🍾 Botella ${perfume.priceFullBottle.toLocaleString()}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
