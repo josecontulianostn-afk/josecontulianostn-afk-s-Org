@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, PlusCircle, X, ShoppingCart, Percent, Save, Trash2, Edit2, Package } from 'lucide-react';
+import { Search, PlusCircle, X, ShoppingCart, Percent, Save, Trash2, Edit2, Package, User, Star } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 import { PERFUMES, GIFTS, SERVICES } from '../../constants';
 
@@ -39,14 +39,14 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
     };
 
     const fetchClients = async (search: string) => {
-        if (!search) {
+        if (!search || search.length < 2) {
             setClients([]);
             return;
         }
         const { data, error } = await supabase
             .from('clients')
             .select('*')
-            .ilike('phone', `%${search}%`)
+            .or(`phone.ilike.%${search}%,name.ilike.%${search}%`)
             .limit(10);
 
         if (data) setClients(data);
@@ -305,40 +305,54 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
                         <ShoppingCart /> Carrito
                     </h3>
 
-                    {/* Client Selector */}
-                    <div className="mb-4">
+                    {/* Client Selector - IMPORTANTE PARA FIDELIDAD */}
+                    <div className="mb-4 p-3 bg-gradient-to-r from-amber-50 to-rose-50 border-2 border-dashed border-amber-300 rounded-xl">
+                        <div className="flex items-center gap-2 mb-2">
+                            <User className="text-amber-600" size={18} />
+                            <span className="font-bold text-amber-800 text-sm">Cliente (Fidelidad)</span>
+                        </div>
                         {posClient ? (
-                            <div className="bg-green-50 border border-green-200 p-3 rounded-lg flex justify-between items-center">
+                            <div className="bg-white border border-green-300 p-3 rounded-lg flex justify-between items-center shadow-sm">
                                 <div>
-                                    <div className="text-xs text-green-600 font-bold uppercase">Cliente</div>
                                     <div className="font-bold text-stone-800">{posClient.name || 'Sin Nombre'}</div>
                                     <div className="text-xs text-stone-500">{posClient.phone}</div>
+                                    <div className="flex items-center gap-1 mt-1">
+                                        <Star className="text-amber-500" size={12} fill="currentColor" />
+                                        <span className="text-xs font-bold text-amber-600">{posClient.loyalty_points || 0} puntos</span>
+                                    </div>
                                 </div>
-                                <button onClick={() => setPosClient(null)} className="text-stone-400 hover:text-red-500"><X size={16} /></button>
+                                <button onClick={() => setPosClient(null)} className="text-stone-400 hover:text-red-500 p-1">
+                                    <X size={18} />
+                                </button>
                             </div>
                         ) : (
                             <div className="relative">
+                                <Search className="absolute left-3 top-2.5 text-stone-400" size={16} />
                                 <input
                                     type="text"
-                                    placeholder="Buscar cliente (Celular)..."
+                                    placeholder="Buscar por nombre o teléfono..."
                                     value={posSearchTerm}
                                     onChange={(e) => setPosSearchTerm(e.target.value)}
-                                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-stone-500 outline-none"
+                                    className="w-full pl-9 pr-4 py-2 border-2 border-amber-200 bg-white rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none"
                                 />
                                 {clients.length > 0 && (
-                                    <div className="absolute top-full left-0 right-0 bg-white border border-stone-200 shadow-xl rounded-lg mt-1 z-50 max-h-48 overflow-y-auto">
+                                    <div className="absolute top-full left-0 right-0 bg-white border-2 border-amber-200 shadow-xl rounded-lg mt-1 z-50 max-h-48 overflow-y-auto">
                                         {clients.map(c => (
                                             <button
                                                 key={c.id}
                                                 onClick={() => { setPosClient(c); setPosSearchTerm(''); setClients([]); }}
-                                                className="w-full text-left px-3 py-2 hover:bg-stone-50 text-sm border-b border-stone-50 last:border-0"
+                                                className="w-full text-left px-3 py-2 hover:bg-amber-50 text-sm border-b border-stone-100 last:border-0 flex justify-between items-center"
                                             >
-                                                <div className="font-bold">{c.name || 'Sin Nombre'}</div>
-                                                <div className="text-xs text-stone-500">{c.phone}</div>
+                                                <div>
+                                                    <div className="font-bold">{c.name || 'Sin Nombre'}</div>
+                                                    <div className="text-xs text-stone-500">{c.phone}</div>
+                                                </div>
+                                                <div className="text-xs text-amber-600 font-bold">{c.loyalty_points || 0} pts</div>
                                             </button>
                                         ))}
                                     </div>
                                 )}
+                                <p className="text-[10px] text-amber-600 mt-1">Asocia un cliente para acumular puntos</p>
                             </div>
                         )}
                     </div>
