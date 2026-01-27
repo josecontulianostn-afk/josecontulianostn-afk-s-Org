@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, PlusCircle, X, ShoppingCart, Percent, Save, Trash2, Edit2 } from 'lucide-react';
+import { Search, PlusCircle, X, ShoppingCart, Percent, Save, Trash2, Edit2, Package } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 import { PERFUMES, GIFTS, SERVICES } from '../../constants';
 
@@ -17,13 +17,26 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
     const [clients, setClients] = useState<any[]>([]);
     const [message, setMessage] = useState('');
 
+    // Inventory products from DB
+    const [inventoryProducts, setInventoryProducts] = useState<any[]>([]);
+
     // Manual Item State
     const [manualItemName, setManualItemName] = useState('');
     const [manualItemPrice, setManualItemPrice] = useState('');
 
     useEffect(() => {
         if (initialClient) setPosClient(initialClient);
+        fetchInventoryProducts();
     }, [initialClient]);
+
+    const fetchInventoryProducts = async () => {
+        const { data, error } = await supabase
+            .from('inventory')
+            .select('*')
+            .gt('quantity', 0)
+            .order('name', { ascending: true });
+        if (data) setInventoryProducts(data);
+    };
 
     const fetchClients = async (search: string) => {
         if (!search) {
@@ -46,19 +59,27 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
         return () => clearTimeout(delayDebounceFn);
     }, [posSearchTerm]);
 
-    const addToCart = (product: any, type: 'product' | 'gift' | 'service') => {
-        const existing = cart.find(item => item.id === product.id && item.type === type && item.variant !== 'manual');
-        if (existing) {
-            setCart(cart.map(item => item.id === product.id && item.type === type ? { ...item, qty: item.qty + 1 } : item));
-        } else {
-            let price = 0;
-            if (type === 'product') price = product.price10ml || 0;
-            if (type === 'gift') price = product.price || 0;
-            if (type === 'service') price = product.price || 0;
+    const addToCart = (product: any, type: 'product' | 'gift' | 'service', variant?: string, customPrice?: number) => {
+        const variantKey = variant || (type === 'product' ? '10ml' : 'standard');
+        const cartId = `${product.id}-${variantKey}`;
 
-            setCart([...cart, { ...product, type, qty: 1, price, variant: type === 'product' ? '10ml' : 'standard' }]);
+        const existing = cart.find(item => item.cartId === cartId);
+        if (existing) {
+            setCart(cart.map(item => item.cartId === cartId ? { ...item, qty: item.qty + 1 } : item));
+        } else {
+            let price = customPrice || 0;
+            if (!customPrice) {
+                if (type === 'product') {
+                    if (variant === '5ml') price = product.price5ml || product.price || 0;
+                    else price = product.price10ml || product.price || 0;
+                }
+                if (type === 'gift') price = product.price || 0;
+                if (type === 'service') price = product.price || 0;
+            }
+
+            setCart([...cart, { ...product, cartId, type, qty: 1, price, variant: variantKey }]);
         }
-        setMessage(`Agregado: ${product.name}`);
+        setMessage(`Agregado: ${product.name} (${variantKey})`);
         setTimeout(() => setMessage(''), 2000);
     };
 
@@ -90,23 +111,23 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
         setTimeout(() => setMessage(''), 3000);
     };
 
-    const updateCartPrice = (id: string, newPrice: string) => {
+    const removeFromCart = (cartId: string) => {
+        setCart(cart.filter(item => item.cartId !== cartId));
+    };
+
+    const updateCartQty = (cartId: string, qty: number) => {
+        if (qty < 1) return;
+        setCart(cart.map(item => item.cartId === cartId ? { ...item, qty } : item));
+    };
+
+    const updateCartPrice = (cartId: string, newPrice: string) => {
         if (newPrice === '') {
-            setCart(cart.map(item => item.id === id ? { ...item, price: 0 } : item));
+            setCart(cart.map(item => item.cartId === cartId ? { ...item, price: 0 } : item));
             return;
         }
         const price = parseInt(newPrice);
         if (isNaN(price)) return;
-        setCart(cart.map(item => item.id === id ? { ...item, price } : item));
-    };
-
-    const removeFromCart = (id: string) => {
-        setCart(cart.filter(item => item.id !== id));
-    };
-
-    const updateCartQty = (id: string, qty: number) => {
-        if (qty < 1) return;
-        setCart(cart.map(item => item.id === id ? { ...item, qty } : item));
+        setCart(cart.map(item => item.cartId === cartId ? { ...item, price } : item));
     };
 
     const handleCheckout = async () => {
@@ -153,6 +174,7 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
 
     const filteredPerfumes = PERFUMES.filter(p => p.name.toLowerCase().includes(posProductSearch.toLowerCase()));
     const filteredServices = SERVICES.filter(s => s.name.toLowerCase().includes(posProductSearch.toLowerCase()));
+    const filteredInventory = inventoryProducts.filter(p => p.name.toLowerCase().includes(posProductSearch.toLowerCase()));
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[80vh]">
@@ -211,19 +233,58 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
                     </div>
                 </div>
 
-                {/* Products Grid */}
+                {/* Products Grid - From Inventory */}
                 <div>
-                    <h4 className="font-bold text-stone-500 mb-2 uppercase text-xs">Perfumes & Productos</h4>
+                    <h4 className="font-bold text-stone-500 mb-2 uppercase text-xs flex items-center gap-2">
+                        <Package size={14} /> Inventario ({filteredInventory.length})
+                    </h4>
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                        {filteredInventory.map(product => (
+                            <div
+                                key={product.product_id}
+                                className="p-3 bg-white border border-stone-100 rounded-lg shadow-sm hover:border-emerald-300 text-left transition group"
+                            >
+                                <div className="font-bold text-stone-800 text-sm group-hover:text-emerald-600 truncate">{product.name}</div>
+                                <div className="text-stone-400 text-[10px] mb-2">Stock: {product.quantity}</div>
+                                <div className="flex gap-1">
+                                    <button
+                                        onClick={() => addToCart({ ...product, id: product.product_id }, 'product', 'unidad', product.sale_price || product.price || 0)}
+                                        className="flex-1 bg-emerald-600 text-white text-xs py-1 rounded font-bold hover:bg-emerald-700"
+                                    >
+                                        ${(product.sale_price || product.price || 0).toLocaleString()}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Perfumes from Constants - With Variants */}
+                <div>
+                    <h4 className="font-bold text-stone-500 mb-2 uppercase text-xs">Perfumes Catálogo ({filteredPerfumes.length})</h4>
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                         {filteredPerfumes.map(perfume => (
-                            <button
+                            <div
                                 key={perfume.id}
-                                onClick={() => addToCart(perfume, 'product')}
                                 className="p-3 bg-white border border-stone-100 rounded-lg shadow-sm hover:border-blue-300 text-left transition group"
                             >
                                 <div className="font-bold text-stone-800 text-sm group-hover:text-blue-600 truncate">{perfume.name}</div>
-                                <div className="text-stone-500 text-xs">${perfume.price10ml.toLocaleString()} (10ml)</div>
-                            </button>
+                                <div className="text-stone-400 text-[10px] mb-2">{perfume.brand}</div>
+                                <div className="flex gap-1">
+                                    <button
+                                        onClick={() => addToCart(perfume, 'product', '5ml', perfume.price5ml)}
+                                        className="flex-1 bg-blue-500 text-white text-xs py-1 rounded font-bold hover:bg-blue-600"
+                                    >
+                                        5ml ${perfume.price5ml.toLocaleString()}
+                                    </button>
+                                    <button
+                                        onClick={() => addToCart(perfume, 'product', '10ml', perfume.price10ml)}
+                                        className="flex-1 bg-blue-700 text-white text-xs py-1 rounded font-bold hover:bg-blue-800"
+                                    >
+                                        10ml ${perfume.price10ml.toLocaleString()}
+                                    </button>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -277,23 +338,27 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
                     {/* Cart Items */}
                     <div className="space-y-3">
                         {cart.map((item, idx) => (
-                            <div key={`${item.id}-${idx}`} className="flex justify-between items-start border-b border-stone-100 pb-3">
+                            <div key={item.cartId || `${item.id}-${idx}`} className="flex justify-between items-start border-b border-stone-100 pb-3">
                                 <div className="flex-1">
                                     <div className="font-medium text-sm text-stone-800">{item.name}</div>
                                     <div className="text-xs text-stone-400">{item.variant}</div>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <button onClick={() => updateCartQty(item.id, item.qty - 1)} className="w-5 h-5 flex items-center justify-center bg-stone-100 rounded text-xs">-</button>
+                                        <button onClick={() => updateCartQty(item.cartId, item.qty - 1)} className="w-5 h-5 flex items-center justify-center bg-stone-100 rounded text-xs">-</button>
                                         <span className="text-xs font-bold w-4 text-center">{item.qty}</span>
-                                        <button onClick={() => updateCartQty(item.id, item.qty + 1)} className="w-5 h-5 flex items-center justify-center bg-stone-100 rounded text-xs">+</button>
+                                        <button onClick={() => updateCartQty(item.cartId, item.qty + 1)} className="w-5 h-5 flex items-center justify-center bg-stone-100 rounded text-xs">+</button>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <input
-                                        className="w-16 text-right border-none bg-transparent font-bold text-stone-800 text-sm focus:ring-1 focus:ring-stone-200 rounded px-1"
-                                        value={item.price}
-                                        onChange={(e) => updateCartPrice(item.id, e.target.value)}
-                                    />
-                                    <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-500 block ml-auto mt-1"><Trash2 size={12} /></button>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-stone-400 text-xs">$</span>
+                                        <input
+                                            className="w-20 text-right border border-stone-200 bg-amber-50 font-bold text-stone-800 text-sm focus:ring-2 focus:ring-amber-300 rounded px-2 py-1"
+                                            value={item.price}
+                                            onChange={(e) => updateCartPrice(item.cartId, e.target.value)}
+                                            title="Click para editar precio"
+                                        />
+                                    </div>
+                                    <button onClick={() => removeFromCart(item.cartId)} className="text-red-400 hover:text-red-500 block ml-auto mt-1"><Trash2 size={12} /></button>
                                 </div>
                             </div>
                         ))}
