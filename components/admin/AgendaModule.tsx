@@ -101,7 +101,6 @@ const AgendaModule: React.FC = () => {
                 name: name,
                 phone: manualBookingPhone || '00000000',
                 email: 'manual@admin.com',
-                service_id: isBlock ? 'block' : 'manual',
                 service_name: isBlock ? 'Bloqueo' : manualBookingService,
                 is_home_service: manualBookingType === 'domicilio',
                 created_at: new Date().toISOString()
@@ -132,7 +131,6 @@ const AgendaModule: React.FC = () => {
             name: 'BLOQUEADO',
             phone: '00000000',
             email: 'block@admin.com',
-            service_id: 'block',
             service_name: 'Bloqueo',
             is_home_service: false,
             created_at: new Date().toISOString()
@@ -167,7 +165,6 @@ const AgendaModule: React.FC = () => {
                 name: 'BLOQUEADO',
                 phone: '00000000',
                 email: 'block@admin.com',
-                service_id: 'block',
                 service_name: 'Bloqueo',
                 is_home_service: false,
                 created_at: new Date().toISOString()
