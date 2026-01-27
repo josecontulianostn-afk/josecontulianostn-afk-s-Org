@@ -158,17 +158,19 @@ const LoyaltyCheck: React.FC = () => {
                             Consulta tus puntos, beneficios y acceso a tu tarjeta digital.
                         </p>
                         <form onSubmit={checkLoyalty} className="space-y-4">
-                            <div className="relative group">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 font-mono text-lg z-10 pointer-events-none border-r border-stone-800 pr-3 h-6 flex items-center">+569</span>
-                                <input
-                                    type="tel"
-                                    value={phone}
-                                    onChange={handlePhoneChange}
-                                    placeholder="87654321"
-                                    maxLength={8}
-                                    className="w-full bg-stone-950 border border-stone-800 rounded-xl py-4 pl-[5.5rem] pr-12 text-white placeholder-stone-600 focus:outline-none focus:border-amber-500/50 transition duration-300 font-mono tracking-normal md:tracking-widest text-lg"
-                                />
-                                <Search size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-600 group-focus-within:text-amber-500 transition-colors pointer-events-none" />
+                            <div className="flex items-center gap-2 group">
+                                <span className="bg-stone-800/50 text-stone-400 font-mono text-sm px-3 py-4 rounded-xl border border-stone-700 whitespace-nowrap">+569</span>
+                                <div className="relative flex-1">
+                                    <input
+                                        type="tel"
+                                        value={phone}
+                                        onChange={handlePhoneChange}
+                                        placeholder="87654321"
+                                        maxLength={8}
+                                        className="w-full bg-stone-950 border border-stone-800 rounded-xl py-4 px-4 pr-10 text-white placeholder-stone-600 focus:outline-none focus:border-amber-500/50 transition duration-300 font-mono text-lg tracking-wider"
+                                    />
+                                    <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-600 group-focus-within:text-amber-500 transition-colors pointer-events-none" />
+                                </div>
                             </div>
                             <button
                                 type="submit"
