@@ -95,10 +95,10 @@ const Header: React.FC<HeaderProps> = () => {
       // Default / Layout "Style" (for /style, /gallery, /booking etc)
       return (
         <Link to="/style" className="flex flex-col items-start leading-none hover:opacity-80 transition-opacity">
-          <span className={`serif text-2xl md:text-4xl font-bold italic tracking-tighter text-stone-900`}>
+          <span className={`serif text-xl md:text-4xl font-bold italic tracking-tighter text-stone-900`}>
             Style
           </span>
-          <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] uppercase mt-1">
+          <span className="text-stone-500 text-[8px] md:text-xs font-medium tracking-[0.15em] md:tracking-[0.2em] uppercase">
             by tus3b
           </span>
         </Link>
