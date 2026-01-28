@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Search, QrCode, X, Scissors, PlusCircle, Save, ChevronLeft, ChevronRight, Calendar, Trash2 } from 'lucide-react';
+import { Shield, Search, QrCode, X, Scissors, PlusCircle, Save, ChevronLeft, ChevronRight, Calendar, Trash2, Eye } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 import { classifyExpenseStatic } from '../../services/staticChatService';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
@@ -97,6 +97,11 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     const [clientFormName, setClientFormName] = useState('');
     const [clientFormPhone, setClientFormPhone] = useState('');
     const [editingClient, setEditingClient] = useState<any | null>(null);
+
+    // Client History State
+    const [clientHistory, setClientHistory] = useState<any[]>([]);
+    const [selectedClientForHistory, setSelectedClientForHistory] = useState<any>(null);
+    const [historyLoading, setHistoryLoading] = useState(false);
 
     // Expenses State
     const [expenses, setExpenses] = useState<any[]>([]);
@@ -452,6 +457,32 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
             fetchClients();
         } catch (error: any) {
             alert('Error al eliminar: ' + error.message);
+        }
+    };
+
+    const fetchClientHistory = async (client: any) => {
+        setHistoryLoading(true);
+        setSelectedClientForHistory(client);
+
+        const { data, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('client_id', client.id)
+            .order('created_at', { ascending: false });
+
+        if (error) console.error("Error fetching history:", error);
+        else setClientHistory(data || []);
+        setHistoryLoading(false);
+    };
+
+    const handleDeleteTransaction = async (transactionId: string) => {
+        if (!window.confirm('¿Eliminar esta transacción?')) return;
+
+        const { error } = await supabase.from('transactions').delete().eq('id', transactionId);
+        if (error) {
+            alert('Error: ' + error.message);
+        } else {
+            setClientHistory(prev => prev.filter(t => t.id !== transactionId));
         }
     };
 
@@ -908,11 +939,18 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                                 <td className="px-3 py-2 text-center text-purple-400 font-bold">{c.hair_service_count || 0}</td>
                                                 <td className="px-3 py-2 text-right flex justify-end gap-1">
                                                     <button
+                                                        onClick={() => fetchClientHistory(c)}
+                                                        className="bg-purple-600/20 hover:bg-purple-600 hover:text-white text-purple-400 p-1.5 rounded transition"
+                                                        title="Ver Historial"
+                                                    >
+                                                        <Eye size={14} />
+                                                    </button>
+                                                    <button
                                                         onClick={() => openClientModal(c)}
                                                         className="bg-blue-600/20 hover:bg-blue-600 hover:text-white text-blue-500 p-1.5 rounded transition"
                                                         title="Editar Cliente"
                                                     >
-                                                        <Scissors size={14} className="rotate-90" /> {/* Using scissors as edit icon for style :) or just generic edit */}
+                                                        <Scissors size={14} className="rotate-90" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteClient(c.id, c.phone)}
@@ -961,6 +999,97 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                         <div className="flex gap-2">
                                             <button onClick={() => setIsClientModalOpen(false)} className="flex-1 py-2 rounded bg-stone-700 text-white text-sm hover:bg-stone-600">Cancelar</button>
                                             <button onClick={saveClient} className="flex-1 py-2 rounded bg-green-600 text-white font-bold text-sm hover:bg-green-500">Guardar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Client History Modal */}
+                            {selectedClientForHistory && (
+                                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                                    <div className="bg-stone-800 p-6 rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col border border-stone-600 shadow-2xl">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <div>
+                                                <h3 className="text-xl font-bold text-white">Historial de Servicios</h3>
+                                                <p className="text-sm text-stone-400">
+                                                    {selectedClientForHistory.name || 'Cliente'} - {selectedClientForHistory.phone}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedClientForHistory(null);
+                                                    setClientHistory([]);
+                                                }}
+                                                className="p-2 hover:bg-stone-700 rounded-full text-stone-400"
+                                            >
+                                                <X size={20} />
+                                            </button>
+                                        </div>
+
+                                        {historyLoading ? (
+                                            <div className="py-12 text-center text-stone-400">Cargando historial...</div>
+                                        ) : clientHistory.length === 0 ? (
+                                            <div className="py-12 text-center text-stone-500 bg-stone-900 rounded-lg border border-stone-700">
+                                                <p>Este cliente no tiene transacciones registradas.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="overflow-y-auto flex-1">
+                                                <table className="w-full text-xs text-left text-stone-300">
+                                                    <thead className="text-xs uppercase bg-stone-700 text-stone-400 sticky top-0">
+                                                        <tr>
+                                                            <th className="px-3 py-2">Fecha</th>
+                                                            <th className="px-3 py-2">Descripción</th>
+                                                            <th className="px-3 py-2 text-right">Monto</th>
+                                                            <th className="px-3 py-2 w-8"></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {clientHistory.map((t) => (
+                                                            <tr key={t.id} className="border-b border-stone-700 hover:bg-stone-700/30">
+                                                                <td className="px-3 py-2 text-stone-500 text-[10px]">
+                                                                    {new Date(t.created_at).toLocaleDateString('es-CL')}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-white">
+                                                                    {t.description || (t.type === 'service' ? 'Servicio' : 'Producto')}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right text-emerald-400 font-bold">
+                                                                    ${t.amount.toLocaleString()}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right">
+                                                                    <button
+                                                                        onClick={() => handleDeleteTransaction(t.id)}
+                                                                        className="text-red-500 hover:text-red-400 p-1"
+                                                                        title="Eliminar"
+                                                                    >
+                                                                        <Trash2 size={12} />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                    <tfoot className="bg-stone-900 font-bold text-white">
+                                                        <tr>
+                                                            <td colSpan={2} className="px-3 py-2">Total</td>
+                                                            <td className="px-3 py-2 text-right text-emerald-400">
+                                                                ${clientHistory.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
+                                                            </td>
+                                                            <td></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        )}
+
+                                        <div className="mt-4 pt-4 border-t border-stone-700">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedClientForHistory(null);
+                                                    setClientHistory([]);
+                                                }}
+                                                className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-white rounded font-bold text-sm"
+                                            >
+                                                Cerrar
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
