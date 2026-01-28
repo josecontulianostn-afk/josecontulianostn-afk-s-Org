@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { GripHorizontal, Check } from 'lucide-react';
+import AddToWalletButtons from './AddToWalletButtons';
 
 interface DigitalCardProps {
     clientName: string;
@@ -55,7 +56,7 @@ const DigitalCard: React.FC<DigitalCardProps> = ({ clientName, token, visits, ne
             <div className={`relative transition-transform duration-700 preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
 
                 {/* FRONT - STAMP CARD STYLE */}
-                <div className="backface-hidden w-full bg-stone-950 rounded-[24px] overflow-hidden shadow-2xl flex flex-col relative h-[560px] border border-stone-800">
+                <div className="backface-hidden w-full bg-stone-950 rounded-[24px] overflow-hidden shadow-2xl flex flex-col relative h-[680px] border border-stone-800">
 
                     {/* Header: Branding & Client */}
                     <div className="p-6 pb-2 flex justify-between items-start z-10">
@@ -124,6 +125,16 @@ const DigitalCard: React.FC<DigitalCardProps> = ({ clientName, token, visits, ne
                             <QRCodeSVG value={token} size={160} level={"M"} />
                             <p className="text-center text-[9px] font-mono mt-2 text-stone-500 tracking-widest">{token}</p>
                         </div>
+
+                        {/* Apple Wallet Button */}
+                        <div className="mt-4 w-full" onClick={(e) => e.stopPropagation()}>
+                            <AddToWalletButtons
+                                clientName={clientName}
+                                token={token}
+                                visits={visits}
+                                tier={(tier as 'Bronce' | 'Plata' | 'Gold') || 'Bronce'}
+                            />
+                        </div>
                     </div>
 
                     {/* Background Ambient Effect */}
@@ -131,7 +142,7 @@ const DigitalCard: React.FC<DigitalCardProps> = ({ clientName, token, visits, ne
                 </div>
 
                 {/* BACK - DETAILS & BENEFITS */}
-                <div className="absolute top-0 left-0 backface-hidden w-full h-[560px] bg-stone-900 rounded-[24px] shadow-2xl rotate-y-180 p-8 text-white flex flex-col justify-between border border-stone-800">
+                <div className="absolute top-0 left-0 backface-hidden w-full h-[680px] bg-stone-900 rounded-[24px] shadow-2xl rotate-y-180 p-8 text-white flex flex-col justify-between border border-stone-800">
                     <div>
                         <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
                             <h3 className="font-serif italic text-2xl">Beneficios</h3>
