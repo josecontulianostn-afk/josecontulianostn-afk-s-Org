@@ -99,6 +99,16 @@ const LoyaltyCheck: React.FC = () => {
             const finalRUT = formatRUT(regRUT);
             const fullPhone = '+569' + phone;
 
+            // Generar UUID para member_token
+            const generateToken = () => {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            };
+            const newToken = generateToken();
+
             const { data, error } = await supabase.from('clients').insert([
                 {
                     name: `${regName} ${regSurname}`,
@@ -106,7 +116,8 @@ const LoyaltyCheck: React.FC = () => {
                     rut: finalRUT,
                     visits: 0,
                     referrals: 0,
-                    hair_service_count: 0
+                    hair_service_count: 0,
+                    member_token: newToken
                 }
             ]).select();
 
@@ -119,7 +130,7 @@ const LoyaltyCheck: React.FC = () => {
                     visits: 0,
                     referrals: 0,
                     nextReward: 5,
-                    token: newClient.member_token,
+                    token: newClient.member_token || newToken,
                     tier: 'Bronce',
                     hair_service_count: 0
                 });
