@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Gift, Star, UserCheck, Search, Loader2, Scissors, UserPlus } from 'lucide-react';
+import { Gift, Star, UserCheck, Search, Loader2, Scissors, UserPlus, AlertCircle } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import DigitalCard from './DigitalCard';
 import { Reward } from '../types';
@@ -7,6 +7,7 @@ import { Reward } from '../types';
 const LoyaltyCheck: React.FC = () => {
     const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [stats, setStats] = useState<{
         name?: string;
         visits: number;
@@ -158,7 +159,7 @@ const LoyaltyCheck: React.FC = () => {
 
         } catch (err: any) {
             console.error("Error registering:", err);
-            alert(err.message || "No se pudo registrar. Verifica si ya existe el número o RUT.");
+            setErrorMessage(err.message || "No se pudo registrar. Verifica si ya existe el número o RUT.");
         } finally {
             setLoading(false);
         }
@@ -226,13 +227,21 @@ const LoyaltyCheck: React.FC = () => {
                         </div>
 
                         <form onSubmit={handleRegister} className="space-y-4">
+                            {/* Mensaje de error visible */}
+                            {errorMessage && (
+                                <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 flex items-center gap-3">
+                                    <AlertCircle className="text-red-400 shrink-0" size={20} />
+                                    <p className="text-red-300 text-sm">{errorMessage}</p>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-2 gap-4">
                                 <input
                                     type="text"
                                     placeholder="Nombre"
                                     required
                                     value={regName}
-                                    onChange={(e) => setRegName(e.target.value)}
+                                    onChange={(e) => { setRegName(e.target.value); setErrorMessage(null); }}
                                     className="bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:outline-none"
                                 />
                                 <input
@@ -240,7 +249,7 @@ const LoyaltyCheck: React.FC = () => {
                                     placeholder="Apellido"
                                     required
                                     value={regSurname}
-                                    onChange={(e) => setRegSurname(e.target.value)}
+                                    onChange={(e) => { setRegSurname(e.target.value); setErrorMessage(null); }}
                                     className="bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:outline-none"
                                 />
                             </div>
@@ -249,7 +258,7 @@ const LoyaltyCheck: React.FC = () => {
                                 placeholder="RUT (Sin puntos ni guión)"
                                 required
                                 value={regRUT}
-                                onChange={(e) => setRegRUT(e.target.value)}
+                                onChange={(e) => { setRegRUT(e.target.value); setErrorMessage(null); }}
                                 className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:outline-none"
                             />
 
