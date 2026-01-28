@@ -5,7 +5,7 @@ import { VisitRegistration, InventoryLog } from '../../types';
 import VisitValidationModal from './VisitValidationModal';
 import FinancialDashboard from './FinancialDashboard';
 import { QRCodeSVG } from 'qrcode.react';
-import { Download, TrendingUp, Users, DollarSign, Package, PieChart, BarChart as BarChartIcon, ScatterChart as ScatterChartIcon, QrCode, ClipboardCheck, History, ShoppingCart, Calendar } from 'lucide-react';
+import { Download, TrendingUp, Users, DollarSign, Package, PieChart, BarChart as BarChartIcon, ScatterChart as ScatterChartIcon, QrCode, ClipboardCheck, History, ShoppingCart, Calendar, Eye, Trash2, X } from 'lucide-react';
 import POSModule from './POSModule';
 import AgendaModule from './AgendaModule';
 import {
@@ -236,6 +236,11 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const [clients, setClients] = useState<any[]>([]);
     const [editingClient, setEditingClient] = useState<any>(null);
     const [posInitialClient, setPosInitialClient] = useState<any>(null);
+
+    // Client History State
+    const [clientHistory, setClientHistory] = useState<Transaction[]>([]);
+    const [selectedClientForHistory, setSelectedClientForHistory] = useState<any>(null);
+    const [historyLoading, setHistoryLoading] = useState(false);
 
     // QR Validation Data
     const [pendingVisits, setPendingVisits] = useState<VisitRegistration[]>([]);
@@ -503,6 +508,32 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     const handleGoToPOS = (client: any) => {
         setPosInitialClient(client);
         setActiveTab('ventas');
+    };
+
+    const fetchClientHistory = async (client: any) => {
+        setHistoryLoading(true);
+        setSelectedClientForHistory(client);
+
+        const { data, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('client_id', client.id)
+            .order('created_at', { ascending: false });
+
+        if (error) console.error("Error fetching history:", error);
+        else setClientHistory(data as Transaction[] || []);
+        setHistoryLoading(false);
+    };
+
+    const handleDeleteTransaction = async (transactionId: string) => {
+        if (!window.confirm('¿Eliminar esta transacción? Esta acción no se puede deshacer.')) return;
+
+        const { error } = await supabase.from('transactions').delete().eq('id', transactionId);
+        if (error) {
+            alert('Error al eliminar: ' + error.message);
+        } else {
+            setClientHistory(prev => prev.filter(t => t.id !== transactionId));
+        }
     };
 
     const downloadCSV = () => {
@@ -929,6 +960,12 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                         <td className="px-6 py-4 text-stone-500">{new Date(c.last_visit).toLocaleDateString()}</td>
                                         <td className="px-6 py-4 text-right space-x-2">
                                             <button
+                                                onClick={() => fetchClientHistory(c)}
+                                                className="text-purple-600 hover:text-purple-800 font-medium text-xs px-2 py-1 bg-purple-50 rounded inline-flex items-center gap-1"
+                                            >
+                                                <Eye size={12} /> Historial
+                                            </button>
+                                            <button
                                                 onClick={() => setEditingClient(c)}
                                                 className="text-blue-600 hover:text-blue-800 font-medium text-xs px-2 py-1 bg-blue-50 rounded"
                                             >
@@ -997,6 +1034,116 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Client History Modal */}
+            {selectedClientForHistory && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white p-6 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+                        <div className="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 className="text-xl font-bold">Historial de Servicios</h3>
+                                <p className="text-sm text-stone-500">
+                                    {selectedClientForHistory.name || 'Cliente'} - {selectedClientForHistory.phone}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setSelectedClientForHistory(null);
+                                    setClientHistory([]);
+                                }}
+                                className="p-2 hover:bg-stone-100 rounded-full"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {historyLoading ? (
+                            <div className="py-12 text-center text-stone-400">Cargando historial...</div>
+                        ) : clientHistory.length === 0 ? (
+                            <div className="py-12 text-center text-stone-400 bg-stone-50 rounded-lg border-2 border-dashed border-stone-100">
+                                <p>Este cliente no tiene transacciones registradas.</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-y-auto flex-1">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="text-xs uppercase bg-stone-50 text-stone-500 sticky top-0">
+                                        <tr>
+                                            <th className="px-4 py-3">Fecha</th>
+                                            <th className="px-4 py-3">Descripción</th>
+                                            <th className="px-4 py-3">Tipo</th>
+                                            <th className="px-4 py-3 text-right">Monto</th>
+                                            <th className="px-4 py-3 text-right">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {clientHistory.map((t) => (
+                                            <tr key={t.id} className="border-b border-stone-100 hover:bg-stone-50">
+                                                <td className="px-4 py-3 text-stone-500 text-xs">
+                                                    {new Date(t.created_at).toLocaleDateString('es-CL', {
+                                                        day: '2-digit',
+                                                        month: 'short',
+                                                        year: 'numeric'
+                                                    })}
+                                                </td>
+                                                <td className="px-4 py-3 font-medium">
+                                                    {t.description || 'Sin descripción'}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${t.type === 'service'
+                                                            ? 'bg-purple-100 text-purple-700'
+                                                            : 'bg-blue-100 text-blue-700'
+                                                        }`}>
+                                                        {t.type === 'service' ? 'Servicio' : 'Producto'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-bold text-green-600">
+                                                    ${t.amount.toLocaleString()}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <button
+                                                        onClick={() => handleDeleteTransaction(t.id)}
+                                                        className="text-red-500 hover:text-red-700 p-1"
+                                                        title="Eliminar transacción"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot className="bg-stone-100 font-bold">
+                                        <tr>
+                                            <td colSpan={3} className="px-4 py-3">Total General</td>
+                                            <td className="px-4 py-3 text-right text-green-700">
+                                                ${clientHistory.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        )}
+
+                        <div className="mt-4 pt-4 border-t border-stone-200 flex gap-2">
+                            <button
+                                onClick={() => handleGoToPOS(selectedClientForHistory)}
+                                className="flex-1 px-4 py-2 bg-stone-900 text-white rounded-lg font-bold flex items-center justify-center gap-2"
+                            >
+                                <ShoppingCart size={16} /> Registrar Nueva Venta
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setSelectedClientForHistory(null);
+                                    setClientHistory([]);
+                                }}
+                                className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg font-bold"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
