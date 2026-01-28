@@ -95,7 +95,16 @@ const LoyaltyCheck: React.FC = () => {
         setLoading(true);
 
         try {
+            // Verificar que Supabase esté configurado
+            if (!supabase) {
+                throw new Error('Sistema no disponible. Contacta al administrador.');
+            }
+
             // Validate Inputs
+            if (!regName.trim() || !regSurname.trim()) {
+                throw new Error('Por favor completa nombre y apellido');
+            }
+
             const finalRUT = formatRUT(regRUT);
             const fullPhone = '+569' + phone;
 
@@ -109,6 +118,8 @@ const LoyaltyCheck: React.FC = () => {
             };
             const newToken = generateToken();
 
+            console.log('Registrando cliente:', { fullPhone, name: `${regName} ${regSurname}`, token: newToken });
+
             const { data, error } = await supabase.from('clients').insert([
                 {
                     name: `${regName} ${regSurname}`,
@@ -121,10 +132,16 @@ const LoyaltyCheck: React.FC = () => {
                 }
             ]).select();
 
-            if (error) throw error;
+            console.log('Resultado insert:', { data, error });
+
+            if (error) {
+                console.error('Error de Supabase:', error);
+                throw new Error(error.message || 'Error al registrar');
+            }
 
             if (data && data[0]) {
                 const newClient = data[0];
+                console.log('Cliente creado:', newClient);
                 setStats({
                     name: newClient.name,
                     visits: 0,
@@ -135,11 +152,13 @@ const LoyaltyCheck: React.FC = () => {
                     hair_service_count: 0
                 });
                 setIsRegistering(false);
+            } else {
+                throw new Error('No se recibieron datos del servidor');
             }
 
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error registering:", err);
-            alert("No se pudo registrar. Verifica si ya existe el número o RUT.");
+            alert(err.message || "No se pudo registrar. Verifica si ya existe el número o RUT.");
         } finally {
             setLoading(false);
         }
