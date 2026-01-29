@@ -33,23 +33,39 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
     }, [transactions, expenses]);
 
     const loadServiceCosts = async () => {
-        // Intentar cargar costos guardados desde localStorage
-        const saved = localStorage.getItem('serviceCosts');
-        if (saved) {
-            setServiceCosts(JSON.parse(saved));
-        } else {
-            // Inicializar con 0
-            const initial: Record<string, number> = {};
-            SERVICES.forEach(s => { initial[s.id] = 0; });
-            setServiceCosts(initial);
+        try {
+            const { data, error } = await supabase.from('service_costs').select('*');
+            if (data) {
+                const costs: Record<string, number> = {};
+                // Initialize with 0 for all services first
+                SERVICES.forEach(s => { costs[s.id] = 0; });
+
+                // Override with DB values
+                data.forEach((item: any) => {
+                    costs[item.service_id] = item.cost;
+                });
+                setServiceCosts(costs);
+            }
+            if (error) console.error("Error loading service costs:", error);
+        } catch (err) {
+            console.error("Failed to load costs:", err);
         }
     };
 
-    const saveServiceCost = (serviceId: string, cost: number) => {
-        const updated = { ...serviceCosts, [serviceId]: cost };
-        setServiceCosts(updated);
-        localStorage.setItem('serviceCosts', JSON.stringify(updated));
-        setEditingService(null);
+    const saveServiceCost = async (serviceId: string, cost: number) => {
+        try {
+            const { error } = await supabase
+                .from('service_costs')
+                .upsert({ service_id: serviceId, cost: cost }, { onConflict: 'service_id' });
+
+            if (error) throw error;
+
+            const updated = { ...serviceCosts, [serviceId]: cost };
+            setServiceCosts(updated);
+            setEditingService(null);
+        } catch (err: any) {
+            alert('Error guardando costo: ' + err.message);
+        }
     };
 
     const loadClientStats = async () => {
@@ -406,8 +422,8 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
                                         </td>
                                         <td className="px-2 py-3 text-center">
                                             <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${client.visits >= 5 ? 'bg-green-100 text-green-700' :
-                                                    client.visits >= 2 ? 'bg-blue-100 text-blue-700' :
-                                                        'bg-stone-100 text-stone-600'
+                                                client.visits >= 2 ? 'bg-blue-100 text-blue-700' :
+                                                    'bg-stone-100 text-stone-600'
                                                 }`}>
                                                 {client.visits || 0}
                                             </span>

@@ -553,6 +553,28 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
         document.body.removeChild(link);
     };
 
+    const downloadClientsCSV = () => {
+        const headers = ['Nombre', 'Teléfono', 'Visitas', 'Última Visita'];
+        const rows = clients.map(c => [
+            c.name || 'Sin Nombre',
+            c.phone,
+            c.visits,
+            c.last_visit ? new Date(c.last_visit).toLocaleDateString() : 'N/A'
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8,"
+            + headers.join(",") + "\n"
+            + rows.map(e => e.join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `clientes_tus3b_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="max-w-6xl mx-auto p-4 py-8 md:pt-24">
             <div className="flex justify-between items-center mb-8">
@@ -946,7 +968,15 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                 </>
             ) : (
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
-                    <h3 className="text-xl font-bold mb-6">Gestión de Clientes</h3>
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-bold">Gestión de Clientes</h3>
+                        <button
+                            onClick={downloadClientsCSV}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 flex items-center gap-2"
+                        >
+                            <Download size={16} /> Exportar Excel
+                        </button>
+                    </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
                             <thead className="text-xs uppercase bg-stone-50 text-stone-500">
