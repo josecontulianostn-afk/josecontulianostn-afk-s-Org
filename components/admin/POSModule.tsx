@@ -136,7 +136,48 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
 
         setIsCheckoutLoading(true);
         try {
-            const clientId = posClient ? posClient.id : null;
+            let clientId = posClient?.id || null;
+
+            // Si tenemos datos de cliente (de agenda) pero sin ID, buscar/crear
+            if (posClient && !posClient.id && posClient.phone) {
+                // Buscar cliente existente por teléfono
+                const phoneToSearch = posClient.phone.startsWith('+') ? posClient.phone : '+569' + posClient.phone;
+                const { data: existingClient } = await supabase
+                    .from('clients')
+                    .select('id')
+                    .eq('phone', phoneToSearch)
+                    .single();
+
+                if (existingClient) {
+                    clientId = existingClient.id;
+                } else {
+                    // Crear nuevo cliente
+                    const generateToken = () => {
+                        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                            const r = Math.random() * 16 | 0;
+                            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                            return v.toString(16);
+                        });
+                    };
+
+                    const { data: newClient, error: createError } = await supabase
+                        .from('clients')
+                        .insert({
+                            name: posClient.name || 'Cliente',
+                            phone: phoneToSearch,
+                            visits: 1,
+                            member_token: generateToken()
+                        })
+                        .select('id')
+                        .single();
+
+                    if (createError) {
+                        console.error('Error creando cliente:', createError);
+                    } else if (newClient) {
+                        clientId = newClient.id;
+                    }
+                }
+            }
 
             for (const item of cart) {
                 // 1. Inventory Logic
