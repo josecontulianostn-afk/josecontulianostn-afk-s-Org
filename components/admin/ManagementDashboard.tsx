@@ -10,7 +10,7 @@ import POSModule from './POSModule';
 import AgendaModule from './AgendaModule';
 import {
     PieChart as RechartsPie, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
-    BarChart, Bar, XAxis, YAxis, CartesianGrid,
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Area, ComposedChart, Line,
     ScatterChart, Scatter, ZAxis, ReferenceLine
 } from 'recharts';
 
@@ -20,7 +20,9 @@ interface Transaction {
     created_at: string;
     client_id: string;
     type: string;
-    description?: string; // Add description to track product/service name
+    description?: string;
+    cost?: number; // Costo real registrado
+    client?: { name: string; phone: string }; // Datos del cliente joined
 }
 
 interface ClientStat {
@@ -257,6 +259,34 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
     // Inventory History
     const [showInventoryHistory, setShowInventoryHistory] = useState(false);
 
+    // Daily Stats for Evolution Chart
+    const dailyStats = React.useMemo(() => {
+        const stats = new Map<string, { date: string, sales: number, cost: number, clients: Set<string> }>();
+        // Sort chrono ASC for the graph
+        const sortedTrans = [...transactions].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+        sortedTrans.forEach(t => {
+            const d = new Date(t.created_at);
+            const key = d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+
+            if (!stats.has(key)) stats.set(key, { date: key, sales: 0, cost: 0, clients: new Set() });
+
+            const current = stats.get(key)!;
+            current.sales += t.amount;
+            current.cost += (t.cost || 0); // Costo real DB
+            // Si costo es 0, seria bueno estimar con serviceCosts[t.description] aqui, pero es complejo matchear strings.
+            // Por ahora, solo suma lo que tenga registrado.
+
+            if (t.client_id) current.clients.add(t.client_id);
+        });
+
+        return Array.from(stats.values()).map(s => ({
+            ...s,
+            margin: s.sales - s.cost,
+            uniqueClients: s.clients.size
+        }));
+    }, [transactions]);
+
     // Refresh data when tab changes or time range changes
     useEffect(() => {
         if (activeTab === 'dashboard' || activeTab === 'finanzas') {
@@ -288,7 +318,7 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
 
             const { data: transData, error: transError } = await supabase
                 .from('transactions')
-                .select('*')
+                .select('*, clients(name, phone)')
                 .gte('created_at', rangeDate.toISOString());
 
             if (transError) throw transError;
@@ -715,6 +745,7 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                     expenses={expenses} // We need to fetch expenses in ManagementDashboard
                     timeRange={timeRange as any}
                     onTimeRangeChange={(r) => setTimeRange(r)}
+                    onRefresh={fetchDashboardData}
                 />
             )}
 
@@ -771,6 +802,38 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                     </div>
 
                     {/* Charts Section */}
+                    {/* Evolution Chart */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 mb-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold flex items-center gap-2">
+                                <TrendingUp className="text-blue-600" /> Evolución Financiera
+                            </h3>
+                            {/* Placeholder for future Week/Month grouping selector if needed */}
+                        </div>
+                        <div className="h-[350px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={dailyStats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                    <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} stroke="#9ca3af" />
+                                    <YAxis yAxisId="left" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v / 1000}k`} stroke="#9ca3af" />
+                                    <YAxis yAxisId="right" orientation="right" fontSize={12} tickLine={false} axisLine={false} stroke="#9ca3af" />
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                        formatter={(value: number, name: string) => [
+                                            name === 'Clientes' ? value : `$${value.toLocaleString()}`,
+                                            name
+                                        ]}
+                                    />
+                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                    <Bar yAxisId="left" dataKey="sales" name="Venta Total" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={20} />
+                                    <Bar yAxisId="left" dataKey="cost" name="Costo" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={20} />
+                                    <Line yAxisId="left" type="monotone" dataKey="margin" name="Margen" stroke="#10b981" strokeWidth={3} dot={false} />
+                                    <Area yAxisId="right" type="monotone" dataKey="uniqueClients" name="Clientes Únicos" fill="#e0f2fe" stroke="#3b82f6" fillOpacity={0.4} />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                         {/* 1. Category Distribution */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">

@@ -1,35 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { PERFUMES, SERVICES } from '../../constants';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { DollarSign, TrendingUp, PieChart, Activity, Calendar, Users, Edit2, Save, RefreshCw } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { DollarSign, TrendingUp, PieChart, Activity, Users, Edit2, Save, RefreshCw } from 'lucide-react';
 
 interface FinancialDashboardProps {
     transactions: any[];
     expenses: any[];
     timeRange: 'day' | 'week' | 'month';
     onTimeRangeChange: (range: 'day' | 'week' | 'month') => void;
+    onRefresh?: () => void;
 }
 
-const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, expenses, timeRange, onTimeRangeChange }) => {
+const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, expenses, timeRange, onTimeRangeChange, onRefresh }) => {
     // Aggregated Data State
     const [areaStats, setAreaStats] = useState<any[]>([]);
     const [investmentStats, setInvestmentStats] = useState<any>({ invested: 0, recovered: 0 });
-    const [trendData, setTrendData] = useState<any[]>([]);
 
     // Service Costs State (editable)
     const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
     const [editingService, setEditingService] = useState<string | null>(null);
     const [tempCost, setTempCost] = useState<string>('');
 
-    // Client Stats State
-    const [clientStats, setClientStats] = useState<any[]>([]);
-    const [loadingClients, setLoadingClients] = useState(false);
+    const updateTransactionCost = async (id: string, newCost: number) => {
+        try {
+            const { error } = await supabase.from('transactions').update({ cost: newCost }).eq('id', id);
+            if (error) throw error;
+            if (onRefresh) onRefresh();
+        } catch (e: any) {
+            alert("Error actualizando costo: " + e.message);
+        }
+    };
 
     useEffect(() => {
         calculateStats();
         loadServiceCosts();
-        loadClientStats();
     }, [transactions, expenses]);
 
     const loadServiceCosts = async () => {
@@ -68,53 +73,6 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
         }
     };
 
-    const loadClientStats = async () => {
-        setLoadingClients(true);
-        try {
-            // Obtener clientes con sus estadísticas
-            const { data: clients, error: clientError } = await supabase
-                .from('clients')
-                .select('id, name, phone, visits, created_at')
-                .order('visits', { ascending: false });
-
-            if (clientError) throw clientError;
-
-            // Obtener totales de transacciones por cliente
-            const { data: txData, error: txError } = await supabase
-                .from('transactions')
-                .select('client_id, amount');
-
-            if (txError) throw txError;
-
-            // Calcular totales por cliente
-            const totalsByClient = new Map<string, { total: number, count: number }>();
-            txData?.forEach(tx => {
-                if (tx.client_id) {
-                    const current = totalsByClient.get(tx.client_id) || { total: 0, count: 0 };
-                    current.total += tx.amount;
-                    current.count += 1;
-                    totalsByClient.set(tx.client_id, current);
-                }
-            });
-
-            // Combinar datos
-            const combined = clients?.map(client => ({
-                ...client,
-                totalSpent: totalsByClient.get(client.id)?.total || 0,
-                transactionCount: totalsByClient.get(client.id)?.count || 0,
-                avgTicket: totalsByClient.get(client.id)
-                    ? Math.round(totalsByClient.get(client.id)!.total / totalsByClient.get(client.id)!.count)
-                    : 0
-            })) || [];
-
-            setClientStats(combined);
-        } catch (err) {
-            console.error('Error loading client stats:', err);
-        } finally {
-            setLoadingClients(false);
-        }
-    };
-
     const calculateStats = () => {
         // 1. Area Stats (Style, Perfum, Amor Amor)
         const stats = {
@@ -125,34 +83,16 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
 
         transactions.forEach(t => {
             let area = 'Style'; // Default
-            let unitCost = 0;
 
-            // Determine Area & Unit Cost
+            // Determine Area
             if (t.type === 'product') {
-                // Try to match product to get category (Perfum or Amor Amor?)
-                // Simple heuristic: if description contains "Regalito" -> Amor Amor, else Perfum
                 if (t.description?.includes('Regalito') || t.description?.includes('Amor')) {
                     area = 'Amor Amor';
-                    // We need cost for gifts. Assuming fixed margin or cost for now? 
-                    // Let's assume 70% cost for gifts if not found? Or better, 0 if unknown.
                 } else {
                     area = 'Perfum';
-                    // Find perfume cost
-                    // Heuristic: match price? or description name?
-                    const p = PERFUMES.find(p => t.description?.includes(p.name));
-                    if (p) {
-                        // We need raw cost. 'priceFullBottle' is retail. 
-                        // We don't have unit cost in constants easily accessibly mapped to transactions without ID.
-                        // But we can try. 
-                        // *Improvement*: Store product_id in transaction metadata for exact cost lookup.
-                        // For now: assume 50% margin if unknown, or 0 cost.
-                    }
                 }
             } else {
                 area = 'Style';
-                // Service costs are usually Labor + Supplies. 
-                // We rely on 'additional_cost' for supplies. Labor is internal.
-                // So Unit Cost = 0 (unless we define fixed costs per service).
             }
 
             // Sum up
@@ -161,8 +101,10 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
                 current.sales += t.amount;
                 current.extras += (t.additional_cost || 0);
                 current.count += 1;
-                // Add estimated unit cost if logic allowed, for now 0
-                current.cost += 0;
+                // Cost uses transaction cost if available, else 0 (unless we implemented estimation logic inside calculateStats, 
+                // but detailed logic is now in the table row).
+                // For aggregated area stats, we should ideally sum t.cost.
+                current.cost += (t.cost || 0);
             }
         });
 
@@ -182,17 +124,38 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
         setAreaStats(formattedAreaStats);
 
         // 2. Investment Stats
-        // Invested: Sum of all expenses (Category: 'Materiales', 'Insumos', 'Productos', etc)
-        // Recovered: Sum of all Sales (Revenue)
         const totalInvested = expenses.reduce((sum, e) => sum + e.amount, 0);
         const totalRecovered = transactions.reduce((sum, t) => sum + t.amount, 0);
         setInvestmentStats({ invested: totalInvested, recovered: totalRecovered });
-
-
-        // 3. Trend Data (Daily/Weekly based on filter?)
-        // Let's show Daily trend for the selected period
-        // ... (Simplified for now to just show area stats logic)
     };
+
+    // Dynamic Services Logic
+    const allServices = React.useMemo(() => {
+        const knownIds = new Set(SERVICES.map(s => s.id));
+        const knownNames = new Set(SERVICES.map(s => s.name));
+
+        const dynamicVars: any[] = [];
+
+        transactions.forEach(t => {
+            if (t.type === 'service' && t.description) {
+                const name = t.description;
+                // Si no coincide exactamente con un servicio conocido
+                if (!knownNames.has(name)) {
+                    // Verificar si ya lo descubrimos en esta iteración
+                    if (!dynamicVars.find(d => d.name === name)) {
+                        dynamicVars.push({
+                            id: name, // Usar nombre como ID para estos casos
+                            name: name,
+                            price: 0, // Precio variable, se calculará promedio en la tabla
+                            isDynamic: true
+                        });
+                    }
+                }
+            }
+        });
+
+        return [...SERVICES, ...dynamicVars];
+    }, [transactions]);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -309,7 +272,7 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
                 </div>
             </div>
 
-            {/* ========== NUEVA SECCIÓN: GESTIÓN DE SERVICIOS Y CLIENTES ========== */}
+            {/* ========== NUEVA SECCIÓN: GESTIÓN DE SERVICIOS Y RENTABILIDAD ========== */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Gestión de Costos de Servicios */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
@@ -323,22 +286,37 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
                             <thead className="text-xs uppercase text-stone-400 bg-stone-50">
                                 <tr>
                                     <th className="px-2 py-2 text-left">Servicio</th>
-                                    <th className="px-2 py-2 text-right">Precio</th>
+                                    <th className="px-2 py-2 text-right">Precio Prom.</th>
                                     <th className="px-2 py-2 text-right">Costo</th>
                                     <th className="px-2 py-2 text-right">Margen</th>
                                     <th className="px-2 py-2 text-right">%</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-stone-100">
-                                {SERVICES.map(service => {
+                                {allServices.map(service => {
                                     const cost = serviceCosts[service.id] || 0;
-                                    const margin = service.price - cost;
-                                    const marginPercent = service.price > 0 ? Math.round((margin / service.price) * 100) : 0;
+
+                                    // Calculate average price if dynamic or static
+                                    let avgPrice = service.price || 0;
+                                    if (service.isDynamic || !avgPrice) {
+                                        // Find transactions for this service to calculate avg
+                                        const serviceTx = transactions.filter(t => t.description === service.name && t.amount > 0);
+                                        if (serviceTx.length > 0) {
+                                            const total = serviceTx.reduce((sum, t) => sum + t.amount, 0);
+                                            avgPrice = total / serviceTx.length;
+                                        }
+                                    }
+
+                                    const margin = avgPrice - cost;
+                                    const marginPercent = avgPrice > 0 ? Math.round((margin / avgPrice) * 100) : 0;
 
                                     return (
                                         <tr key={service.id} className="hover:bg-stone-50">
-                                            <td className="px-2 py-3 font-medium text-stone-700">{service.name}</td>
-                                            <td className="px-2 py-3 text-right text-stone-600">${service.price.toLocaleString()}</td>
+                                            <td className="px-2 py-3 font-medium text-stone-700">
+                                                {service.name}
+                                                {service.isDynamic && <span className="text-[10px] text-blue-500 ml-1">(Nuevo)</span>}
+                                            </td>
+                                            <td className="px-2 py-3 text-right text-stone-600">${avgPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                             <td className="px-2 py-3 text-right">
                                                 {editingService === service.id ? (
                                                     <div className="flex items-center justify-end gap-1">
@@ -380,81 +358,121 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
                     </div>
                 </div>
 
-                {/* Estadísticas de Clientes */}
+                {/* Rentabilidad por Cliente / Visita */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="font-bold text-lg flex items-center gap-2">
-                            <Users size={20} className="text-blue-600" /> Gestión de Clientes
+                            <Users size={20} className="text-blue-600" /> Vista de Ingreso, Costo y Margen por Cliente
                         </h3>
-                        <button
-                            onClick={loadClientStats}
-                            disabled={loadingClients}
-                            className="text-stone-400 hover:text-stone-600 p-1"
-                        >
-                            <RefreshCw size={16} className={loadingClients ? 'animate-spin' : ''} />
-                        </button>
                     </div>
-                    <p className="text-xs text-stone-400 mb-4">Retornos y totales acumulados por cliente.</p>
+                    <p className="text-xs text-stone-400 mb-4">Detalle de visitas. Edita el costo manual si difiere del estándar.</p>
 
-                    <div className="overflow-x-auto max-h-[400px]">
+                    <div className="overflow-x-auto max-h-[600px]">
                         <table className="w-full text-sm">
-                            <thead className="text-xs uppercase text-stone-400 bg-stone-50 sticky top-0">
+                            <thead className="text-xs uppercase text-stone-400 bg-stone-50 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-2 py-2 text-left">Cliente</th>
-                                    <th className="px-2 py-2 text-center">Visitas</th>
-                                    <th className="px-2 py-2 text-right">Total $</th>
-                                    <th className="px-2 py-2 text-right">Ticket Prom.</th>
+                                    <th className="px-4 py-3 text-left">Fecha</th>
+                                    <th className="px-4 py-3 text-left">Cliente</th>
+                                    <th className="px-4 py-3 text-left">Servicio/Producto</th>
+                                    <th className="px-4 py-3 text-right">Venta</th>
+                                    <th className="px-4 py-3 text-right">Costo (Edit)</th>
+                                    <th className="px-4 py-3 text-right">Margen</th>
+                                    <th className="px-4 py-3 text-right">%</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-stone-100">
-                                {clientStats.length === 0 && (
+                                {transactions.length === 0 && (
                                     <tr>
-                                        <td colSpan={4} className="text-center py-8 text-stone-400">
-                                            {loadingClients ? 'Cargando...' : 'No hay clientes registrados'}
+                                        <td colSpan={7} className="text-center py-8 text-stone-400">
+                                            No hay transacciones en este periodo.
                                         </td>
                                     </tr>
                                 )}
-                                {clientStats.map(client => (
-                                    <tr key={client.id} className="hover:bg-stone-50">
-                                        <td className="px-2 py-3">
-                                            <div className="font-medium text-stone-700">{client.name || 'Sin nombre'}</div>
-                                            <div className="text-xs text-stone-400">{client.phone}</div>
-                                        </td>
-                                        <td className="px-2 py-3 text-center">
-                                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${client.visits >= 5 ? 'bg-green-100 text-green-700' :
-                                                client.visits >= 2 ? 'bg-blue-100 text-blue-700' :
-                                                    'bg-stone-100 text-stone-600'
-                                                }`}>
-                                                {client.visits || 0}
-                                            </span>
-                                        </td>
-                                        <td className="px-2 py-3 text-right font-bold text-emerald-600">
-                                            ${client.totalSpent.toLocaleString()}
-                                        </td>
-                                        <td className="px-2 py-3 text-right text-stone-500">
-                                            ${client.avgTicket.toLocaleString()}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {transactions.map(t => {
+                                    // Heuristica para costo estandar
+                                    let stdCost = 0;
+                                    if (!t.cost && t.type === 'service') {
+                                        const svc = SERVICES.find(s => t.description?.includes(s.name));
+                                        if (svc) stdCost = serviceCosts[svc.id] || 0;
+                                    }
+
+                                    return (
+                                        <ProfitabilityRow
+                                            key={t.id}
+                                            transaction={t}
+                                            serviceCostStd={stdCost}
+                                            onUpdate={updateTransactionCost}
+                                        />
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
-
-                    {clientStats.length > 0 && (
-                        <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg text-xs">
-                            <div className="flex justify-between items-center">
-                                <span className="text-stone-600">Total Clientes: <strong>{clientStats.length}</strong></span>
-                                <span className="text-emerald-600 font-bold">
-                                    Ingresos Totales: ${clientStats.reduce((sum, c) => sum + c.totalSpent, 0).toLocaleString()}
-                                </span>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
     );
 };
 
-export default FinancialDashboard;
+const ProfitabilityRow = ({ transaction, serviceCostStd, onUpdate }: any) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [cost, setCost] = useState(0);
+    const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        setCost(transaction.cost !== undefined && transaction.cost !== null ? transaction.cost : serviceCostStd);
+    }, [transaction.cost, serviceCostStd]);
+
+    const margin = transaction.amount - cost;
+    const marginPercent = transaction.amount > 0 ? (margin / transaction.amount) * 100 : 0;
+
+    const handleSave = async () => {
+        setLoading(true);
+        await onUpdate(transaction.id, cost);
+        setLoading(false);
+        setIsEditing(false);
+    };
+
+    return (
+        <tr className="hover:bg-stone-50 border-b border-stone-100 last:border-0">
+            <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{new Date(transaction.created_at).toLocaleDateString()}</td>
+            <td className="px-4 py-3">
+                <div className="font-medium text-stone-800">{transaction.client?.name || 'Cliente Casual'}</div>
+                <div className="text-xs text-stone-400">{transaction.client?.phone || ''}</div>
+            </td>
+            <td className="px-4 py-3 text-stone-600">
+                <div className="text-sm truncate max-w-[200px]" title={transaction.description}>{transaction.description || transaction.type}</div>
+            </td>
+            <td className="px-4 py-3 text-right text-stone-800 font-medium">${transaction.amount.toLocaleString()}</td>
+            <td className="px-4 py-3 text-right">
+                {isEditing ? (
+                    <div className="flex items-center justify-end gap-1">
+                        <input
+                            type="number"
+                            value={cost}
+                            onChange={e => setCost(Number(e.target.value))}
+                            className="w-20 border border-stone-300 rounded px-2 py-1 text-right text-sm focus:outline-none focus:border-blue-500"
+                            autoFocus
+                        />
+                        <button onClick={handleSave} disabled={loading} className="text-green-600 hover:text-green-700 bg-green-50 p-1 rounded">
+                            <Save size={16} />
+                        </button>
+                    </div>
+                ) : (
+                    <button onClick={() => setIsEditing(true)} className="text-stone-500 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition-colors text-sm flex items-center justify-end w-full gap-1 group">
+                        ${cost.toLocaleString()}
+                        <Edit2 size={12} className="opacity-0 group-hover:opacity-100" />
+                    </button>
+                )}
+            </td>
+            <td className={`px-4 py-3 text-right font-bold ${margin >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                ${margin.toLocaleString()}
+            </td>
+            <td className="px-4 py-3 text-right text-xs text-stone-400">
+                {marginPercent.toFixed(0)}%
+            </td>
+        </tr>
+    );
+};
+
+export default FinancialDashboard;
