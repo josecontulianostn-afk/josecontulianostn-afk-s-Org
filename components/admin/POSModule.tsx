@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, PlusCircle, X, ShoppingCart, Percent, Save, Trash2, Edit2, Package, User, Star } from 'lucide-react';
+import { Search, Plus, X, ShoppingCart, CreditCard, RotateCcw, RefreshCw, Trash2, Edit2, Package, User, ShoppingBag, UserPlus } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
-import { PERFUMES, GIFTS, SERVICES } from '../../constants';
+import { PERFUMES, SERVICES } from '../../constants';
 
 interface POSModuleProps {
     initialClient?: any;
@@ -13,6 +13,7 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
     const [posClient, setPosClient] = useState<any>(initialClient || null);
     const [posSearchTerm, setPosSearchTerm] = useState('');
     const [posProductSearch, setPosProductSearch] = useState('');
+    const [activeCategory, setActiveCategory] = useState('todos');
     const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
     const [clients, setClients] = useState<any[]>([]);
     const [message, setMessage] = useState('');
@@ -24,9 +25,14 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
     const [manualItemName, setManualItemName] = useState('');
     const [manualItemPrice, setManualItemPrice] = useState('');
 
+    // Recent Transactions State
+    const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+
     useEffect(() => {
         if (initialClient) setPosClient(initialClient);
         fetchInventoryProducts();
+        loadRecentTransactions();
     }, [initialClient]);
 
     const fetchInventoryProducts = async () => {
@@ -36,6 +42,25 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
             .gt('quantity', 0)
             .order('name', { ascending: true });
         if (data) setInventoryProducts(data);
+    };
+
+    const loadRecentTransactions = async () => {
+        setLoadingHistory(true);
+        // Cargar ventas de las últimas 24 horas
+        const yesterday = new Date();
+        yesterday.setHours(yesterday.getHours() - 24);
+
+        const { data, error } = await supabase
+            .from('transactions')
+            .select('*, clients(name)')
+            .gte('created_at', yesterday.toISOString())
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (!error && data) {
+            setRecentTransactions(data);
+        }
+        setLoadingHistory(false);
     };
 
     const fetchClients = async (search: string) => {
@@ -69,9 +94,11 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
         } else {
             let price = customPrice || 0;
             if (!customPrice) {
-                if (type === 'product') {
+                if (type === 'product') { // Perfumes from constants
                     if (variant === '5ml') price = product.price5ml || product.price || 0;
-                    else price = product.price10ml || product.price || 0;
+                    else if (variant === '10ml') price = product.price10ml || 0;
+                    else if (variant === 'Botella') price = product.priceFullBottle || 0;
+                    else price = product.price || 0;
                 }
                 if (type === 'gift') price = product.price || 0;
                 if (type === 'service') price = product.price || 0;
@@ -101,7 +128,8 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
             type: 'service',
             qty: 1,
             variant: 'manual',
-            stock: false
+            stock: false,
+            cartId: 'manual-' + Date.now()
         };
 
         setCart(prev => [...prev, newItem]);
@@ -130,6 +158,71 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
         setCart(cart.map(item => item.cartId === cartId ? { ...item, price } : item));
     };
 
+    const handleQuickCreateClient = async () => {
+        const phone = prompt(`Ingresa el teléfono para el nuevo cliente "${posSearchTerm}":`, "+569");
+        if (!phone) return;
+
+        try {
+            // Verificar si existe por si acaso
+            const { data: existing } = await supabase.from('clients').select('id, name, phone').eq('phone', phone).single();
+            if (existing) {
+                alert(`El cliente ya existe: ${existing.name}`);
+                setPosClient(existing);
+                setPosSearchTerm('');
+                return;
+            }
+
+            const generateToken = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+
+            const { data: newClient, error } = await supabase
+                .from('clients')
+                .insert({
+                    name: posSearchTerm,
+                    phone: phone,
+                    visits: 1,
+                    member_token: generateToken()
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            alert(`✅ Cliente creado: ${newClient.name}`);
+            setPosClient(newClient);
+            setPosSearchTerm('');
+        } catch (err: any) {
+            alert("Error creando cliente: " + err.message);
+        }
+    };
+
+    const handleAssignClientToTransaction = async (txId: string) => {
+        if (!posClient || !posClient.id) {
+            alert("⚠️ Primero selecciona un cliente en el panel 'Venta Actual' (derecha).\n\n1. Busca y selecciona el cliente arriba a la derecha.\n2. Vuelve aquí y presiona este botón para asignarlo a esta venta.");
+            return;
+        }
+
+        if (!confirm(`¿Asignar cliente "${posClient.name}" a esta venta?`)) return;
+
+        try {
+            const { error } = await supabase
+                .from('transactions')
+                .update({ client_id: posClient.id })
+                .eq('id', txId);
+
+            if (error) throw error;
+
+            alert("✅ Cliente asignado correctamente.");
+            loadRecentTransactions();
+            setPosClient(null); // Reset after assign
+        } catch (err: any) {
+            alert("Error: " + err.message);
+        }
+    };
+
+
     const handleCheckout = async () => {
         if (cart.length === 0) return alert("El carrito está vacío");
         if (!window.confirm(`¿Confirmar venta por $${cart.reduce((sum, item) => sum + (item.price * item.qty), 0).toLocaleString()}?`)) return;
@@ -140,7 +233,6 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
 
             // Si tenemos datos de cliente (de agenda) pero sin ID, buscar/crear
             if (posClient && !posClient.id && posClient.phone) {
-                // Buscar cliente existente por teléfono
                 const phoneToSearch = posClient.phone.startsWith('+') ? posClient.phone : '+569' + posClient.phone;
                 const { data: existingClient } = await supabase
                     .from('clients')
@@ -151,7 +243,6 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
                 if (existingClient) {
                     clientId = existingClient.id;
                 } else {
-                    // Crear nuevo cliente
                     const generateToken = () => {
                         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                             const r = Math.random() * 16 | 0;
@@ -196,7 +287,12 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
                     amount: item.price * item.qty,
                     type: item.type === 'service' ? 'service' : 'product',
                     description: `POS: ${item.name} (${item.variant}) x${item.qty}`,
-                    additional_cost: 0
+                    additional_cost: 0,
+                    // Si la migración se aplica, esto funcionará, si no, se ignorarán si supabase está en modo lax o fallará
+                    // Para seguridad: no enviamos product_id por ahora si no estamos seguros de la migración,
+                    // o asumimos que el usuario la ejecutará pronto.
+                    // product_id: item.type === 'product' ? item.id : null,
+                    // quantity: item.qty
                 });
 
                 if (txError) throw txError;
@@ -206,6 +302,7 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
             setCart([]);
             setPosClient(null);
             setPosSearchTerm('');
+            loadRecentTransactions(); // Recargar historial
         } catch (err: any) {
             alert("Error procesando venta: " + err.message);
         } finally {
@@ -213,26 +310,69 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
         }
     };
 
-    const filteredPerfumes = PERFUMES.filter(p => p.name?.toLowerCase().includes(posProductSearch.toLowerCase()));
-    const filteredServices = SERVICES.filter(s => s.name?.toLowerCase().includes(posProductSearch.toLowerCase()));
-    const filteredInventory = inventoryProducts.filter(p => p.name?.toLowerCase().includes(posProductSearch.toLowerCase()));
+    const handleDeleteTransaction = async (tx: any) => {
+        if (!confirm(`¿Eliminar venta de $${tx.amount.toLocaleString()}?\n\nEsta acción eliminará el registro financiero.`)) return;
+
+        // Opcional: Sugerir ajustar stock
+        const shouldAdjustStock = tx.type === 'product' && confirm("¿Deseas intentar devolver el stock automáticamente?\n(Solo funciona si el sistema puede identificar el producto)");
+
+        try {
+            const { error } = await supabase.from('transactions').delete().eq('id', tx.id);
+            if (error) throw error;
+
+            alert("Venta eliminada correctamente.");
+            loadRecentTransactions();
+        } catch (err: any) {
+            alert("Error al eliminar: " + err.message);
+        }
+    };
+
+    // Filter Logic
+    const filteredPerfumes = PERFUMES.filter(p =>
+        (activeCategory === 'todos' || activeCategory === 'perfumes' || (activeCategory === 'arabes' && p.category === 'arab')) &&
+        p.name?.toLowerCase().includes(posProductSearch.toLowerCase())
+    );
+    const filteredServices = SERVICES.filter(s =>
+        (activeCategory === 'todos' || activeCategory === 'servicios') &&
+        s.name?.toLowerCase().includes(posProductSearch.toLowerCase())
+    );
+    const filteredInventory = inventoryProducts.filter(p =>
+        (activeCategory === 'todos' || activeCategory === 'productos') &&
+        p.name?.toLowerCase().includes(posProductSearch.toLowerCase())
+    );
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[80vh]">
-            {/* Left: Product Catalog */}
-            <div className="md:col-span-2 space-y-4 overflow-y-auto pr-2">
-                {message && <div className="bg-green-600 text-white p-2 rounded text-center text-sm font-bold sticky top-0 z-10">{message}</div>}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
+            {/* Left Column: Product Selection */}
+            <div className="lg:col-span-2 space-y-6 overflow-y-auto pr-2 pb-20">
+                {message && <div className="bg-green-600 text-white p-2 rounded text-center text-sm font-bold sticky top-0 z-50 animate-in slide-in-from-top duration-300 shadow-lg">{message}</div>}
 
-                <div className="sticky top-0 bg-white z-10 pb-4">
+                {/* Search & Tabs */}
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-100 z-10 sticky top-0">
                     <div className="relative">
-                        <Search className="absolute left-3 top-3 text-stone-400" size={18} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={20} />
                         <input
                             type="text"
-                            placeholder="Buscar productos o servicios..."
+                            placeholder="Buscar servicio o producto..."
                             value={posProductSearch}
                             onChange={(e) => setPosProductSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 outline-none"
+                            className="w-full pl-10 pr-4 py-3 bg-stone-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-black transition-all"
                         />
+                    </div>
+
+                    <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
+                        {['todos', 'servicios', 'perfumes', 'arabes', 'productos'].map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${activeCategory === cat
+                                    ? 'bg-black text-white shadow-lg scale-105'
+                                    : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                                    }`}
+                            >
+                                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -253,198 +393,294 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
                             value={manualItemPrice}
                             onChange={e => setManualItemPrice(e.target.value)}
                         />
-                        <button onClick={addManualItem} className="bg-stone-800 text-white px-3 rounded font-bold text-sm">+</button>
+                        <button onClick={addManualItem} className="bg-stone-800 text-white px-3 rounded-lg font-bold text-sm hover:bg-black transition flex items-center gap-1">
+                            <Plus size={16} /> Agregar
+                        </button>
                     </div>
                 </div>
 
-                {/* Services Grid */}
-                <div>
-                    <h4 className="font-bold text-stone-500 mb-2 uppercase text-xs">Servicios</h4>
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                        {filteredServices.map(service => (
-                            <button
-                                key={service.id}
-                                onClick={() => addToCart(service, 'service')}
-                                className="p-3 bg-white border border-stone-100 rounded-lg shadow-sm hover:border-purple-300 text-left transition group"
-                            >
-                                <div className="font-bold text-stone-800 group-hover:text-purple-600">{service.name}</div>
-                                <div className="text-stone-500 text-xs">${service.price.toLocaleString()}</div>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Products Grid - From Inventory */}
-                <div>
-                    <h4 className="font-bold text-stone-500 mb-2 uppercase text-xs flex items-center gap-2">
-                        <Package size={14} /> Inventario ({filteredInventory.length})
-                    </h4>
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                        {filteredInventory.map(product => (
-                            <div
-                                key={product.product_id}
-                                className="p-3 bg-white border border-stone-100 rounded-lg shadow-sm hover:border-emerald-300 text-left transition group"
-                            >
-                                <div className="font-bold text-stone-800 text-sm group-hover:text-emerald-600 truncate">{product.name}</div>
-                                <div className="text-stone-400 text-[10px] mb-2">Stock: {product.quantity}</div>
-                                <div className="flex gap-1">
+                {/* GRIDS */}
+                <div className="space-y-8">
+                    {/* Services */}
+                    {filteredServices.length > 0 && (
+                        <div>
+                            <h4 className="font-bold text-stone-500 mb-3 uppercase text-xs">Servicios</h4>
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                                {filteredServices.map(service => (
                                     <button
-                                        onClick={() => addToCart({ ...product, id: product.product_id }, 'product', 'unidad', product.sale_price || product.price || 0)}
-                                        className="flex-1 bg-emerald-600 text-white text-xs py-1 rounded font-bold hover:bg-emerald-700"
+                                        key={service.id}
+                                        onClick={() => addToCart(service, 'service')}
+                                        className="bg-white p-4 rounded-xl border border-stone-100 hover:shadow-md hover:border-purple-200 transition-all text-left group relative overflow-hidden"
                                     >
-                                        ${(product.sale_price || product.price || 0).toLocaleString()}
+                                        <div className="mb-2">
+                                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full bg-purple-100 text-purple-700">
+                                                Servicio
+                                            </span>
+                                        </div>
+                                        <h3 className="font-bold text-stone-800 leading-tight mb-1">{service.name}</h3>
+                                        <div className="font-mono font-bold text-lg text-emerald-600 mt-2">
+                                            ${service.price.toLocaleString()}
+                                        </div>
                                     </button>
-                                </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                </div>
+                        </div>
+                    )}
 
-                {/* Perfumes from Constants - With Variants */}
-                <div>
-                    <h4 className="font-bold text-stone-500 mb-2 uppercase text-xs">Perfumes Catálogo ({filteredPerfumes.length})</h4>
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                        {filteredPerfumes.map(perfume => (
-                            <div
-                                key={perfume.id}
-                                className="p-3 bg-white border border-stone-100 rounded-lg shadow-sm hover:border-blue-300 text-left transition group"
-                            >
-                                <div className="font-bold text-stone-800 text-sm group-hover:text-blue-600 truncate">{perfume.name}</div>
-                                <div className="text-stone-400 text-[10px] mb-2">{perfume.brand}</div>
-                                <div className="flex flex-wrap gap-1">
-                                    <button
-                                        onClick={() => addToCart(perfume, 'product', '5ml', perfume.price5ml)}
-                                        className="flex-1 bg-blue-500 text-white text-xs py-1 rounded font-bold hover:bg-blue-600"
+                    {/* Inventory */}
+                    {filteredInventory.length > 0 && (
+                        <div>
+                            <h4 className="font-bold text-stone-500 mb-3 uppercase text-xs flex items-center gap-2">
+                                <Package size={14} /> Inventario
+                            </h4>
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                                {filteredInventory.map(product => (
+                                    <div
+                                        key={product.product_id}
+                                        className="bg-white p-4 rounded-xl border border-stone-100 hover:shadow-md hover:border-emerald-200 transition-all text-left relative overflow-hidden"
                                     >
-                                        5ml ${perfume.price5ml.toLocaleString()}
-                                    </button>
-                                    <button
-                                        onClick={() => addToCart(perfume, 'product', '10ml', perfume.price10ml)}
-                                        className="flex-1 bg-blue-700 text-white text-xs py-1 rounded font-bold hover:bg-blue-800"
-                                    >
-                                        10ml ${perfume.price10ml.toLocaleString()}
-                                    </button>
-                                    {perfume.priceFullBottle && (
+                                        <div className="font-bold text-stone-800 text-sm mb-1 truncate">{product.name}</div>
+                                        <div className="text-stone-400 text-[10px] mb-3">Stock: {product.quantity}</div>
                                         <button
-                                            onClick={() => addToCart(perfume, 'product', 'Botella', perfume.priceFullBottle)}
-                                            className="w-full mt-1 bg-amber-600 text-white text-xs py-1 rounded font-bold hover:bg-amber-700"
+                                            onClick={() => addToCart({ ...product, id: product.product_id }, 'product', 'unidad', product.sale_price || product.price || 0)}
+                                            className="w-full bg-emerald-600 text-white text-xs py-2 rounded-lg font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-1"
                                         >
-                                            🍾 Botella ${perfume.priceFullBottle.toLocaleString()}
+                                            <Plus size={14} /> ${(product.sale_price || product.price || 0).toLocaleString()}
                                         </button>
-                                    )}
-                                </div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        </div>
+                    )}
+
+                    {/* Perfumes Catalog */}
+                    {filteredPerfumes.length > 0 && (
+                        <div>
+                            <h4 className="font-bold text-stone-500 mb-3 uppercase text-xs">Catálogo de Perfumes</h4>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                {filteredPerfumes.map(perfume => (
+                                    <div key={perfume.id} className="bg-white p-4 rounded-xl border border-stone-100 hover:shadow-md transition-all">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h3 className="font-bold text-stone-800 text-sm">{perfume.name}</h3>
+                                                <p className="text-xs text-stone-400">{perfume.brand}</p>
+                                            </div>
+                                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full bg-orange-100 text-orange-700">
+                                                {perfume.category}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2 mt-3">
+                                            <button onClick={() => addToCart(perfume, 'product', '5ml', perfume.price5ml)} className="bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs py-2 rounded-lg font-bold transition">
+                                                5ml<br /><span className="text-emerald-600">${perfume.price5ml.toLocaleString()}</span>
+                                            </button>
+                                            <button onClick={() => addToCart(perfume, 'product', '10ml', perfume.price10ml)} className="bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs py-2 rounded-lg font-bold transition">
+                                                10ml<br /><span className="text-emerald-600">${perfume.price10ml.toLocaleString()}</span>
+                                            </button>
+                                            {perfume.priceFullBottle && (
+                                                <button onClick={() => addToCart(perfume, 'product', 'Botella', perfume.priceFullBottle)} className="bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs py-2 rounded-lg font-bold transition border border-amber-200">
+                                                    Botella<br /><span className="text-emerald-600">${perfume.priceFullBottle.toLocaleString()}</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* --- SECCIÓN: HISTORIAL DE VENTAS --- */}
+                <div className="mt-12 pt-8 border-t border-stone-200">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="font-bold text-stone-800 flex items-center gap-2">
+                            <RotateCcw size={18} /> Últimas Ventas (24h)
+                        </h3>
+                        <button onClick={loadRecentTransactions} className="text-stone-400 hover:text-black p-2 hover:bg-stone-100 rounded-full transition">
+                            <RefreshCw size={16} className={loadingHistory ? 'animate-spin' : ''} />
+                        </button>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead className="bg-stone-50 text-stone-400 text-xs uppercase">
+                                <tr>
+                                    <th className="px-4 py-3 text-left">Hora</th>
+                                    <th className="px-4 py-3 text-left">Descripción</th>
+                                    <th className="px-4 py-3 text-right">Monto</th>
+                                    <th className="px-4 py-3 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-stone-100">
+                                {recentTransactions.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="p-8 text-center text-stone-400">
+                                            No hay ventas recientes hoy.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    recentTransactions.map(tx => (
+                                        <tr key={tx.id} className="hover:bg-stone-50 transition-colors">
+                                            <td className="px-4 py-3 text-stone-500 whitespace-nowrap">
+                                                {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="font-medium text-stone-800 line-clamp-1">{tx.description}</div>
+                                                <div className="text-xs text-stone-400">{tx.clients?.name || 'Cliente Casual'}</div>
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-mono font-medium text-emerald-600">
+                                                ${tx.amount.toLocaleString()}
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <div className="flex justify-end gap-1">
+                                                    {!tx.clients && (
+                                                        <button
+                                                            onClick={() => handleAssignClientToTransaction(tx.id)}
+                                                            className="p-2 text-stone-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Asignar cliente seleccionado (en panel derecho)"
+                                                        >
+                                                            <UserPlus size={16} />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleDeleteTransaction(tx)}
+                                                        className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                                                        title="Eliminar venta"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            {/* Right: Cart & Checkout */}
-            <div className="md:col-span-1 bg-white border-l border-stone-100 pl-6 flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto">
-                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                        <ShoppingCart /> Carrito
-                    </h3>
+            {/* Right Column: Cart & Checkout */}
+            <div className="bg-white p-6 rounded-3xl shadow-xl h-fit border border-stone-100 lg:sticky lg:top-4 flex flex-col max-h-[90vh]">
+                <h3 className="font-bold text-xl mb-6 flex items-center gap-2">
+                    <ShoppingBag /> Venta Actual
+                </h3>
 
-                    {/* Client Selector - IMPORTANTE PARA FIDELIDAD */}
-                    <div className="mb-4 p-3 bg-gradient-to-r from-amber-50 to-rose-50 border-2 border-dashed border-amber-300 rounded-xl">
-                        <div className="flex items-center gap-2 mb-2">
-                            <User className="text-amber-600" size={18} />
-                            <span className="font-bold text-amber-800 text-sm">Cliente (Fidelidad)</span>
+                {/* Client Selector */}
+                <div className="mb-6 space-y-2">
+                    <label className="text-xs font-bold text-stone-400 uppercase tracking-wider">Cliente</label>
+                    {posClient ? (
+                        <div className="flex items-center justify-between p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-emerald-100 p-2 rounded-full">
+                                    <User size={16} />
+                                </div>
+                                <span className="font-bold">{posClient.name}</span>
+                            </div>
+                            <button onClick={() => setPosClient(null)} className="p-1 hover:bg-emerald-100 rounded-full text-emerald-600">
+                                <X size={16} />
+                            </button>
                         </div>
-                        {posClient ? (
-                            <div className="bg-white border border-green-300 p-3 rounded-lg flex justify-between items-center shadow-sm">
-                                <div>
-                                    <div className="font-bold text-stone-800">{posClient.name || 'Sin Nombre'}</div>
-                                    <div className="text-xs text-stone-500">{posClient.phone}</div>
-                                    <div className="flex items-center gap-1 mt-1">
-                                        <Star className="text-amber-500" size={12} fill="currentColor" />
-                                        <span className="text-xs font-bold text-amber-600">{posClient.loyalty_points || 0} puntos</span>
-                                    </div>
-                                </div>
-                                <button onClick={() => setPosClient(null)} className="text-stone-400 hover:text-red-500 p-1">
-                                    <X size={18} />
+                    ) : (
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                            <input
+                                type="text"
+                                placeholder="Buscar cliente..."
+                                value={posSearchTerm}
+                                onChange={(e) => setPosSearchTerm(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 bg-stone-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all border border-transparent focus:border-stone-200"
+                            />
+                            {/* Create Client Shortcut */}
+                            {!posClient && posSearchTerm.length > 2 && clients.length === 0 && (
+                                <button
+                                    onClick={handleQuickCreateClient}
+                                    className="absolute top-full left-0 right-0 mt-2 w-full py-2 bg-emerald-600 text-white rounded-xl shadow-lg z-50 text-sm font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition animate-in fade-in slide-in-from-top-2"
+                                >
+                                    <UserPlus size={16} /> Crear "{posSearchTerm}"
                                 </button>
-                            </div>
-                        ) : (
-                            <div className="relative">
-                                <Search className="absolute left-3 top-2.5 text-stone-400" size={16} />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por nombre o teléfono..."
-                                    value={posSearchTerm}
-                                    onChange={(e) => setPosSearchTerm(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2 border-2 border-amber-200 bg-white rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none"
-                                />
-                                {clients.length > 0 && (
-                                    <div className="absolute top-full left-0 right-0 bg-white border-2 border-amber-200 shadow-xl rounded-lg mt-1 z-50 max-h-48 overflow-y-auto">
-                                        {clients.map(c => (
-                                            <button
-                                                key={c.id}
-                                                onClick={() => { setPosClient(c); setPosSearchTerm(''); setClients([]); }}
-                                                className="w-full text-left px-3 py-2 hover:bg-amber-50 text-sm border-b border-stone-100 last:border-0 flex justify-between items-center"
-                                            >
-                                                <div>
-                                                    <div className="font-bold">{c.name || 'Sin Nombre'}</div>
-                                                    <div className="text-xs text-stone-500">{c.phone}</div>
-                                                </div>
-                                                <div className="text-xs text-amber-600 font-bold">{c.loyalty_points || 0} pts</div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                                <p className="text-[10px] text-amber-600 mt-1">Asocia un cliente para acumular puntos</p>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                            {/* Dropdown Results */}
+                            {clients.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 bg-white border border-stone-100 shadow-xl rounded-xl mt-2 z-50 max-h-48 overflow-y-auto p-2">
+                                    {clients.map(c => (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => { setPosClient(c); setPosSearchTerm(''); setClients([]); }}
+                                            className="w-full text-left px-3 py-2 hover:bg-stone-50 text-sm rounded-lg flex justify-between items-center group"
+                                        >
+                                            <div>
+                                                <div className="font-bold text-stone-800">{c.name || 'Sin Nombre'}</div>
+                                                <div className="text-xs text-stone-400">{c.phone}</div>
+                                            </div>
+                                            {c.visits && <span className="text-[10px] bg-stone-100 px-2 py-1 rounded-full">{c.visits} visitas</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
 
-                    {/* Cart Items */}
-                    <div className="space-y-3">
-                        {cart.map((item, idx) => (
-                            <div key={item.cartId || `${item.id}-${idx}`} className="flex justify-between items-start border-b border-stone-100 pb-3">
-                                <div className="flex-1">
-                                    <div className="font-medium text-sm text-stone-800">{item.name}</div>
-                                    <div className="text-xs text-stone-400">{item.variant}</div>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <button onClick={() => updateCartQty(item.cartId, item.qty - 1)} className="w-5 h-5 flex items-center justify-center bg-stone-100 rounded text-xs">-</button>
+                {/* Cart Items */}
+                <div className="flex-1 overflow-y-auto space-y-3 pr-1 mb-6 min-h-[200px]">
+                    {cart.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-stone-300 space-y-4">
+                            <ShoppingBag size={48} strokeWidth={1} />
+                            <p className="text-sm font-medium">Carrito vacío</p>
+                        </div>
+                    ) : (
+                        cart.map(item => (
+                            <div key={item.cartId || `${item.id}-${item.variant}`} className="flex justify-between items-center group bg-stone-50 p-3 rounded-xl border border-transparent hover:border-stone-200 transition-all">
+                                <div>
+                                    <div className="font-bold text-stone-800 text-sm">{item.name}</div>
+                                    <div className="text-xs text-stone-400 mb-2">{item.variant}</div>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => updateCartQty(item.cartId, item.qty - 1)} className="w-6 h-6 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-xs hover:bg-stone-100 transition">-</button>
                                         <span className="text-xs font-bold w-4 text-center">{item.qty}</span>
-                                        <button onClick={() => updateCartQty(item.cartId, item.qty + 1)} className="w-5 h-5 flex items-center justify-center bg-stone-100 rounded text-xs">+</button>
+                                        <button onClick={() => updateCartQty(item.cartId, item.qty + 1)} className="w-6 h-6 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-xs hover:bg-stone-100 transition">+</button>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <div className="flex items-center gap-1">
+                                <div className="text-right flex flex-col items-end gap-1">
+                                    <div className="flex items-center gap-1 justify-end">
                                         <span className="text-stone-400 text-xs">$</span>
                                         <input
-                                            className="w-20 text-right border border-stone-200 bg-amber-50 font-bold text-stone-800 text-sm focus:ring-2 focus:ring-amber-300 rounded px-2 py-1"
+                                            className="w-20 text-right bg-transparent border-b border-stone-300 font-bold text-stone-800 text-sm focus:outline-none focus:border-black p-0"
                                             value={item.price}
                                             onChange={(e) => updateCartPrice(item.cartId, e.target.value)}
                                             title="Click para editar precio"
                                         />
                                     </div>
-                                    <button onClick={() => removeFromCart(item.cartId)} className="text-red-400 hover:text-red-500 block ml-auto mt-1"><Trash2 size={12} /></button>
+                                    <button
+                                        onClick={() => removeFromCart(item.cartId)}
+                                        className="text-stone-300 hover:text-red-500 transition-colors p-1"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
                             </div>
-                        ))}
-                        {cart.length === 0 && <p className="text-center text-stone-400 text-sm py-8">Carrito vacío</p>}
-                    </div>
+                        ))
+                    )}
                 </div>
 
-                {/* Footer Totals */}
-                <div className="border-t border-stone-200 pt-4 mt-4">
-                    <div className="flex justify-between items-center mb-4">
+                {/* Totals & Actions */}
+                <div className="space-y-4 pt-6 border-t border-stone-100 mt-auto">
+                    <div className="flex justify-between items-end">
                         <span className="text-stone-500 font-medium">Total</span>
-                        <span className="text-2xl font-bold text-stone-900">
+                        <span className="text-4xl font-bold font-mono text-stone-900 tracking-tight">
                             ${cart.reduce((sum, item) => sum + (item.price * item.qty), 0).toLocaleString()}
                         </span>
                     </div>
+
                     <button
                         onClick={handleCheckout}
-                        disabled={isCheckoutLoading || cart.length === 0}
-                        className="w-full bg-stone-900 text-white py-3 rounded-xl font-bold hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition flex justify-center items-center gap-2"
+                        disabled={cart.length === 0 || isCheckoutLoading}
+                        className="w-full py-4 bg-black text-white font-bold rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-xl shadow-stone-200"
                     >
-                        {isCheckoutLoading ? 'Procesando...' : (
+                        {isCheckoutLoading ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        ) : (
                             <>
-                                <Save size={18} /> Confirmar Venta
+                                <CreditCard size={20} /> Cobrar
                             </>
                         )}
                     </button>
