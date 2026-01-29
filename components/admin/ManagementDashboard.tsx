@@ -701,7 +701,18 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             )}
 
             {activeTab === 'agenda' && (
-                <AgendaModule />
+                <AgendaModule
+                    onRegisterService={(booking) => {
+                        // Buscar cliente por teléfono o crear objeto temporal
+                        const clientData = {
+                            name: booking.name,
+                            phone: booking.phone,
+                            service: booking.service
+                        };
+                        setPosInitialClient(clientData);
+                        setActiveTab('ventas');
+                    }}
+                />
             )}
 
             {activeTab === 'dashboard' ? (
@@ -1093,8 +1104,8 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <span className={`px-2 py-1 rounded-full text-xs font-bold ${t.type === 'service'
-                                                            ? 'bg-purple-100 text-purple-700'
-                                                            : 'bg-blue-100 text-blue-700'
+                                                        ? 'bg-purple-100 text-purple-700'
+                                                        : 'bg-blue-100 text-blue-700'
                                                         }`}>
                                                         {t.type === 'service' ? 'Servicio' : 'Producto'}
                                                     </span>

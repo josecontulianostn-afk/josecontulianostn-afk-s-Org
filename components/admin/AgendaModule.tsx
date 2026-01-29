@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
-import { ChevronLeft, ChevronRight, X, Calendar, Edit2, Trash2, Lock, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Calendar, Edit2, Trash2, Lock, Clock, CheckCircle } from 'lucide-react';
 
-const AgendaModule: React.FC = () => {
+interface AgendaModuleProps {
+    onRegisterService?: (booking: { name: string; phone: string; service: string }) => void;
+}
+
+const AgendaModule: React.FC<AgendaModuleProps> = ({ onRegisterService }) => {
     const [bookings, setBookings] = useState<any[]>([]);
     const [weekStart, setWeekStart] = useState(new Date());
     const [selectedSlot, setSelectedSlot] = useState<{ date: string, time: string } | null>(null);
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState<any | null>(null); // Para opciones de reserva existente
 
     // Manual Booking Form State
     const [manualBookingName, setManualBookingName] = useState('');
@@ -93,11 +98,10 @@ const AgendaModule: React.FC = () => {
         // Check if occupied
         const booking = bookings.find(b => b.date === dateStr && b.time === time);
         if (booking) {
-            if (window.confirm(`¿${booking.name === 'BLOQUEADO' ? 'Desbloquear' : 'Eliminar reserva de ' + booking.name}?`)) {
-                deleteBooking(booking.id);
-            }
+            // Abrir modal de opciones para la reserva
+            setSelectedBooking(booking);
         } else {
-            // Open Modal
+            // Open Modal para nueva reserva
             setSelectedSlot({ date: dateStr, time });
             setManualBookingType('salon'); // Reset
             setManualBookingName('');
@@ -482,6 +486,66 @@ const AgendaModule: React.FC = () => {
                                 className={`w-full py-3 rounded-xl font-bold text-white shadow-lg mt-2 disabled:opacity-50 ${manualBookingType === 'bloqueo' ? 'bg-red-600 hover:bg-red-700' : 'bg-stone-900 hover:bg-stone-800'}`}
                             >
                                 {loading ? 'Guardando...' : (manualBookingType === 'bloqueo' ? 'Bloquear Horario' : 'Guardar Reserva')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Opciones para Reserva Existente */}
+            {selectedBooking && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold">
+                                {selectedBooking.name === 'BLOQUEADO' ? 'Horario Bloqueado' : 'Reserva'}
+                            </h3>
+                            <button onClick={() => setSelectedBooking(null)}><X className="text-stone-400 hover:text-stone-600" /></button>
+                        </div>
+
+                        {selectedBooking.name !== 'BLOQUEADO' && (
+                            <div className="bg-stone-50 rounded-xl p-4 mb-4">
+                                <p className="font-bold text-lg">{selectedBooking.name}</p>
+                                <p className="text-stone-500 text-sm">{selectedBooking.phone}</p>
+                                <p className="text-stone-400 text-xs mt-1">{selectedBooking.service_name}</p>
+                                <p className="text-stone-400 text-xs">{selectedBooking.date} - {selectedBooking.time}</p>
+                            </div>
+                        )}
+
+                        <div className="space-y-3">
+                            {/* Botón Registrar Servicio - solo para reservas normales */}
+                            {selectedBooking.name !== 'BLOQUEADO' && onRegisterService && (
+                                <button
+                                    onClick={() => {
+                                        onRegisterService({
+                                            name: selectedBooking.name,
+                                            phone: selectedBooking.phone,
+                                            service: selectedBooking.service_name
+                                        });
+                                        setSelectedBooking(null);
+                                    }}
+                                    className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg"
+                                >
+                                    <CheckCircle size={20} /> Registrar Servicio
+                                </button>
+                            )}
+
+                            {/* Botón Eliminar/Desbloquear */}
+                            <button
+                                onClick={() => {
+                                    deleteBooking(selectedBooking.id);
+                                    setSelectedBooking(null);
+                                }}
+                                className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                            >
+                                <Trash2 size={18} /> {selectedBooking.name === 'BLOQUEADO' ? 'Desbloquear' : 'Eliminar Reserva'}
+                            </button>
+
+                            <button
+                                onClick={() => setSelectedBooking(null)}
+                                className="w-full py-2 bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold rounded-xl"
+                            >
+                                Cancelar
                             </button>
                         </div>
                     </div>
