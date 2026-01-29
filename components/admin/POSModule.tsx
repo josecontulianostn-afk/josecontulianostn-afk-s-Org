@@ -46,14 +46,14 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
 
     const loadRecentTransactions = async () => {
         setLoadingHistory(true);
-        // Cargar ventas de las últimas 24 horas
-        const yesterday = new Date();
-        yesterday.setHours(yesterday.getHours() - 24);
+        // Cargar ventas de los últimos 7 días para dar margen de corrección
+        const dateLimit = new Date();
+        dateLimit.setDate(dateLimit.getDate() - 7);
 
         const { data, error } = await supabase
             .from('transactions')
             .select('*, clients(name)')
-            .gte('created_at', yesterday.toISOString())
+            .gte('created_at', dateLimit.toISOString())
             .order('created_at', { ascending: false })
             .limit(50);
 
