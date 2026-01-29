@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { PERFUMES, SERVICES } from '../../constants';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { DollarSign, TrendingUp, PieChart, Activity, Calendar } from 'lucide-react';
+import { DollarSign, TrendingUp, PieChart, Activity, Calendar, Users, Edit2, Save, RefreshCw } from 'lucide-react';
 
 interface FinancialDashboardProps {
     transactions: any[];
@@ -17,9 +17,87 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
     const [investmentStats, setInvestmentStats] = useState<any>({ invested: 0, recovered: 0 });
     const [trendData, setTrendData] = useState<any[]>([]);
 
+    // Service Costs State (editable)
+    const [serviceCosts, setServiceCosts] = useState<Record<string, number>>({});
+    const [editingService, setEditingService] = useState<string | null>(null);
+    const [tempCost, setTempCost] = useState<string>('');
+
+    // Client Stats State
+    const [clientStats, setClientStats] = useState<any[]>([]);
+    const [loadingClients, setLoadingClients] = useState(false);
+
     useEffect(() => {
         calculateStats();
+        loadServiceCosts();
+        loadClientStats();
     }, [transactions, expenses]);
+
+    const loadServiceCosts = async () => {
+        // Intentar cargar costos guardados desde localStorage
+        const saved = localStorage.getItem('serviceCosts');
+        if (saved) {
+            setServiceCosts(JSON.parse(saved));
+        } else {
+            // Inicializar con 0
+            const initial: Record<string, number> = {};
+            SERVICES.forEach(s => { initial[s.id] = 0; });
+            setServiceCosts(initial);
+        }
+    };
+
+    const saveServiceCost = (serviceId: string, cost: number) => {
+        const updated = { ...serviceCosts, [serviceId]: cost };
+        setServiceCosts(updated);
+        localStorage.setItem('serviceCosts', JSON.stringify(updated));
+        setEditingService(null);
+    };
+
+    const loadClientStats = async () => {
+        setLoadingClients(true);
+        try {
+            // Obtener clientes con sus estadísticas
+            const { data: clients, error: clientError } = await supabase
+                .from('clients')
+                .select('id, name, phone, visits, created_at')
+                .order('visits', { ascending: false });
+
+            if (clientError) throw clientError;
+
+            // Obtener totales de transacciones por cliente
+            const { data: txData, error: txError } = await supabase
+                .from('transactions')
+                .select('client_id, amount');
+
+            if (txError) throw txError;
+
+            // Calcular totales por cliente
+            const totalsByClient = new Map<string, { total: number, count: number }>();
+            txData?.forEach(tx => {
+                if (tx.client_id) {
+                    const current = totalsByClient.get(tx.client_id) || { total: 0, count: 0 };
+                    current.total += tx.amount;
+                    current.count += 1;
+                    totalsByClient.set(tx.client_id, current);
+                }
+            });
+
+            // Combinar datos
+            const combined = clients?.map(client => ({
+                ...client,
+                totalSpent: totalsByClient.get(client.id)?.total || 0,
+                transactionCount: totalsByClient.get(client.id)?.count || 0,
+                avgTicket: totalsByClient.get(client.id)
+                    ? Math.round(totalsByClient.get(client.id)!.total / totalsByClient.get(client.id)!.count)
+                    : 0
+            })) || [];
+
+            setClientStats(combined);
+        } catch (err) {
+            console.error('Error loading client stats:', err);
+        } finally {
+            setLoadingClients(false);
+        }
+    };
 
     const calculateStats = () => {
         // 1. Area Stats (Style, Perfum, Amor Amor)
@@ -214,8 +292,153 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ transactions, e
                     </div>
                 </div>
             </div>
+
+            {/* ========== NUEVA SECCIÓN: GESTIÓN DE SERVICIOS Y CLIENTES ========== */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Gestión de Costos de Servicios */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Edit2 size={20} className="text-purple-600" /> Costos de Servicios
+                    </h3>
+                    <p className="text-xs text-stone-400 mb-4">Ingresa el costo de insumos por servicio para calcular márgenes reales.</p>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="text-xs uppercase text-stone-400 bg-stone-50">
+                                <tr>
+                                    <th className="px-2 py-2 text-left">Servicio</th>
+                                    <th className="px-2 py-2 text-right">Precio</th>
+                                    <th className="px-2 py-2 text-right">Costo</th>
+                                    <th className="px-2 py-2 text-right">Margen</th>
+                                    <th className="px-2 py-2 text-right">%</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-stone-100">
+                                {SERVICES.map(service => {
+                                    const cost = serviceCosts[service.id] || 0;
+                                    const margin = service.price - cost;
+                                    const marginPercent = service.price > 0 ? Math.round((margin / service.price) * 100) : 0;
+
+                                    return (
+                                        <tr key={service.id} className="hover:bg-stone-50">
+                                            <td className="px-2 py-3 font-medium text-stone-700">{service.name}</td>
+                                            <td className="px-2 py-3 text-right text-stone-600">${service.price.toLocaleString()}</td>
+                                            <td className="px-2 py-3 text-right">
+                                                {editingService === service.id ? (
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <input
+                                                            type="number"
+                                                            value={tempCost}
+                                                            onChange={(e) => setTempCost(e.target.value)}
+                                                            className="w-16 border rounded px-1 py-0.5 text-right text-sm"
+                                                            autoFocus
+                                                        />
+                                                        <button
+                                                            onClick={() => saveServiceCost(service.id, parseInt(tempCost) || 0)}
+                                                            className="text-green-600 hover:text-green-700"
+                                                        >
+                                                            <Save size={14} />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingService(service.id);
+                                                            setTempCost(cost.toString());
+                                                        }}
+                                                        className="text-red-500 hover:underline"
+                                                    >
+                                                        ${cost.toLocaleString()}
+                                                    </button>
+                                                )}
+                                            </td>
+                                            <td className={`px-2 py-3 text-right font-bold ${margin > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                ${margin.toLocaleString()}
+                                            </td>
+                                            <td className="px-2 py-3 text-right text-stone-500">{marginPercent}%</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Estadísticas de Clientes */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-bold text-lg flex items-center gap-2">
+                            <Users size={20} className="text-blue-600" /> Gestión de Clientes
+                        </h3>
+                        <button
+                            onClick={loadClientStats}
+                            disabled={loadingClients}
+                            className="text-stone-400 hover:text-stone-600 p-1"
+                        >
+                            <RefreshCw size={16} className={loadingClients ? 'animate-spin' : ''} />
+                        </button>
+                    </div>
+                    <p className="text-xs text-stone-400 mb-4">Retornos y totales acumulados por cliente.</p>
+
+                    <div className="overflow-x-auto max-h-[400px]">
+                        <table className="w-full text-sm">
+                            <thead className="text-xs uppercase text-stone-400 bg-stone-50 sticky top-0">
+                                <tr>
+                                    <th className="px-2 py-2 text-left">Cliente</th>
+                                    <th className="px-2 py-2 text-center">Visitas</th>
+                                    <th className="px-2 py-2 text-right">Total $</th>
+                                    <th className="px-2 py-2 text-right">Ticket Prom.</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-stone-100">
+                                {clientStats.length === 0 && (
+                                    <tr>
+                                        <td colSpan={4} className="text-center py-8 text-stone-400">
+                                            {loadingClients ? 'Cargando...' : 'No hay clientes registrados'}
+                                        </td>
+                                    </tr>
+                                )}
+                                {clientStats.map(client => (
+                                    <tr key={client.id} className="hover:bg-stone-50">
+                                        <td className="px-2 py-3">
+                                            <div className="font-medium text-stone-700">{client.name || 'Sin nombre'}</div>
+                                            <div className="text-xs text-stone-400">{client.phone}</div>
+                                        </td>
+                                        <td className="px-2 py-3 text-center">
+                                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${client.visits >= 5 ? 'bg-green-100 text-green-700' :
+                                                    client.visits >= 2 ? 'bg-blue-100 text-blue-700' :
+                                                        'bg-stone-100 text-stone-600'
+                                                }`}>
+                                                {client.visits || 0}
+                                            </span>
+                                        </td>
+                                        <td className="px-2 py-3 text-right font-bold text-emerald-600">
+                                            ${client.totalSpent.toLocaleString()}
+                                        </td>
+                                        <td className="px-2 py-3 text-right text-stone-500">
+                                            ${client.avgTicket.toLocaleString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {clientStats.length > 0 && (
+                        <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg text-xs">
+                            <div className="flex justify-between items-center">
+                                <span className="text-stone-600">Total Clientes: <strong>{clientStats.length}</strong></span>
+                                <span className="text-emerald-600 font-bold">
+                                    Ingresos Totales: ${clientStats.reduce((sum, c) => sum + c.totalSpent, 0).toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
 
 export default FinancialDashboard;
+
