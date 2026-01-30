@@ -8,7 +8,12 @@ interface AgendaModuleProps {
 
 const AgendaModule: React.FC<AgendaModuleProps> = ({ onRegisterService }) => {
     const [bookings, setBookings] = useState<any[]>([]);
-    const [weekStart, setWeekStart] = useState(new Date());
+    // Fix: Initialize with 00:00:00 to avoid time drift issues
+    const [weekStart, setWeekStart] = useState(() => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    });
     const [selectedSlot, setSelectedSlot] = useState<{ date: string, time: string } | null>(null);
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<any | null>(null); // Para opciones de reserva existente
@@ -92,6 +97,12 @@ const AgendaModule: React.FC<AgendaModuleProps> = ({ onRegisterService }) => {
         const newDate = new Date(weekStart);
         newDate.setDate(weekStart.getDate() + 7);
         setWeekStart(newDate);
+    };
+
+    const handleToday = () => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        setWeekStart(d);
     };
 
     const handleSlotClick = (dateStr: string, time: string) => {
@@ -255,9 +266,9 @@ const AgendaModule: React.FC<AgendaModuleProps> = ({ onRegisterService }) => {
                     </h3>
                     <div className="flex items-center bg-stone-100 rounded-lg p-1">
                         <button onClick={handlePrevWeek} className="p-1 hover:bg-stone-200 rounded"><ChevronLeft size={20} /></button>
-                        <span className="px-3 font-mono text-sm font-bold">
-                            {weekDays[0].getDate()}/{weekDays[0].getMonth() + 1} - {weekDays[6].getDate()}/{weekDays[6].getMonth() + 1}
-                        </span>
+                        <button onClick={handleToday} className="px-3 py-1 font-bold text-sm text-stone-600 hover:text-stone-900 border-x border-stone-200">
+                            Hoy
+                        </button>
                         <button onClick={handleNextWeek} className="p-1 hover:bg-stone-200 rounded"><ChevronRight size={20} /></button>
                     </div>
                 </div>

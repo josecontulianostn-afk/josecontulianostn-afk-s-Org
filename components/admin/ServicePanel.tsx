@@ -554,13 +554,35 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
         }
     }, [scannerActive, scanResult]);
 
-    const recordTransaction = async (clientId: string, amount: number, type: string, description: string) => {
+    const recordTransaction = async (clientId: string, amount: number, type: string, description: string, additionalCost: number = 0, additionalCostDetail: string = '') => {
         if (amount <= 0) return;
+
+        let cost = 0;
+
+        // Fetch standard cost for service if applicable
+        if (type === 'service') {
+            // Try to match description to a service ID (simple heuristic for now)
+            const service = SERVICES.find(s => description.includes(s.name));
+            if (service) {
+                const { data } = await supabase.from('service_costs').select('cost').eq('service_id', service.id).single();
+                if (data) cost = data.cost;
+            }
+        }
+
+        // Add additional cost (e.g. manual extras)
+        // cost = Base Cost + Manual Extra Cost (if we want to track total cost in one column, OR keep them separate.
+        // The implementation plan said: "Insert this value into the cost field".
+        // FinancialDashboard calculates margin as: Amount - Cost - Additional_Cost. 
+        // So 'cost' should be the BASE service cost. 'additional_cost' is already a separate column.
+
         const { error } = await supabase.from('transactions').insert({
             client_id: clientId,
             amount: amount,
             type: type,
-            description: description
+            description: description,
+            additional_cost: additionalCost,
+            additional_cost_detail: additionalCostDetail,
+            cost: cost
         });
         if (error) console.error("Error recording transaction:", error);
     };
@@ -587,7 +609,9 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                     // register_visit might not return ID directly in all versions, let's fetch client.
                     const { data: clientData } = await supabase.from('clients').select('id').eq('member_token', decodedText).single();
                     if (clientData) {
-                        await recordTransaction(clientData.id, price, 'service', `Servicio: ${serviceType}`);
+                        if (clientData) {
+                            await recordTransaction(clientData.id, price, 'service', `Servicio: ${serviceType}`, 0, '');
+                        }
                     }
                 } else if (activeTab === 'ventas') {
                     const { data: clientData } = await supabase.from('clients').select('*').eq('member_token', decodedText).single();
@@ -687,14 +711,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                     const { data: clientData } = await supabase.from('clients').select('id').eq('phone', phone).single();
 
                     if (clientData) {
-                        await supabase.from('transactions').insert({
-                            client_id: clientData.id,
-                            amount: price,
-                            type: 'service',
-                            description: `Servicio: ${serviceType}`,
-                            additional_cost: cost,
-                            additional_cost_detail: extraCostDetail
-                        });
+                        await recordTransaction(clientData.id, price, 'service', `Servicio: ${serviceType}`, cost, extraCostDetail);
                     }
 
                     setMessage(`✅ Servicio registrado. Total: ${data.new_total_services}. ${data.discount_5th_unlocked ? '¡DESCUENTO 10% DESBLOQUEADO!' : ''} ${data.free_cut_unlocked ? '¡CORTE GRATIS DESBLOQUEADO!' : ''}`);
