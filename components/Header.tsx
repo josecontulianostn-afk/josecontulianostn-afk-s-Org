@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ViewState } from '../types'; // Kept for types if needed, but we rely on routes now
-import { Menu, X, ShoppingBag, Scissors, Gift } from 'lucide-react';
+import { ViewState } from '../types';
+import { Menu, X, ShoppingBag, Scissors, Gift, Home } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 
-interface HeaderProps {
-  // Legacy props might be removed if state is fully managed by router
-  // But staying compatible for now if needed, though we will likely ignore them
-}
+interface HeaderProps { }
 
 const Header: React.FC<HeaderProps> = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -16,18 +13,23 @@ const Header: React.FC<HeaderProps> = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navClass = `fixed w-full z-50 transition-all duration-300 ${(isScrolled || location.pathname === '/') ? 'bg-white/90 backdrop-blur-md shadow-sm py-2' : 'bg-transparent py-4'
-    }`;
+  // Use a reliable background for all inner pages to ensure logo visibility
+  const isHomePage = location.pathname === '/';
+  const headerBgClass = (isScrolled || !isHomePage)
+    ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-stone-100 py-2'
+    : 'bg-transparent py-4';
+
+  const navClass = `fixed top-0 left-0 w-full z-50 transition-all duration-300 ${headerBgClass}`;
 
   const linkClass = (path: string) => `cursor-pointer font-medium tracking-wide transition-colors ${location.pathname === path
     ? 'text-stone-900 border-b-2 border-stone-800'
-    : (isScrolled ? 'text-stone-600 hover:text-stone-900' : 'text-stone-800 hover:text-stone-600')
+    : ((isScrolled || !isHomePage) ? 'text-stone-600 hover:text-stone-900' : 'text-stone-800 hover:text-stone-600')
     }`;
 
   const handleNavClick = (path: string) => {
@@ -39,94 +41,78 @@ const Header: React.FC<HeaderProps> = () => {
   const getLogoContent = () => {
     const path = location.pathname;
 
-    // On Hub, show all 3 brands
-    // On Hub, show all 3 brands
+    // HUB VIEW: Show all 3 brand icons centered/aligned
     if (path === '/') {
       return (
-        <div className="flex items-center gap-2 md:gap-6">
-          {/* Main Logo Image */}
-          <div className="w-10 h-10 md:w-16 md:h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-lg shrink-0">
-            <img src="/images/logo-hub.jpg" alt="Logo" className="w-full h-full object-cover rounded-full border-2 border-white/10" />
+        <div className="flex items-center gap-2 md:gap-4">
+          <div className="w-9 h-9 md:w-12 md:h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-md shrink-0">
+            <img src="/images/logo-hub.jpg" alt="Logo" className="w-full h-full object-cover rounded-full border border-white/20" />
           </div>
-
-          {/* Style Logo */}
-          <Link to="/style" className="flex flex-col items-center leading-none hover:opacity-70 transition-opacity cursor-pointer">
-            <span className="serif text-base md:text-xl font-bold italic tracking-tighter text-stone-900 whitespace-nowrap">Style</span>
-          </Link>
-          {/* Divider */}
-          <div className="h-4 w-px bg-stone-200 block md:h-6"></div>
-          {/* Perfum Logo */}
-          <Link to="/perfum" className="flex flex-col items-center leading-none hover:opacity-70 transition-opacity cursor-pointer">
-            <span className="serif text-base md:text-xl font-bold tracking-tight text-amber-500 whitespace-nowrap">Perfum</span>
-          </Link>
-          {/* Divider */}
-          <div className="h-4 w-px bg-stone-200 block md:h-6"></div>
-          {/* Amor Amor Logo */}
-          <Link to="/regalos" className="flex flex-col items-center leading-none hover:opacity-70 transition-opacity cursor-pointer">
-            <span className="serif text-base md:text-xl font-bold tracking-tight text-rose-500 whitespace-nowrap">Amor Amor</span>
-          </Link>
+          <div className="hidden md:flex items-center gap-3">
+            <span className="serif text-lg font-bold italic text-stone-900">Style</span>
+            <span className="h-4 w-px bg-stone-300"></span>
+            <span className="serif text-lg font-bold text-amber-500">Perfum</span>
+            <span className="h-4 w-px bg-stone-300"></span>
+            <span className="serif text-lg font-bold text-rose-500">Amor Amor</span>
+          </div>
+          <div className="md:hidden flex flex-col leading-none">
+            <span className="serif text-sm font-bold text-stone-900">Tus3B Hub</span>
+          </div>
         </div>
       );
     }
 
+    // INTERNAL VIEWS: Left-aligned specific brand logo
+    let mainColor = 'text-stone-900';
+    let brandName = 'Style';
+    let subText = 'by tus3b';
+    let isItalic = true;
+
     if (path.startsWith('/perfum')) {
-      return (
-        <Link to="/perfum" className="flex flex-col items-start leading-none hover:opacity-80 transition-opacity">
-          <span className={`serif text-2xl md:text-4xl font-bold tracking-tight text-amber-500`}>
-            Perfum
-          </span>
-          <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] uppercase mt-1">
-            by tus3b
-          </span>
-        </Link>
-      );
+      mainColor = 'text-amber-600';
+      brandName = 'Perfum';
+      isItalic = false;
     } else if (path.startsWith('/regalos')) {
-      return (
-        <Link to="/regalos" className="flex flex-col items-start leading-none hover:opacity-80 transition-opacity">
-          <span className={`serif text-2xl md:text-3xl font-bold tracking-tight text-rose-500`}>
-            Amor Amor
-          </span>
-          <span className="text-stone-600 text-[10px] md:text-xs font-medium tracking-[0.2em] uppercase mt-1">
-            by tus3b
-          </span>
-        </Link>
-      );
-    } else {
-      // Default / Layout "Style" (for /style, /gallery, /booking etc)
-      return (
-        <Link to="/style" className="flex flex-col items-start leading-none hover:opacity-80 transition-opacity">
-          <span className={`serif text-xl md:text-4xl font-bold italic tracking-tighter text-stone-900`}>
-            Style
-          </span>
-          <span className="text-stone-500 text-[8px] md:text-xs font-medium tracking-[0.15em] md:tracking-[0.2em] uppercase">
-            by tus3b
-          </span>
-        </Link>
-      );
+      mainColor = 'text-rose-600';
+      brandName = 'Amor Amor';
+      isItalic = false;
     }
+
+    return (
+      <Link to={path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="flex flex-col items-start justify-center leading-none group">
+        <div className="flex items-center gap-2">
+          <span className={`serif text-2xl md:text-3xl font-bold tracking-tight ${mainColor} ${isItalic ? 'italic' : ''} transition-opacity group-hover:opacity-80`}>
+            {brandName}
+          </span>
+        </div>
+        <span className="text-stone-400 text-[10px] font-medium tracking-[0.2em] uppercase mt-0.5 ml-0.5">
+          {subText}
+        </span>
+      </Link>
+    );
   };
 
   return (
     <nav className={navClass}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-14 md:h-16">
 
-          {/* Logo (Dynamic) */}
-          <div className="flex items-center gap-3">
+          {/* LEFT: Branding & Back Button */}
+          <div className="flex items-center gap-3 md:gap-4 flex-1">
             {location.pathname !== '/' && (
-              <Link to="/" className="text-white bg-stone-900 p-2 rounded-full hover:bg-stone-700 transition z-10 shrink-0" title="Volver al Hub">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+              <Link to="/" className={`p-2 rounded-full transition shrink-0 ${(isScrolled || !isHomePage) ? 'bg-stone-100 text-stone-600 hover:bg-stone-200' : 'bg-black/20 text-white hover:bg-black/30'}`} title="Volver al Hub">
+                <Home size={18} />
               </Link>
             )}
 
-            {/* Aligned Logo Container */}
-            <div className="flex items-center">
+            {/* Brand Logo Container - Takes remaining left space */}
+            <div className="flex items-center justify-start">
               {getLogoContent()}
             </div>
           </div>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8 items-center">
+          {/* CENTER: Desktop Menu */}
+          <div className="hidden md:flex space-x-8 items-center justify-center flex-1">
             {location.pathname !== '/' && (
               <>
                 <Link to="/style" className={linkClass('/style')}>Style</Link>
@@ -134,7 +120,11 @@ const Header: React.FC<HeaderProps> = () => {
                 <Link to="/regalos" className={linkClass('/regalos')}>Amor Amor</Link>
               </>
             )}
+          </div>
 
+          {/* RIGHT: Buttons */}
+          <div className="flex items-center justify-end flex-1 gap-4">
+            {/* Desktop Booking Button */}
             <button
               onClick={() => {
                 if (location.pathname === '/style') {
@@ -143,42 +133,46 @@ const Header: React.FC<HeaderProps> = () => {
                   navigate('/style');
                 }
               }}
-              className="bg-stone-900 text-white px-6 py-2 rounded-full text-sm uppercase tracking-wider hover:bg-stone-800 transition shadow-lg"
+              className="hidden md:block bg-stone-900 text-white px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-stone-800 transition shadow-lg transform hover:scale-105"
             >
               Reservar
             </button>
+
+            {/* Mobile Menu Toggle */}
+            <div className="md:hidden flex items-center">
+              <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className={`focus:outline-none ${(isScrolled || !isHomePage) ? 'text-stone-900' : 'text-stone-800'}`}>
+                {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+              </button>
+            </div>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-stone-800 focus:outline-none">
-              {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
-          </div>
         </div>
       </div>
 
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-16 bg-white z-40 flex flex-col p-6 space-y-8 animate-in slide-in-from-right-10">
-          <button onClick={() => handleNavClick('/style')} className="flex items-center space-x-4 text-xl font-medium text-stone-700 p-2 active:bg-stone-50 rounded-lg">
-            <Scissors size={24} />
+        <div className="md:hidden fixed inset-0 top-[56px] bg-white z-40 flex flex-col p-6 space-y-6 animate-in slide-in-from-right-10 border-t border-stone-100">
+          <button onClick={() => handleNavClick('/style')} className="flex items-center space-x-4 text-lg font-medium text-stone-800 p-3 active:bg-stone-50 rounded-xl border border-transparent active:border-stone-100">
+            <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600"><Scissors size={20} /></div>
             <span>Style (Inicio)</span>
           </button>
-          <button onClick={() => handleNavClick('/perfum')} className="flex items-center space-x-4 text-xl font-medium text-stone-700 p-2 active:bg-stone-50 rounded-lg">
-            <ShoppingBag size={24} />
+
+          <button onClick={() => handleNavClick('/perfum')} className="flex items-center space-x-4 text-lg font-medium text-stone-800 p-3 active:bg-stone-50 rounded-xl border border-transparent active:border-stone-100">
+            <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600"><ShoppingBag size={20} /></div>
             <span>Perfumes</span>
           </button>
-          <button onClick={() => handleNavClick('/regalos')} className="flex items-center space-x-4 text-xl font-medium text-stone-700 p-2 active:bg-stone-50 rounded-lg">
-            <Gift size={24} />
+
+          <button onClick={() => handleNavClick('/regalos')} className="flex items-center space-x-4 text-lg font-medium text-stone-800 p-3 active:bg-stone-50 rounded-xl border border-transparent active:border-stone-100">
+            <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600"><Gift size={20} /></div>
             <span>Regalos</span>
           </button>
 
           <div className="mt-auto pb-8">
             <button
               onClick={() => handleNavClick('/booking')}
-              className="w-full bg-stone-900 text-white py-4 rounded-xl text-center uppercase tracking-widest font-bold shadow-lg active:scale-95 transition-transform"
+              className="w-full bg-stone-900 text-white py-4 rounded-xl text-center uppercase tracking-widest font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
             >
+              <Scissors size={18} />
               Agendar Cita
             </button>
           </div>

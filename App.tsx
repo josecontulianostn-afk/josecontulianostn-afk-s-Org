@@ -18,17 +18,10 @@ import PrintableQR from './components/PrintableQR';
 import HomeSelection from './components/HomeSelection';
 import HairTips from './components/blog/HairTips';
 import { SERVICES } from './constants';
+import ScrollToTop from './components/ScrollToTop';
 import { Scissors, ShoppingBag, ArrowRight, Gift, ShieldCheck, Star } from 'lucide-react';
 
-const ScrollToTop = () => {
-  const { pathname } = useLocation();
 
-  React.useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-
-  return null;
-};
 
 const App: React.FC = () => {
   const [lastBooking, setLastBooking] = useState<BookingData | null>(null);
