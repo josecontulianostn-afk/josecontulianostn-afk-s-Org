@@ -207,13 +207,35 @@ const CheckInPage: React.FC = () => {
     };
 
     const submitCheckIn = async (clientId: string) => {
-        const { error } = await supabase
+        // 1. Log the visit registration
+        const { error: logError } = await supabase
             .from('visit_registrations')
             .insert([{ client_id: clientId }]);
 
-        if (error) {
-            console.error(error);
-            // Don't throw - loyalty registration failing shouldn't block the flow
+        if (logError) {
+            console.error("Error logging visit:", logError);
+        }
+
+        // 2. Auto-increment loyalty points
+        // We use the current state 'visits' + 1. 
+        // Ideally we would use an RPC or SQL increment to be atomic, but this works for now.
+        if (client) {
+            const newVisits = (client.visits || 0) + 1;
+            const { data: updatedClient, error: updateError } = await supabase
+                .from('clients')
+                .update({
+                    visits: newVisits,
+                    last_visit: new Date().toISOString()
+                })
+                .eq('id', clientId)
+                .select()
+                .single();
+
+            if (updateError) {
+                console.error("Error updating loyalty points:", updateError);
+            } else if (updatedClient) {
+                setClient(updatedClient); // Update UI to show new progress
+            }
         }
     };
 
