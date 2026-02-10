@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = () => {
   // Use a reliable background for all inner pages to ensure logo visibility
   const isHomePage = location.pathname === '/';
   const headerBgClass = (isScrolled || !isHomePage)
-    ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-stone-100 py-2'
+    ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-stone-100 py-3'
     : 'bg-transparent py-4';
 
   const navClass = `fixed top-0 left-0 w-full z-50 transition-all duration-300 ${headerBgClass}`;
@@ -79,7 +79,7 @@ const Header: React.FC<HeaderProps> = () => {
     }
 
     return (
-      <Link to={path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="flex flex-col justify-center items-start leading-none group">
+      <Link to={path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="flex flex-col justify-center items-start leading-none group pb-1">
         <div className="flex items-center gap-2">
           <span className={`serif text-2xl md:text-3xl font-bold tracking-tight ${mainColor} ${isItalic ? 'italic' : ''} transition-opacity group-hover:opacity-80`}>
             {brandName}
@@ -95,7 +95,7 @@ const Header: React.FC<HeaderProps> = () => {
   return (
     <nav className={navClass}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center min-h-[3.5rem] md:min-h-[4rem]">
+        <div className="flex justify-between items-center min-h-[3.75rem] md:min-h-[4rem]">
 
           {/* LEFT: Branding & Back Button */}
           <div className="flex items-center gap-3 md:gap-4 flex-1">
