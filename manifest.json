@@ -9,15 +9,15 @@
     "orientation": "portrait",
     "icons": [
         {
-            "src": "/vite.svg",
+            "src": "/images/app-icon.jpg",
             "sizes": "192x192",
-            "type": "image/svg+xml",
+            "type": "image/jpeg",
             "purpose": "any maskable"
         },
         {
-            "src": "/vite.svg",
+            "src": "/images/app-icon.jpg",
             "sizes": "512x512",
-            "type": "image/svg+xml",
+            "type": "image/jpeg",
             "purpose": "any maskable"
         }
     ]
