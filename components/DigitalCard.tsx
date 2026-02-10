@@ -126,15 +126,8 @@ const DigitalCard: React.FC<DigitalCardProps> = ({ clientName, token, visits, ne
                             <p className="text-center text-[9px] font-mono mt-2 text-stone-500 tracking-widest">{token}</p>
                         </div>
 
-                        {/* Apple Wallet Button */}
-                        <div className="mt-4 w-full" onClick={(e) => e.stopPropagation()}>
-                            <AddToWalletButtons
-                                clientName={clientName}
-                                token={token}
-                                visits={visits}
-                                tier={(tier as 'Bronce' | 'Plata' | 'Gold') || 'Bronce'}
-                            />
-                        </div>
+                        {/* Removed AddToWalletButtons from here to place it outside */}
+
                     </div>
 
                     {/* Background Ambient Effect */}

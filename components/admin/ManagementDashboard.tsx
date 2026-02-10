@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { PERFUMES, SERVICES } from '../../constants';
-import { VisitRegistration, InventoryLog } from '../../types';
+import { VisitRegistration, InventoryLog, InventoryRequest } from '../../types';
 import VisitValidationModal from './VisitValidationModal';
 import FinancialDashboard from './FinancialDashboard';
 import { QRCodeSVG } from 'qrcode.react';
@@ -246,6 +246,7 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
 
     // QR Validation Data
     const [pendingVisits, setPendingVisits] = useState<VisitRegistration[]>([]);
+    const [pendingInventoryRequests, setPendingInventoryRequests] = useState<InventoryRequest[]>([]);
     const [visitToValidate, setVisitToValidate] = useState<VisitRegistration | null>(null);
 
     // Inventory Data Hoisted
@@ -296,6 +297,7 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
             fetchClients();
         } else if (activeTab === 'validaciones') {
             fetchPendingVisits();
+            fetchPendingInventoryRequests();
         }
         // Always fetch inventory for the side panel if needed, or lazy load? 
         // For now, let's fetch it on mount or when dashboard active to ensure totals are ready
@@ -494,6 +496,46 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
         else setPendingVisits(data as VisitRegistration[] || []);
         setLoading(false);
     };
+    const fetchPendingInventoryRequests = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('inventory_requests')
+            .select('*, product:products(*)')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: true });
+
+        if (error) console.error("Error fetching inventory requests", error);
+        else setPendingInventoryRequests(data as InventoryRequest[] || []);
+        setLoading(false);
+    };
+
+    const handleApproveInventoryRequest = async (reqId: string) => {
+        if (!confirm('¿Aprobar esta venta/movimiento? Esto descontará el stock.')) return;
+
+        const { data, error } = await supabase.rpc('approve_inventory_request', { p_request_id: reqId });
+
+        if (error || !data.success) {
+            alert('Error: ' + (error?.message || data?.message));
+        } else {
+            alert('Aprobado correctamente');
+            fetchPendingInventoryRequests();
+            // Refresh main inventory if needed
+            fetchInventory();
+        }
+    };
+
+    const handleRejectInventoryRequest = async (reqId: string) => {
+        if (!confirm('¿Rechazar esta solicitud?')) return;
+
+        const { data, error } = await supabase.rpc('reject_inventory_request', { p_request_id: reqId });
+
+        if (error || !data.success) {
+            alert('Error: ' + (error?.message || data?.message));
+        } else {
+            alert('Solicitud rechazada');
+            fetchPendingInventoryRequests();
+        }
+    };
 
     const handleUpdateClient = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -643,10 +685,10 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                     onClick={() => setActiveTab('validaciones')}
                     className={`px-4 py-2 font-bold transition ${activeTab === 'validaciones' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}
                 >
-                    Validaciones QR
-                    {pendingVisits.length > 0 && (
+                    Validaciones
+                    {(pendingVisits.length + pendingInventoryRequests.length) > 0 && (
                         <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full align-top">
-                            {pendingVisits.length}
+                            {pendingVisits.length + pendingInventoryRequests.length}
                         </span>
                     )}
                 </button>
@@ -733,6 +775,67 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                                         </button>
                                     </div>
                                 ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Inventory Requests List */}
+                    <div className="md:col-span-3 bg-white p-6 rounded-2xl shadow-sm border border-stone-100 mt-6">
+                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-amber-700">
+                            <ShoppingCart /> Ventas / Inventario Pendiente
+                        </h3>
+
+                        {pendingInventoryRequests.length === 0 ? (
+                            <div className="py-8 text-center text-stone-400 bg-stone-50 rounded-lg border-2 border-dashed border-stone-100">
+                                <p>No hay solicitudes de inventario pendientes.</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-stone-50 text-stone-500 text-xs uppercase">
+                                            <th className="p-3">Fecha</th>
+                                            <th className="p-3">Producto</th>
+                                            <th className="p-3 text-center">Cantidad</th>
+                                            <th className="p-3 text-right">Solicitante</th>
+                                            <th className="p-3 text-right">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-stone-100">
+                                        {pendingInventoryRequests.map((req) => (
+                                            <tr key={req.id} className="hover:bg-amber-50/30 transition">
+                                                <td className="p-3 text-sm text-stone-500">
+                                                    {new Date(req.created_at).toLocaleString()}
+                                                </td>
+                                                <td className="p-3 font-medium text-stone-800">
+                                                    {req.product?.name || 'Producto Desconocido'}
+                                                </td>
+                                                <td className={`p-3 text-center font-bold ${req.quantity < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                                                    {req.quantity}
+                                                </td>
+                                                <td className="p-3 text-right text-xs text-stone-400">
+                                                    {req.requested_by || 'Staff'}
+                                                </td>
+                                                <td className="p-3 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            onClick={() => handleRejectInventoryRequest(req.id)}
+                                                            className="px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-100 rounded"
+                                                        >
+                                                            Rechazar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleApproveInventoryRequest(req.id)}
+                                                            className="px-3 py-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded shadow-sm"
+                                                        >
+                                                            Aprobar
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         )}
                     </div>

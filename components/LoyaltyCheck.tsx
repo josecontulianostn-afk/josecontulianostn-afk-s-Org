@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Gift, Star, UserCheck, Search, Loader2, Scissors, UserPlus, AlertCircle } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import DigitalCard from './DigitalCard';
+import AddToWalletButtons from './AddToWalletButtons';
 import { Reward } from '../types';
 
 const LoyaltyCheck: React.FC = () => {
@@ -23,6 +24,9 @@ const LoyaltyCheck: React.FC = () => {
     const [regName, setRegName] = useState('');
     const [regSurname, setRegSurname] = useState('');
     const [regRUT, setRegRUT] = useState('');
+    const [regEmail, setRegEmail] = useState('');
+    const [regBirthDate, setRegBirthDate] = useState('');
+    const [termsAccepted, setTermsAccepted] = useState(false);
 
     const formatRUT = (value: string) => {
         // Remove dots and dashes
@@ -105,6 +109,9 @@ const LoyaltyCheck: React.FC = () => {
             if (!regName.trim() || !regSurname.trim()) {
                 throw new Error('Por favor completa nombre y apellido');
             }
+            if (!termsAccepted) {
+                throw new Error('Debes aceptar los términos de uso');
+            }
 
             const finalRUT = formatRUT(regRUT);
             const fullPhone = '+569' + phone;
@@ -126,6 +133,8 @@ const LoyaltyCheck: React.FC = () => {
                     name: `${regName} ${regSurname}`,
                     phone: fullPhone,
                     rut: finalRUT,
+                    email: regEmail || null,
+                    birth_date: regBirthDate || null,
                     visits: 0,
                     referrals: 0,
                     hair_service_count: 0,
@@ -137,7 +146,9 @@ const LoyaltyCheck: React.FC = () => {
 
             if (error) {
                 console.error('Error de Supabase:', error);
-                throw new Error(error.message || 'Error al registrar');
+                // Translate common errors or use generic
+                if (error.code === '23505') throw new Error('Este número o RUT ya está registrado.');
+                throw new Error('Ocurrió un problema al registrar. Por favor intenta nuevamente.');
             }
 
             if (data && data[0]) {
@@ -159,7 +170,14 @@ const LoyaltyCheck: React.FC = () => {
 
         } catch (err: any) {
             console.error("Error registering:", err);
-            setErrorMessage(err.message || "No se pudo registrar. Verifica si ya existe el número o RUT.");
+            // Show friendly message instead of raw error
+            setErrorMessage(
+                err.message === 'Este número o RUT ya está registrado.' ||
+                    err.message === 'Por favor completa nombre y apellido' ||
+                    err.message === 'Debes aceptar los términos de uso'
+                    ? err.message
+                    : "No se pudo completar el registro. Verifica tus datos e intenta nuevamente."
+            );
         } finally {
             setLoading(false);
         }
@@ -262,6 +280,37 @@ const LoyaltyCheck: React.FC = () => {
                                 className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:outline-none"
                             />
 
+                            <input
+                                type="email"
+                                placeholder="Email (Opcional)"
+                                value={regEmail}
+                                onChange={(e) => setRegEmail(e.target.value)}
+                                className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:outline-none"
+                            />
+
+                            <div>
+                                <label className="block text-xs text-stone-500 ml-1 mb-1">Fecha de Nacimiento</label>
+                                <input
+                                    type="date"
+                                    value={regBirthDate}
+                                    onChange={(e) => setRegBirthDate(e.target.value)}
+                                    className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:outline-none"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-3 py-2">
+                                <input
+                                    type="checkbox"
+                                    id="terms"
+                                    checked={termsAccepted}
+                                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                                    className="w-5 h-5 rounded border-stone-700 bg-stone-900 text-amber-500 focus:ring-amber-500/50"
+                                />
+                                <label htmlFor="terms" className="text-xs text-stone-400 select-none">
+                                    He leído y acepto los <a href="#" className="text-amber-500 hover:underline">términos de uso</a>.
+                                </label>
+                            </div>
+
                             <button
                                 type="submit"
                                 disabled={loading}
@@ -291,6 +340,9 @@ const LoyaltyCheck: React.FC = () => {
                                 nextReward={5}
                                 tier={stats.tier as any}
                             />
+                            <div className="mt-6">
+                                <AddToWalletButtons />
+                            </div>
                         </div>
 
                         {/* Actions Below Card */}

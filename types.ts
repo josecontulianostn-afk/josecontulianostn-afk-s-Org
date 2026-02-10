@@ -25,6 +25,7 @@ export interface Service {
   durationMin: number;
   includes: string[];
   homeServiceOnly?: boolean;
+  fromPrice?: boolean;
 }
 
 export interface LoyaltyProfile {
@@ -38,6 +39,9 @@ export interface Client {
   id: string;
   name: string;
   phone: string;
+  rut?: string;
+  email?: string;
+  birth_date?: string;
   visits: number;
   referrals: number;
   last_visit?: string;
@@ -109,4 +113,27 @@ export interface VisitRegistration {
   admin_notes?: string;
   validated_at?: string;
   client?: Client; // Joined data
+}
+
+export interface Product {
+  id: string;
+  barcode: string | null;
+  name: string;
+  category: 'perfume' | 'desodorante' | 'capilar' | 'otro';
+  gender: 'hombre' | 'mujer' | 'unisex' | 'n/a';
+  cost_price: number;
+  sale_price: number;
+  stock: number;
+  created_at?: string;
+  margin?: number; // Calculated on frontend
+}
+
+export interface InventoryRequest {
+  id: string;
+  product_id: string;
+  quantity: number;
+  status: 'pending' | 'approved' | 'rejected';
+  requested_by?: string;
+  created_at: string;
+  product?: Product;
 }

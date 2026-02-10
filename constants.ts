@@ -52,6 +52,42 @@ export const SERVICES: Service[] = [
     price: 10000,
     durationMin: 60,
     includes: ['Aplicación uniforme', 'Lavado final']
+  },
+  {
+    id: 'alisado-1',
+    name: 'Alisado Permanente',
+    description: 'Alisado profesional para un cabello liso, suave y brillante por meses.',
+    price: 39990,
+    durationMin: 180,
+    includes: ['Evaluación del cabello', 'Alisado completo', 'Tratamiento sellador'],
+    fromPrice: true
+  },
+  {
+    id: 'mechas-1',
+    name: 'Mechas',
+    description: 'Iluminaciones y mechas para dar luz y dimensión a tu cabello.',
+    price: 39990,
+    durationMin: 150,
+    includes: ['Diagnóstico capilar', 'Mechas personalizadas', 'Matizado'],
+    fromPrice: true
+  },
+  {
+    id: 'hidratacion-1',
+    name: 'Hidratación',
+    description: 'Tratamiento profundo para devolver la vitalidad y suavidad a tu cabello.',
+    price: 14990,
+    durationMin: 60,
+    includes: ['Diagnóstico capilar', 'Tratamiento hidratante profundo', 'Sellado de cutículas'],
+    fromPrice: true
+  },
+  {
+    id: 'balayage-1',
+    name: 'Balayage',
+    description: 'Técnica de coloración para un efecto natural, degradado y luminoso.',
+    price: 34990,
+    durationMin: 180,
+    includes: ['Diagnóstico capilar', 'Balayage personalizado', 'Matizado y sellado'],
+    fromPrice: true
   }
 ];
 
@@ -463,21 +499,80 @@ export const REVIEWS: Review[] = [
 
 export const GIFTS = [
   {
-    id: 'gift-1',
-    name: 'Regalito A',
-    price: 19990,
-    includes: ['Perfume 10ml', 'Chocolates Ferrero', 'Tarjeta Personalizada']
+    id: 'gift-red-passion',
+    name: 'Red Passion',
+    price: 34990,
+    image: '/images/gifts/red-passion-pack.jpg',
+    description: 'Hay regalos que se guardan y otros que se llevan puestos. Con el pack "Red Passion", no solo regalas la exclusividad de Lattafa y la dulzura de Ritter, sino un recordatorio constante en sus manos. Porque cada vez que tome sus llaves, sentirá el peso de un detalle hecho con el corazón.',
+    includes: [
+      'Perfume Ana Abiyedh 60ml',
+      'Caja Roja Premium',
+      '4 Chocolates Ritter',
+      'Llavero Corazón'
+    ],
+    note: 'Consulta por otro perfume'
   },
   {
-    id: 'gift-2',
-    name: 'Regalito B',
+    id: 'gift-love-gold',
+    name: 'Love Gold',
+    price: 36990,
+    image: '/images/gifts/love-gold-pack.jpg',
+    description: '¿Buscas el regalo que lo diga todo por ti? Hemos reunido el aroma más deseado de Maison Alhambra con los detalles que nunca fallan. Sofisticación, flores y chocolates: la tríada perfecta para sorprender a alguien especial.',
+    includes: [
+      'Perfume Léonie 100ml',
+      'Caja Dorada Premium',
+      'Rosa Eterna',
+      '4 Chocolates Ferrero'
+    ],
+    note: 'Consulta por otro perfume'
+  },
+  {
+    id: 'gift-pink-sweet',
+    name: 'Pink Sweet',
     price: 29990,
-    includes: ['Perfume 10ml', 'Crema de Manos', 'Chocolates Finos', 'Globo Corazón']
+    image: '/images/gifts/pink-sweet-pack.jpg',
+    description: 'Hay fragancias que evocan recuerdos y detalles que los mantienen vivos. Sorprende con este pack "Pink Sweet" que combina la sofisticación de Victoria\'s Secret con un detalle táctil: un llavero de corazón que será el recordatorio diario de tu amor en sus manos. Porque los mejores regalos son los que se llevan puestos y se sienten cerca.',
+    includes: [
+      'Body Mist Bare Vanilla Daydream 250ml',
+      'Caja Rosada Premium',
+      '4 Chocolates Ritter',
+      'Llavero Corazón'
+    ],
+    note: 'Consulta por otra fragancia'
+  },
+  {
+    id: 'gift-pink-surprise-fresh',
+    name: 'Pink Surprise Box - Fresh',
+    price: 21990,
+    image: '/images/gifts/pink-surprise-fresh-final.jpg',
+    description: 'Haz que su corazón palpite más fuerte con nuestra Pink Surprise Box. Una selección premium con la sofisticación árabe de Yara, chocolates para endulzar el día y un detalle que vivirá en sus manos: un llavero diseñado para recordarle, paso a paso, cuánto la quieres. ¡Elige la versión que más le guste y sorpréndela!',
+    includes: [
+      'Lattafa Yara Spray 200ml',
+      'Caja Sorpresa Premium',
+      '4 Chocolates',
+      'Llavero de Diseño'
+    ],
+    note: 'Versión Spray'
+  },
+  {
+    id: 'gift-pink-surprise-luxury',
+    name: 'Pink Surprise Box - Luxury',
+    price: 44990,
+    image: '/images/gifts/pink-surprise-luxury-final.jpg',
+    description: 'Haz que su corazón palpite más fuerte con nuestra Pink Surprise Box. Una selección premium con la sofisticación árabe de Yara, chocolates para endulzar el día y un detalle que vivirá en sus manos: un llavero diseñado para recordarle, paso a paso, cuánto la quieres. ¡Elige la versión que más le guste y sorpréndela!',
+    includes: [
+      'Lattafa Yara EDP 100ml',
+      'Caja Sorpresa Premium',
+      '4 Chocolates',
+      'Llavero de Diseño'
+    ],
+    note: 'Versión Perfume'
   },
   {
     id: 'gift-custom',
     name: 'Arma tu regalito',
     price: 0,
+    description: '¿Quieres personalizar tu regalo? Cuéntanos qué tienes en mente y te ayudamos a armarlo.',
     includes: ['Chocolates Ferrero Roche', 'Los Perfumes en Stock', 'Globo de corazón', 'Y mucho más...']
   }
 ];

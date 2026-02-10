@@ -14,6 +14,7 @@ import AdminPanel from './components/AdminPanel';
 import Gallery from './components/Gallery';
 import GiftZone from './components/GiftZone';
 import CheckInPage from './components/CheckInPage';
+import PrintableQR from './components/PrintableQR';
 import HomeSelection from './components/HomeSelection';
 import HairTips from './components/blog/HairTips';
 import { SERVICES } from './constants';
@@ -51,19 +52,27 @@ const App: React.FC = () => {
             {SERVICES.filter(s => !s.homeServiceOnly).map((service) => (
               <div key={service.id} className="flex justify-between items-center border-b border-stone-100 pb-4">
                 <div>
-                  <h3 className="font-bold text-stone-900">{service.name}</h3>
+                  <h3 className="font-bold text-stone-900">
+                    {service.name}
+                    {service.fromPrice && <span className="text-amber-600 text-xs ml-1">*</span>}
+                  </h3>
                   <p className="text-xs text-stone-500">{service.description}</p>
                 </div>
-                <div className="text-right ml-4">
+                <div className="text-right ml-4 shrink-0">
                   <span className="block font-serif font-bold text-lg text-stone-900">
+                    {service.fromPrice && <span className="text-xs font-normal text-stone-500">Desde </span>}
                     ${service.price.toLocaleString('es-CL')}
                   </span>
-                  <span className="text-[10px] text-stone-400 uppercase">{service.durationMin} min</span>
+                  <span className="text-[10px] text-stone-400 uppercase">{service.durationMin} min aprox.</span>
                 </div>
               </div>
             ))}
           </div>
-          <div className="mt-8 text-center">
+          <p className="text-[11px] text-stone-400 mt-6 text-center leading-relaxed">
+            <span className="text-amber-600">*</span> Valor final se entregará luego de la evaluación presencial sin costo.
+            Factores como largo del cabello y su estado determinarán el precio final.
+          </p>
+          <div className="mt-6 text-center">
             <Link to="/booking" className="text-stone-900 font-bold border-b border-stone-900 hover:text-stone-600 hover:border-stone-600 transition">
               Ver Menú Completo
             </Link>
@@ -174,6 +183,7 @@ const App: React.FC = () => {
 
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/checkin" element={<CheckInPage />} />
+            <Route path="/print-qr" element={<PrintableQR />} />
 
             {/* 
                Note: The BookingForm inside Home handles success by calling the prop. 

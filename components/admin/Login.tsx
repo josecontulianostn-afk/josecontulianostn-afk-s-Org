@@ -3,7 +3,7 @@ import { Shield } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 
 interface LoginProps {
-    onLogin: (role: 'service' | 'management', email?: string) => void;
+    onLogin: (role: 'service' | 'management' | 'inventory', email?: string) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -32,6 +32,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 } else {
                     throw new Error('Invalid login credentials');
                 }
+            } else if (email === 'inventario@tus3b.cl' && password === 'Stock2026!') {
+                console.log("ACCESO INVENTARIO: Credenciales válidas");
+                onLogin('inventory', email);
             } else if (email.includes('@')) {
                 // Para otros usuarios (pruebas), pedimos una clave genérica o lo bloqueamos
                 // Por seguridad, bloqueamos a otros por ahora
