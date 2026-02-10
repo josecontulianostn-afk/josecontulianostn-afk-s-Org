@@ -79,13 +79,13 @@ const Header: React.FC<HeaderProps> = () => {
     }
 
     return (
-      <Link to={path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="flex flex-col items-start justify-center leading-none group">
+      <Link to={path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="h-full flex flex-col justify-center items-start leading-none group py-1">
         <div className="flex items-center gap-2">
           <span className={`serif text-2xl md:text-3xl font-bold tracking-tight ${mainColor} ${isItalic ? 'italic' : ''} transition-opacity group-hover:opacity-80`}>
             {brandName}
           </span>
         </div>
-        <span className="text-stone-400 text-[10px] font-medium tracking-[0.2em] uppercase mt-0.5 ml-0.5">
+        <span className="text-stone-400 text-[10px] font-medium tracking-[0.2em] uppercase ml-0.5">
           {subText}
         </span>
       </Link>
