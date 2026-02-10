@@ -105,7 +105,7 @@ const AddToWalletButtons: React.FC = () => {
                                 <div className="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 text-sm font-bold shadow-md">1</div>
                                 <div>
                                     <p className="font-bold text-stone-900">Toca el ícono de Compartir</p>
-                                    <p className="text-stone-500 text-sm mt-0.5">Está en la parte inferior de Safari.</p>
+                                    <p className="text-stone-500 text-sm mt-0.5">Búscalo en la barra de tu explorador web.</p>
                                     <div className="mt-2 flex justify-center">
                                         <div className="bg-blue-50 p-2 rounded-lg">
                                             <Share className="text-blue-500" size={22} />
@@ -120,8 +120,8 @@ const AddToWalletButtons: React.FC = () => {
                             <div className="flex items-start gap-4">
                                 <div className="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 text-sm font-bold shadow-md">2</div>
                                 <div>
-                                    <p className="font-bold text-stone-900">Selecciona "Agregar a Inicio"</p>
-                                    <p className="text-stone-500 text-sm mt-0.5">Desliza hacia abajo en el menú.</p>
+                                    <p className="font-bold text-stone-900">Busca "Agregar a Inicio"</p>
+                                    <p className="text-stone-500 text-sm mt-0.5">Debes deslizar hacia abajo hasta encontrar la opción.</p>
                                     <div className="mt-2 flex items-center gap-2 bg-stone-100 px-4 py-2.5 rounded-xl w-fit">
                                         <PlusSquare size={16} className="text-stone-600" />
                                         <span className="text-sm font-medium text-stone-700">Agregar a Inicio</span>
