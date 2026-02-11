@@ -53,9 +53,9 @@ const Header: React.FC<HeaderProps> = () => {
           </div>
 
           {/* Text - Fixed width alignment */}
-          <div className="flex flex-col items-start justify-center -space-y-0.5">
+          <div className="flex flex-col items-center justify-center -space-y-0.5">
             <h1 className="font-serif italic text-2xl md:text-3xl text-stone-900 tracking-[0.15em] drop-shadow-sm whitespace-nowrap">
-              Tus3B <span className="text-amber-500">Hub</span>
+              Tus3B <span className="text-amber-500">HUB</span>
             </h1>
             <span className="text-[9px] md:text-[10px] text-stone-500 uppercase tracking-[0.25em] font-medium leading-none whitespace-nowrap">
               Belleza &bull; Aroma &bull; Regalos
