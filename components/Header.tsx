@@ -23,7 +23,7 @@ const Header: React.FC<HeaderProps> = () => {
   const isHomePage = location.pathname === '/';
   const headerBgClass = (isScrolled || !isHomePage)
     ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-stone-100 py-3'
-    : 'bg-transparent py-4';
+    : 'bg-transparent py-2';
 
   const navClass = `fixed top-0 left-0 w-full z-50 transition-all duration-300 ${headerBgClass}`;
 
@@ -44,8 +44,8 @@ const Header: React.FC<HeaderProps> = () => {
     // HUB VIEW: Show all 3 brand icons centered/aligned
     if (path === '/') {
       return (
-        <div className="flex items-center gap-2 md:gap-4">
-          <div className="w-9 h-9 md:w-12 md:h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-md shrink-0">
+        <div className="flex items-center gap-2 md:gap-4 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
+          <div className="w-14 h-14 md:w-16 md:h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-md shrink-0">
             <img src="/images/logo-hub.jpg" alt="Logo" className="w-full h-full object-cover rounded-full border border-white/20" />
           </div>
           <div className="hidden md:flex items-center gap-3">
@@ -54,9 +54,6 @@ const Header: React.FC<HeaderProps> = () => {
             <span className="serif text-lg font-bold text-amber-500">Perfum</span>
             <span className="h-4 w-px bg-stone-300"></span>
             <span className="serif text-lg font-bold text-rose-500">Amor Amor</span>
-          </div>
-          <div className="md:hidden flex flex-col leading-none">
-            <span className="serif text-sm font-bold text-stone-900">Tus3B Hub</span>
           </div>
         </div>
       );
@@ -141,7 +138,7 @@ const Header: React.FC<HeaderProps> = () => {
             {/* Mobile Menu Toggle */}
             <div className="md:hidden flex items-center">
               <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className={`focus:outline-none ${(isScrolled || !isHomePage) ? 'text-stone-900' : 'text-stone-800'}`}>
-                {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+                {isMobileMenuOpen ? <X size={32} /> : <Menu size={32} />}
               </button>
             </div>
           </div>
