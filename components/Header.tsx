@@ -44,7 +44,7 @@ const Header: React.FC<HeaderProps> = () => {
     // HUB VIEW: Show all 3 brand icons centered/aligned
     if (path === '/') {
       return (
-        <div className="flex items-center gap-2 md:gap-4 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
+        <div className="flex items-center gap-2 md:gap-4 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0">
           <div className="w-14 h-14 md:w-16 md:h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-md shrink-0">
             <img src="/images/logo-hub.jpg" alt="Logo" className="w-full h-full object-cover rounded-full border border-white/20" />
           </div>
@@ -92,7 +92,7 @@ const Header: React.FC<HeaderProps> = () => {
   return (
     <nav className={navClass}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center min-h-[3.75rem] md:min-h-[4rem]">
+        <div className="relative flex justify-between items-center min-h-[3.75rem] md:min-h-[4rem]">
 
           {/* LEFT: Branding & Back Button */}
           <div className="flex items-center gap-3 md:gap-4 flex-1">
