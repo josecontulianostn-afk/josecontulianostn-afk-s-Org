@@ -79,7 +79,7 @@ const Header: React.FC<HeaderProps> = () => {
     }
 
     return (
-      <Link to={path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="flex flex-col justify-center items-start leading-none group pb-1">
+      <Link to={path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="flex flex-col justify-center items-start leading-none group pb-2.5">
         <div className="flex items-center gap-2">
           <span className={`serif text-2xl md:text-3xl font-bold tracking-tight ${mainColor} ${isItalic ? 'italic' : ''} transition-opacity group-hover:opacity-80`}>
             {brandName}
