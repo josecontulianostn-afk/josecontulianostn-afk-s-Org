@@ -10,10 +10,9 @@ const HomeSelection: React.FC = () => {
             <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
             {/* Main Content Container */}
-            <div className="flex-grow flex flex-col items-center justify-center px-4 py-8 max-w-lg mx-auto w-full z-10 space-y-8">
+            <div className="flex-grow flex flex-col items-center justify-center px-4 py-8 max-w-lg mx-auto w-full z-10 space-y-6">
 
-                {/* 1. BRAND HEADER */}
-                {/* 1. BRAND HEADER */}
+                {/* Brand Header moved to Navbar as requested */}
 
 
                 {/* 2. THE 3 PILLARS (Category Cards) */}

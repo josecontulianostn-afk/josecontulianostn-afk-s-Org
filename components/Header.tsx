@@ -43,17 +43,34 @@ const Header: React.FC<HeaderProps> = () => {
 
 
 
+    // HOME VIEW: Custom Large Branding in Header
+    if (path === '/') {
+      return (
+        <div className="flex items-center gap-3">
+          {/* Logo is handled by parent, but we might want to scale it or just place text next to it. 
+              The parent 'Brand Logo Container' (line 106) wraps this. 
+              Wait, the parent just calls getLogoContent. 
+              Let's return the full block needed.
+          */}
+          <div className="flex flex-col items-start justify-center -space-y-0.5">
+            <h1 className="font-serif italic text-2xl md:text-3xl text-white tracking-tight drop-shadow-md">
+              Tus3B <span className="text-amber-500">Hub</span>
+            </h1>
+            <span className="text-[9px] md:text-[10px] text-stone-300 uppercase tracking-[0.25em] font-medium leading-none">
+              Belleza &bull; Aroma &bull; Regalos
+            </span>
+          </div>
+        </div>
+      );
+    }
+
     // INTERNAL VIEWS: Left-aligned specific brand logo
     let mainColor = 'text-stone-900';
     let brandName = 'Style';
     let subText = 'by tus3b';
     let isItalic = true;
 
-    if (path === '/') {
-      mainColor = isScrolled ? 'text-stone-900' : 'text-white';
-      brandName = 'Tus3B Hub';
-      subText = 'Belleza • Aroma • Regalos';
-    } else if (path.startsWith('/perfum')) {
+    if (path.startsWith('/perfum')) {
       mainColor = 'text-amber-600';
       brandName = 'Perfum';
       isItalic = false;
@@ -64,7 +81,7 @@ const Header: React.FC<HeaderProps> = () => {
     }
 
     return (
-      <Link to={path === '/' ? '/' : path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="flex flex-col justify-center items-start leading-none group pb-2.5">
+      <Link to={path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="flex flex-col justify-center items-start leading-none group pb-2.5">
         <div className="flex items-center gap-2">
           <span className={`serif text-2xl md:text-3xl font-bold tracking-tight ${mainColor} ${isItalic ? 'italic' : ''} transition-opacity group-hover:opacity-80`}>
             {brandName}
