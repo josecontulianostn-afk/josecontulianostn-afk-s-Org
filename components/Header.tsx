@@ -52,12 +52,12 @@ const Header: React.FC<HeaderProps> = () => {
             <img src="/images/logo-hub.jpg" alt="Logo" className="w-full h-full object-cover rounded-full border border-white/20" />
           </div>
 
-          {/* Text - Fixed Colors for White Background */}
+          {/* Text - Fixed width alignment */}
           <div className="flex flex-col items-start justify-center -space-y-0.5">
-            <h1 className="font-serif italic text-2xl md:text-3xl text-stone-900 tracking-tight drop-shadow-sm">
+            <h1 className="font-serif italic text-2xl md:text-3xl text-stone-900 tracking-[0.15em] drop-shadow-sm whitespace-nowrap">
               Tus3B <span className="text-amber-500">Hub</span>
             </h1>
-            <span className="text-[9px] md:text-[10px] text-stone-500 uppercase tracking-[0.25em] font-medium leading-none">
+            <span className="text-[9px] md:text-[10px] text-stone-500 uppercase tracking-[0.25em] font-medium leading-none whitespace-nowrap">
               Belleza &bull; Aroma &bull; Regalos
             </span>
           </div>
