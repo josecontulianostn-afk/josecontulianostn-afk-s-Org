@@ -47,16 +47,17 @@ const Header: React.FC<HeaderProps> = () => {
     if (path === '/') {
       return (
         <div className="flex items-center gap-3">
-          {/* Logo is handled by parent, but we might want to scale it or just place text next to it. 
-              The parent 'Brand Logo Container' (line 106) wraps this. 
-              Wait, the parent just calls getLogoContent. 
-              Let's return the full block needed.
-          */}
+          {/* Logo Restored */}
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-sm shrink-0">
+            <img src="/images/logo-hub.jpg" alt="Logo" className="w-full h-full object-cover rounded-full border border-white/20" />
+          </div>
+
+          {/* Text - Fixed Colors for White Background */}
           <div className="flex flex-col items-start justify-center -space-y-0.5">
-            <h1 className="font-serif italic text-2xl md:text-3xl text-white tracking-tight drop-shadow-md">
+            <h1 className="font-serif italic text-2xl md:text-3xl text-stone-900 tracking-tight drop-shadow-sm">
               Tus3B <span className="text-amber-500">Hub</span>
             </h1>
-            <span className="text-[9px] md:text-[10px] text-stone-300 uppercase tracking-[0.25em] font-medium leading-none">
+            <span className="text-[9px] md:text-[10px] text-stone-500 uppercase tracking-[0.25em] font-medium leading-none">
               Belleza &bull; Aroma &bull; Regalos
             </span>
           </div>
