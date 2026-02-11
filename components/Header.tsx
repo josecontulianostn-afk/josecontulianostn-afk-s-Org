@@ -41,23 +41,7 @@ const Header: React.FC<HeaderProps> = () => {
   const getLogoContent = () => {
     const path = location.pathname;
 
-    // HUB VIEW: Show all 3 brand icons centered/aligned
-    if (path === '/') {
-      return (
-        <div className="flex items-center gap-2 md:gap-4 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0">
-          <div className="w-14 h-14 md:w-16 md:h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-rose-200 to-amber-200 shadow-md shrink-0">
-            <img src="/images/logo-hub.jpg" alt="Logo" className="w-full h-full object-cover rounded-full border border-white/20" />
-          </div>
-          <div className="hidden md:flex items-center gap-3">
-            <span className="serif text-lg font-bold italic text-stone-900">Style</span>
-            <span className="h-4 w-px bg-stone-300"></span>
-            <span className="serif text-lg font-bold text-amber-500">Perfum</span>
-            <span className="h-4 w-px bg-stone-300"></span>
-            <span className="serif text-lg font-bold text-rose-500">Amor Amor</span>
-          </div>
-        </div>
-      );
-    }
+
 
     // INTERNAL VIEWS: Left-aligned specific brand logo
     let mainColor = 'text-stone-900';
@@ -65,7 +49,11 @@ const Header: React.FC<HeaderProps> = () => {
     let subText = 'by tus3b';
     let isItalic = true;
 
-    if (path.startsWith('/perfum')) {
+    if (path === '/') {
+      mainColor = isScrolled ? 'text-stone-900' : 'text-white';
+      brandName = 'Tus3B Hub';
+      subText = 'Belleza • Aroma • Regalos';
+    } else if (path.startsWith('/perfum')) {
       mainColor = 'text-amber-600';
       brandName = 'Perfum';
       isItalic = false;
@@ -76,7 +64,7 @@ const Header: React.FC<HeaderProps> = () => {
     }
 
     return (
-      <Link to={path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="flex flex-col justify-center items-start leading-none group pb-2.5">
+      <Link to={path === '/' ? '/' : path.startsWith('/perfum') ? '/perfum' : path.startsWith('/regalos') ? '/regalos' : '/style'} className="flex flex-col justify-center items-start leading-none group pb-2.5">
         <div className="flex items-center gap-2">
           <span className={`serif text-2xl md:text-3xl font-bold tracking-tight ${mainColor} ${isItalic ? 'italic' : ''} transition-opacity group-hover:opacity-80`}>
             {brandName}

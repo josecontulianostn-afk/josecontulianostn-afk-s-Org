@@ -14,14 +14,7 @@ const HomeSelection: React.FC = () => {
 
                 {/* 1. BRAND HEADER */}
                 {/* 1. BRAND HEADER */}
-                <div className="text-center space-y-2 mb-4">
-                    <h1 className="font-serif italic text-5xl md:text-6xl text-white tracking-tighter">
-                        Tus3B <span className="text-amber-500">Hub</span>
-                    </h1>
-                    <p className="text-stone-400 text-[10px] uppercase tracking-[0.4em] font-medium">
-                        Belleza &bull; Aroma &bull; Regalos
-                    </p>
-                </div>
+
 
                 {/* 2. THE 3 PILLARS (Category Cards) */}
                 <div className="w-full space-y-4">
@@ -29,49 +22,49 @@ const HomeSelection: React.FC = () => {
                     {/* STYLE PILLAR */}
                     <Link to="/style" className="group block relative overflow-hidden rounded-2xl border border-stone-800 bg-stone-900/40 hover:bg-stone-900/60 transition-all duration-300">
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                        <div className="p-6 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-stone-800 flex items-center justify-center text-white border border-stone-700 group-hover:border-white/50 transition-colors">
-                                    <Scissors size={24} />
+                        <div className="p-8 flex items-center justify-between">
+                            <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 rounded-full bg-stone-800 flex items-center justify-center text-white border border-stone-700 group-hover:border-white/50 transition-colors shadow-lg">
+                                    <Scissors size={32} />
                                 </div>
                                 <div>
-                                    <h2 className="font-serif text-2xl italic">Style</h2>
-                                    <p className="text-[10px] text-stone-500 uppercase tracking-widest">Peluquería & Color</p>
+                                    <h2 className="font-serif text-3xl italic text-white drop-shadow-md">Style</h2>
+                                    <p className="text-xs text-stone-400 uppercase tracking-widest font-semibold">Peluquería & Color</p>
                                 </div>
                             </div>
-                            <ArrowRight size={20} className="text-stone-600 group-hover:text-white transition-colors" />
+                            <ArrowRight size={24} className="text-stone-500 group-hover:text-white transition-colors" />
                         </div>
                     </Link>
 
                     {/* PERFUM PILLAR */}
                     <Link to="/perfum" className="group block relative overflow-hidden rounded-2xl border border-amber-900/30 bg-stone-900/40 hover:bg-amber-950/20 transition-all duration-300">
-                        <div className="p-6 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-amber-900/20 flex items-center justify-center text-amber-500 border border-amber-500/20 group-hover:border-amber-500/50 transition-colors">
-                                    <ShoppingBag size={24} />
+                        <div className="p-8 flex items-center justify-between">
+                            <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 rounded-full bg-amber-900/40 flex items-center justify-center text-amber-500 border border-amber-500/30 group-hover:border-amber-500/60 transition-colors shadow-lg shadow-amber-900/20">
+                                    <ShoppingBag size={32} />
                                 </div>
                                 <div>
-                                    <h2 className="font-serif text-2xl text-amber-500">Perfum</h2>
-                                    <p className="text-[10px] text-amber-800/80 uppercase tracking-widest">Decants Exclusivos</p>
+                                    <h2 className="font-serif text-3xl text-amber-500 drop-shadow-md">Perfum</h2>
+                                    <p className="text-xs text-amber-500/80 uppercase tracking-widest font-semibold">Decants Exclusivos</p>
                                 </div>
                             </div>
-                            <ArrowRight size={20} className="text-amber-900/50 group-hover:text-amber-500 transition-colors" />
+                            <ArrowRight size={24} className="text-amber-800 group-hover:text-amber-500 transition-colors" />
                         </div>
                     </Link>
 
                     {/* LOVE PILLAR */}
                     <Link to="/regalos" className="group block relative overflow-hidden rounded-2xl border border-rose-900/30 bg-stone-900/40 hover:bg-rose-950/20 transition-all duration-300">
-                        <div className="p-6 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-rose-900/20 flex items-center justify-center text-rose-400 border border-rose-500/20 group-hover:border-rose-500/50 transition-colors">
-                                    <Gift size={24} />
+                        <div className="p-8 flex items-center justify-between">
+                            <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 rounded-full bg-rose-900/40 flex items-center justify-center text-rose-400 border border-rose-500/30 group-hover:border-rose-500/60 transition-colors shadow-lg shadow-rose-900/20">
+                                    <Gift size={32} />
                                 </div>
                                 <div>
-                                    <h2 className="font-serif text-2xl text-rose-400">Amor Amor</h2>
-                                    <p className="text-[10px] text-rose-800/80 uppercase tracking-widest">Detalles Especiales</p>
+                                    <h2 className="font-serif text-3xl text-rose-400 drop-shadow-md">Amor Amor</h2>
+                                    <p className="text-xs text-rose-400/80 uppercase tracking-widest font-semibold">Detalles Especiales</p>
                                 </div>
                             </div>
-                            <ArrowRight size={20} className="text-rose-900/50 group-hover:text-rose-400 transition-colors" />
+                            <ArrowRight size={24} className="text-rose-800 group-hover:text-rose-400 transition-colors" />
                         </div>
                     </Link>
 
