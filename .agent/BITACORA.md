@@ -165,3 +165,9 @@ npm run deploy
 - **Problema:** La imagen "Love in the Air" seguía rota debido a un problema de ruta/extensión (case sensitivity).
 - **Solución:** Se renombró el archivo `love-air-correct.JPG` a `love-air-correct.jpg` (con minúscula) y se aseguró su ubicación en la carpeta `public`.
 - **Estado:** Desplegado.
+
+### Fix Visual (13:20 PM)
+- **Problema:** Emojis de corazones dobles en la lista "Incluye" de "Love in the Air".
+- **Causa:** El código (`GiftZone.tsx`) agrega un ícono de corazón automáticamente, y el texto en `constants.ts` también tenía un emoji '💗'.
+- **Solución:** Se eliminaron los emojis '💗' de `constants.ts`.
+- **Estado:** Desplegado.
