@@ -160,3 +160,8 @@ npm run deploy
 - **Cambio:** El usuario convirtió la imagen de "Love in the Air" a formato JPG (`love-air-correct.JPG`).
 - **Acción:** Se actualizó `constants.ts` para reflejar el cambio de extensión (.png -> .JPG).
 - **Estado:** Desplegado.
+
+### Corrección Final (12:55 PM)
+- **Problema:** La imagen "Love in the Air" seguía rota debido a un problema de ruta/extensión (case sensitivity).
+- **Solución:** Se renombró el archivo `love-air-correct.JPG` a `love-air-correct.jpg` (con minúscula) y se aseguró su ubicación en la carpeta `public`.
+- **Estado:** Desplegado.
