@@ -149,3 +149,9 @@ npm run deploy
 
 ### Notas
 - Se utilizó la imagen del globo/oso para el producto "Pink Surprise Box - Luxury" aunque la descripción menciona perfume, según confirmación implícita del usuario al adjuntar esa imagen para este producto.
+
+### Corrección (11:20 AM)
+- **Error identificado:** Las imágenes asignadas anteriormente eran incorrectas (Globo en producto de Perfume y viceversa/confusión).
+- **Acción:** El usuario subió las imágenes correctas (`pink-luxury-correct.jpg` y `love-air-correct.png`).
+- **Cambio:** Se actualizaron `gift-pink-surprise-luxury` y `love-in-air` en `constants.ts` para apuntar a los archivos correctos.
+- **Estado:** Corregido y desplegado nuevamente.

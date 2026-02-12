@@ -558,7 +558,7 @@ export const GIFTS = [
     id: 'gift-pink-surprise-luxury',
     name: 'Pink Surprise Box - Luxury',
     price: 44990,
-    image: '/images/gifts/pink-surprise-luxury-balloon.png',
+    image: '/images/gifts/pink-luxury-correct.jpg',
     description: 'Haz que su corazón palpite más fuerte con nuestra Pink Surprise Box. Una selección premium con la sofisticación árabe de Yara, chocolates para endulzar el día y un detalle que vivirá en sus manos: un llavero diseñado para recordarle, paso a paso, cuánto la quieres. ¡Elige la versión que más le guste y sorpréndela!',
     includes: [
       'Lattafa Yara EDP 100ml',
@@ -573,7 +573,7 @@ export const GIFTS = [
     name: '✨ Love in the Air ✨',
     price: 26990,
     description: '¿Buscas una sorpresa que llegue a lo más alto? Hemos diseñado este encantador globo aerostático que combina la ternura clásica con una presentación inolvidable. Dulzura, suavidad y magia: el regalo perfecto para hacer volar su corazón en este día especial.',
-    image: '/love_in_the_air.png',
+    image: '/love-air-correct.png',
     includes: [
       '💗 Oso de Peluche Premium',
       '💗 Caja Hershey\'s Kisses',
