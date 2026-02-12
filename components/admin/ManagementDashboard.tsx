@@ -1209,12 +1209,21 @@ const ManagementDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-stone-700 mb-1">Teléfono</label>
-                                <input
-                                    type="text"
-                                    value={editingClient.phone}
-                                    onChange={(e) => setEditingClient({ ...editingClient, phone: e.target.value })}
-                                    className="w-full px-4 py-2 border rounded-lg"
-                                />
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-stone-200 border border-stone-300 text-stone-600 px-3 py-2 rounded-lg font-bold">+569</span>
+                                    <input
+                                        type="tel"
+                                        value={editingClient.phone.replace('+569', '')}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            if (val.length <= 8) {
+                                                setEditingClient({ ...editingClient, phone: '+569' + val });
+                                            }
+                                        }}
+                                        maxLength={8}
+                                        className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-stone-700 mb-1">Visitas (Puntos)</label>

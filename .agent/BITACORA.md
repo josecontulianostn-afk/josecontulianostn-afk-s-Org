@@ -129,3 +129,23 @@ npm run deploy
 - **Producción:** https://tus3b.cl
 - **Admin:** https://tus3b.cl/admin
 - **Supabase Dashboard:** [Link del proyecto en Supabase]
+
+---
+
+## 📅 Sesión: 2026-02-12
+
+### Resumen
+- **Hora inicio:** 10:00 AM (UTC-3)
+- **Objetivo principal:** Actualizar imagen del producto "Pink Surprise Box - Luxury"
+
+### Acciones Realizadas
+1. [x] Identificación de imagen correcta para el producto "Pink Surprise Box - Luxury"
+2. [x] Actualización de referencia de imagen en `constants.ts` para usar la imagen del globo (`love_in_the_air.png` copiada como `pink-surprise-luxury-balloon.png`) a petición del usuario
+3. [x] Deploy de cambios a producción
+
+### Cambios en Archivos
+- `constants.ts`: Actualizada ruta de imagen para `gift-pink-surprise-luxury`
+- `public/images/gifts/pink-surprise-luxury-balloon.png`: Nueva imagen (copia de `love_in_the_air.png`)
+
+### Notas
+- Se utilizó la imagen del globo/oso para el producto "Pink Surprise Box - Luxury" aunque la descripción menciona perfume, según confirmación implícita del usuario al adjuntar esa imagen para este producto.

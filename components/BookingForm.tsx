@@ -17,7 +17,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
     const [formData, setFormData] = useState<BookingData>({
         name: '',
         email: '',
-        phone: '+569 ',
+        phone: '',
         date: '',
         time: '',
         isHomeService: false,
@@ -67,10 +67,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
     // Check for existing booking when Name and Phone are entered
     useEffect(() => {
         const checkExisting = () => {
-            if (formData.name.length > 3 && formData.phone.length > 8) {
+            if (formData.name.length > 3 && formData.phone.length === 8) {
                 const stored = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+                const fullPhone = '+569' + formData.phone;
                 const found = stored.find((b: any) =>
-                    b.phone.replace(/\s/g, '') === formData.phone.replace(/\s/g, '') &&
+                    b.phone.replace(/\s/g, '') === fullPhone.replace(/\s/g, '') &&
                     b.name.toLowerCase() === formData.name.toLowerCase()
                 );
 
@@ -164,7 +165,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
     const validateForm = () => {
         const newErrors: { [key: string]: string } = {};
         if (!formData.name) newErrors.name = 'El nombre es obligatorio';
-        if (!formData.phone || formData.phone.trim() === '+569') newErrors.phone = 'El teléfono es obligatorio';
+        if (!formData.phone || formData.phone.length < 8) newErrors.phone = 'Ingresa los 8 dígitos';
         if (!formData.email) {
             newErrors.email = 'El email es obligatorio';
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -182,10 +183,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
         const { name, value, type } = e.target;
         const checked = (e.target as HTMLInputElement).checked;
 
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        if (name === 'phone') {
+            const val = value.replace(/[^0-9]/g, '');
+            if (val.length <= 8) {
+                setFormData(prev => ({ ...prev, phone: val }));
+            }
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            }));
+        }
 
         if (errors[name]) {
             setErrors(prev => {
@@ -208,11 +216,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
     };
 
     const saveBooking = async () => {
+        const fullPhone = '+569' + formData.phone;
         // 1. Save to LocalStorage
         const stored = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
         const newBooking = {
             id: Date.now(),
             ...formData,
+            phone: fullPhone,
             duration_minutes: currentDuration,
             created_at: new Date().toISOString()
         };
@@ -226,7 +236,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
                 const { error: leadError } = await supabase
                     .from('leads')
                     .upsert({
-                        phone: formData.phone,
+                        phone: fullPhone,
                         name: formData.name,
                         email: formData.email,
                         last_booking_date: formData.date,
@@ -238,7 +248,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
                 await supabase.from('bookings').insert([{
                     name: formData.name,
                     email: formData.email,
-                    phone: formData.phone,
+                    phone: fullPhone,
                     date: formData.date,
                     time: formData.time,
                     is_home_service: formData.isHomeService,
@@ -270,7 +280,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
 
     const handleCancelModify = () => {
         setShowModifyModal(false);
-        setFormData(prev => ({ ...prev, name: '', phone: '+569 ' }));
+        setFormData(prev => ({ ...prev, name: '', phone: '' }));
         alert(`Entendido. Tu cita anterior (${existingBooking.date} a las ${existingBooking.time}) se mantiene. ¡Gracias!`);
     };
 
@@ -285,6 +295,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
         setLoading(true);
 
         await saveBooking();
+        const fullPhone = '+569' + formData.phone;
 
         const serviceName = `${service.name}${formData.isHomeService ? ' + Domicilio' : ' (En Studio)'}`;
         const formattedPrice = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(totalPrice);
@@ -293,7 +304,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onSuccess }) => {
 Hola Tus3B Style, acabo de reservar en la web.
 --------------------------------
 *Cliente:* ${formData.name}
-*Teléfono:* ${formData.phone}
+*Teléfono:* ${fullPhone}
 *Servicio:* ${serviceName}
 *Fecha:* ${formData.date}
 *Hora:* ${formData.time}
@@ -309,13 +320,16 @@ Espero su confirmación final. Gracias.
         setLoading(false);
 
         if (onSuccess) {
-            onSuccess(formData);
+            onSuccess({
+                ...formData,
+                phone: fullPhone
+            });
         }
 
         // Navigate to confirmation page with state
         navigate('/confirmation', {
             state: {
-                booking: formData,
+                booking: { ...formData, phone: fullPhone },
                 totalPrice: totalPrice,
                 duration: currentDuration
             }
@@ -452,15 +466,19 @@ Espero su confirmación final. Gracias.
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-bold text-stone-500 uppercase mb-1">Teléfono</label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    className={`w-full px-4 py-3 rounded-lg bg-stone-50 border ${errors.phone ? 'border-red-300 focus:border-red-500' : 'border-stone-200 focus:border-stone-900'} focus:ring-1 outline-none transition-all`}
-                                    placeholder="+569..."
-                                    inputMode="numeric"
-                                />
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-stone-100 border border-stone-200 px-3 py-3 rounded-lg text-stone-500 font-bold">+569</span>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                        maxLength={8}
+                                        className={`w-full px-4 py-3 rounded-lg bg-stone-50 border ${errors.phone ? 'border-red-300 focus:border-red-500' : 'border-stone-200 focus:border-stone-900'} focus:ring-1 outline-none transition-all`}
+                                        placeholder="12345678"
+                                        inputMode="numeric"
+                                    />
+                                </div>
                                 {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                             </div>
                             <div>

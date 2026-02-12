@@ -25,7 +25,7 @@ const DigitalCard: React.FC<DigitalCardProps> = ({ clientName, token, visits, ne
                     name: 'NIVEL GOLD',
                     bgGradient: 'bg-gradient-to-br from-amber-500 to-yellow-600', // Gold
                     stampColor: 'bg-amber-100 text-amber-700',
-                    benefit: '30% OFF'
+                    benefit: '15% OFF'
                 };
             case 'Plata':
                 return {
@@ -159,7 +159,10 @@ const DigitalCard: React.FC<DigitalCardProps> = ({ clientName, token, visits, ne
                                 <div>
                                     <h4 className="font-bold text-slate-200">Nivel Plata</h4>
                                     <p className="text-[10px] text-stone-400">5 - 9 visitas</p>
-                                    <span className="text-[10px] text-slate-300 font-bold">15% OFF en servicios</span>
+                                    <ul className="text-[9px] text-stone-300 list-disc list-inside leading-tight mt-1">
+                                        <li>10% OFF Servicios + 7% Productos</li>
+                                        <li>🎁 Regalo: Decant Árabe 5ml</li>
+                                    </ul>
                                 </div>
                             </div>
 
@@ -167,16 +170,21 @@ const DigitalCard: React.FC<DigitalCardProps> = ({ clientName, token, visits, ne
                             <div className={`p-3 rounded-2xl border ${tier === 'Gold' ? 'border-amber-500 bg-amber-900/20' : 'border-stone-800 bg-stone-900/50 opacity-50'} flex gap-4 items-center`}>
                                 <div className="w-10 h-10 rounded-full bg-amber-500 text-stone-900 flex items-center justify-center font-bold shadow-lg shadow-amber-500/40">10</div>
                                 <div>
-                                    <h4 className="font-bold text-amber-500">Nivel Gold</h4>
-                                    <p className="text-[10px] text-stone-400">10+ visitas</p>
-                                    <span className="text-[10px] text-amber-400 font-bold">30% OFF + VIP</span>
+                                    <h4 className="font-bold text-amber-500">Nivel Gold (VIP)</h4>
+                                    <p className="text-[10px] text-stone-400">10+ visitas / Actualización Anual</p>
+                                    <ul className="text-[9px] text-stone-300 list-disc list-inside leading-tight mt-1">
+                                        <li>15% OFF Servicios + 10% Productos</li>
+                                        <li>Prioridad en Agenda + Regalo Cumpleaños</li>
+                                        <li>🎁 Regalo: Decant Premium 10ml</li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="text-center">
+                    <div className="text-center space-y-1">
                         <p className="text-[10px] text-stone-500">Muestra tu código QR para desbloquear niveles.</p>
+                        <p className="text-[8px] text-stone-600 italic">* El sistema de fidelidad se actualiza de forma anual.</p>
                     </div>
                 </div>
 

@@ -83,14 +83,15 @@ const CheckInPage: React.FC = () => {
         try {
             const cleanPhone = phone.replace(/\D/g, '');
             if (cleanPhone.length < 8) {
-                throw new Error('Ingresa un número válido (ej: 912345678)');
+                throw new Error('Ingresa un número válido (8 dígitos)');
             }
+            const fullPhone = '+569' + cleanPhone;
 
             // 1. Find client
             const { data, error } = await supabase
                 .from('clients')
                 .select('*')
-                .eq('phone', cleanPhone)
+                .eq('phone', fullPhone)
                 .single();
 
             if (error && error.code !== 'PGRST116') throw error;
@@ -98,7 +99,7 @@ const CheckInPage: React.FC = () => {
             if (data) {
                 setClient(data);
                 // 2. Check for today's booking
-                await checkTodaysBooking(data, cleanPhone);
+                await checkTodaysBooking(data, fullPhone);
             } else {
                 setStep('register');
             }
@@ -109,12 +110,12 @@ const CheckInPage: React.FC = () => {
         }
     };
 
-    const checkTodaysBooking = async (clientData: Client, cleanPhone: string) => {
+    const checkTodaysBooking = async (clientData: Client, fullPhone: string) => {
         const today = getTodayStr();
         const { data: bookings } = await supabase
             .from('bookings')
             .select('*')
-            .eq('phone', cleanPhone)
+            .eq('phone', fullPhone)
             .eq('date', today)
             .order('time', { ascending: true });
 
@@ -136,6 +137,8 @@ const CheckInPage: React.FC = () => {
 
         try {
             const cleanPhone = phone.replace(/\D/g, '');
+            const fullPhone = '+569' + cleanPhone;
+
             if (!name.trim()) throw new Error('Ingresa tu nombre');
             if (!termsAccepted) throw new Error('Debes aceptar los términos de uso');
 
@@ -143,7 +146,7 @@ const CheckInPage: React.FC = () => {
                 .from('clients')
                 .insert([{
                     name,
-                    phone: cleanPhone,
+                    phone: fullPhone,
                     visits: 0,
                     email: email || null,
                     birth_date: birthDate || null
@@ -471,16 +474,23 @@ const CheckInPage: React.FC = () => {
                                 <label className="block text-xs font-bold text-stone-500 uppercase tracking-widest ml-1">
                                     Número de Teléfono
                                 </label>
-                                <div className="relative group">
-                                    <input
-                                        type="tel"
-                                        placeholder="9 1234 5678"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        className="w-full bg-stone-950 border border-stone-800 rounded-2xl px-6 py-5 text-white placeholder-stone-700 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all text-2xl tracking-widest text-center shadow-inner font-mono group-hover:border-stone-700"
-                                        autoFocus
-                                    />
-                                    <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-transparent group-hover:ring-white/5 pointer-events-none" />
+                                <div className="relative group flex items-center gap-2">
+                                    <span className="bg-stone-900 border border-stone-800 text-stone-400 rounded-2xl px-4 py-5 font-mono text-xl">+569</span>
+                                    <div className="relative w-full">
+                                        <input
+                                            type="tel"
+                                            placeholder="12345678"
+                                            value={phone}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                                if (val.length <= 8) setPhone(val);
+                                            }}
+                                            className="w-full bg-stone-950 border border-stone-800 rounded-2xl px-6 py-5 text-white placeholder-stone-700 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all text-2xl tracking-widest text-center shadow-inner font-mono group-hover:border-stone-700"
+                                            autoFocus
+                                            maxLength={8}
+                                        />
+                                        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-transparent group-hover:ring-white/5 pointer-events-none" />
+                                    </div>
                                 </div>
                             </div>
                             <button
@@ -552,7 +562,7 @@ const CheckInPage: React.FC = () => {
                                         </label>
                                         <input
                                             type="tel"
-                                            value={phone}
+                                            value={'+569' + phone}
                                             disabled
                                             className="w-full bg-stone-950/50 border border-stone-800/50 rounded-xl px-5 py-4 text-stone-500 font-mono text-lg"
                                         />

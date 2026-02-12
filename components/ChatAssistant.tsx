@@ -1,8 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Sparkles, Loader2 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { sendMessageToStaticBot } from '../services/staticChatService';
 
 const ChatAssistant: React.FC = () => {
+  const { pathname } = useLocation();
+
+  // Hide on Home ("/") and Style Home ("/style") and Amor Amor ("/regalos")
+  if (pathname === '/' || pathname === '/style' || pathname === '/regalos') {
+    return null;
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'bot', text: string }[]>([
     { role: 'bot', text: '¡Hola! Soy tu asistente experto en perfumes árabes. Pregúntame por "recomendaciones dulces", "algo tipo YSL" o por nuestros servicios.' }
@@ -73,8 +81,8 @@ const ChatAssistant: React.FC = () => {
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] p-3 rounded-2xl text-sm whitespace-pre-line ${msg.role === 'user'
-                    ? 'bg-stone-800 text-white rounded-br-none'
-                    : 'bg-white text-stone-800 border border-stone-200 rounded-bl-none shadow-sm'
+                  ? 'bg-stone-800 text-white rounded-br-none'
+                  : 'bg-white text-stone-800 border border-stone-200 rounded-bl-none shadow-sm'
                   }`}>
                   {msg.text}
                 </div>

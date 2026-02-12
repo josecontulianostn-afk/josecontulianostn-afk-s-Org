@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, X, ShoppingCart, CreditCard, RotateCcw, RefreshCw, Trash2, Edit2, Package, User, ShoppingBag, UserPlus } from 'lucide-react';
+import { Search, Plus, X, ShoppingCart, CreditCard, RotateCcw, RefreshCw, Trash2, Edit2, Package, User, ShoppingBag, UserPlus, Crown } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 import { PERFUMES, SERVICES } from '../../constants';
 
@@ -569,14 +569,18 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
                 <div className="mb-6 space-y-2">
                     <label className="text-xs font-bold text-stone-400 uppercase tracking-wider">Cliente</label>
                     {posClient ? (
-                        <div className="flex items-center justify-between p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
+                        <div className={`flex items-center justify-between p-3 rounded-xl border ${posClient.visits >= 10 ? 'bg-amber-50 border-amber-200 text-amber-800' : (posClient.visits >= 5 ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-emerald-50 border-emerald-100 text-emerald-700')}`}>
                             <div className="flex items-center gap-3">
-                                <div className="bg-emerald-100 p-2 rounded-full">
-                                    <User size={16} />
+                                <div className={`p-2 rounded-full ${posClient.visits >= 10 ? 'bg-amber-100' : (posClient.visits >= 5 ? 'bg-slate-200' : 'bg-emerald-100')}`}>
+                                    {posClient.visits >= 10 ? <Crown size={16} className="text-amber-600" /> : <User size={16} />}
                                 </div>
-                                <span className="font-bold">{posClient.name}</span>
+                                <div>
+                                    <span className="font-bold block">{posClient.name}</span>
+                                    {posClient.visits >= 10 && <span className="text-[10px] uppercase font-bold text-amber-600 tracking-wider">Cliente VIP Gold</span>}
+                                    {posClient.visits >= 5 && posClient.visits < 10 && <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Cliente Plata</span>}
+                                </div>
                             </div>
-                            <button onClick={() => setPosClient(null)} className="p-1 hover:bg-emerald-100 rounded-full text-emerald-600">
+                            <button onClick={() => setPosClient(null)} className={`p-1 rounded-full ${posClient.visits >= 10 ? 'hover:bg-amber-100 text-amber-600' : 'hover:bg-stone-100 text-stone-500'}`}>
                                 <X size={16} />
                             </button>
                         </div>
@@ -612,12 +616,60 @@ const POSModule: React.FC<POSModuleProps> = ({ initialClient }) => {
                                                 <div className="font-bold text-stone-800">{c.name || 'Sin Nombre'}</div>
                                                 <div className="text-xs text-stone-400">{c.phone}</div>
                                             </div>
-                                            {c.visits && <span className="text-[10px] bg-stone-100 px-2 py-1 rounded-full">{c.visits} visitas</span>}
+                                            <div className="flex items-center gap-1">
+                                                {c.visits >= 10 && <Crown size={12} className="text-amber-500 fill-amber-500" />}
+                                                <span className={`text-[10px] px-2 py-1 rounded-full ${c.visits >= 10 ? 'bg-amber-100 text-amber-700 font-bold' : (c.visits >= 5 ? 'bg-slate-100 text-slate-600 font-bold' : 'bg-stone-100')}`}>
+                                                    {c.visits} visitas
+                                                </span>
+                                            </div>
                                         </button>
                                     ))}
                                 </div>
                             )}
                         </div>
+                    )}
+
+                    {/* Discount Buttons */}
+                    {posClient && cart.some(i => i.type === 'product') && (
+                        <>
+                            {/* Gold Discount (10%) */}
+                            {posClient.visits >= 10 && (
+                                <button
+                                    onClick={() => {
+                                        setCart(cart.map(item => {
+                                            if (item.type === 'product') {
+                                                return { ...item, price: Math.floor(item.price * 0.90) };
+                                            }
+                                            return item;
+                                        }));
+                                        setMessage("💰 Descuento VIP (10%) aplicado a productos");
+                                        setTimeout(() => setMessage(''), 3000);
+                                    }}
+                                    className="w-full py-2 bg-amber-100 text-amber-800 text-xs font-bold rounded-lg hover:bg-amber-200 transition flex items-center justify-center gap-1"
+                                >
+                                    <Crown size={14} /> Aplicar 10% OFF Extra (VIP)
+                                </button>
+                            )}
+
+                            {/* Plata Discount (7%) */}
+                            {posClient.visits >= 5 && posClient.visits < 10 && (
+                                <button
+                                    onClick={() => {
+                                        setCart(cart.map(item => {
+                                            if (item.type === 'product') {
+                                                return { ...item, price: Math.floor(item.price * 0.93) };
+                                            }
+                                            return item;
+                                        }));
+                                        setMessage("💰 Descuento Plata (7%) aplicado a productos");
+                                        setTimeout(() => setMessage(''), 3000);
+                                    }}
+                                    className="w-full py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-200 transition flex items-center justify-center gap-1"
+                                >
+                                    <User size={14} /> Aplicar 7% OFF (Plata)
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
 

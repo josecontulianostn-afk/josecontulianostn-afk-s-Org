@@ -500,17 +500,19 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     };
 
     const saveClient = async () => {
-        if (!clientFormPhone) return alert("El teléfono es obligatorio");
+        if (!clientFormPhone || clientFormPhone.length < 8) return alert("El teléfono debe tener 8 dígitos");
 
         // Simple validation or standardizing
-        const phoneClean = clientFormPhone.trim();
+        const phoneClean = clientFormPhone.replace(/[^0-9]/g, '');
+        const fullPhone = '+569' + phoneClean;
 
         try {
             if (editingClient) {
                 // Update
                 const { error } = await supabase.from('clients').update({
                     name: clientFormName,
-                    phone: phoneClean
+                    // Phone usually is not updated if it's ID, but if allowed:
+                    // phone: fullPhone 
                 }).eq('id', editingClient.id);
                 if (error) throw error;
                 alert('Cliente actualizado');
@@ -519,7 +521,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                 // Check if exists first to avoid duplicate errors unique violation if needed, but phone should be unique
                 const { error } = await supabase.from('clients').insert({
                     name: clientFormName,
-                    phone: phoneClean,
+                    phone: fullPhone,
                     member_token: 'manual-' + Date.now(), // Temp token for manual entries
                     visits: 0
                 });
@@ -673,10 +675,12 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
     };
 
     const handleAddVisit = async () => {
-        if (phone.length < 8) {
-            alert("Ingrese un número válido (ej: +569...)");
+        const cleanPhone = phone.replace(/[^0-9]/g, '');
+        if (cleanPhone.length < 8) {
+            alert("Ingrese un número válido (8 dígitos)");
             return;
         }
+        const fullPhone = '+569' + cleanPhone;
 
         try {
             setMessage("Procesando...");
@@ -686,18 +690,8 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                 const price = parseInt(servicePrice) || 0;
                 const cost = parseInt(extraCost) || 0;
 
-                // Note: RPC might need update to accept extra costs, or we update transaction after?
-                // For now, let's update the transaction immediately after if RPC returns success/transaction_id
-                // OR better: Just rely on recording transaction separately if RPC doesn't handle it fully?
-                // Actually, add_hair_service_by_phone creates a 'hair_service_log' entry but maybe not 'transactions'?
-                // Checking previous code: we rely on separate transaction recording usually?
-                // Wait, in handleAddVisit for 'hair' tab, we called the RPC.
-                // Let's check if the RPC creates a transaction. If not, we do it here.
-
-                // Assuming we want to record the transaction with details:
-
                 const { data, error } = await supabase.rpc('add_hair_service_by_phone', {
-                    phone_input: phone,
+                    phone_input: fullPhone,
                     service_type: serviceType,
                     service_price: price,
                     notes_input: `Ingreso Manual. Extras: ${extraCostDetail} ($${cost})`
@@ -706,9 +700,8 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                 if (error) throw error;
 
                 if (data.success) {
-                    // Record financial transaction separately to ensure costs are tracked
-                    // First get client ID from phone (RPC should ideally return it or we fetch)
-                    const { data: clientData } = await supabase.from('clients').select('id').eq('phone', phone).single();
+                    // Record financial transaction separately
+                    const { data: clientData } = await supabase.from('clients').select('id').eq('phone', fullPhone).single();
 
                     if (clientData) {
                         await recordTransaction(clientData.id, price, 'service', `Servicio: ${serviceType}`, cost, extraCostDetail);
@@ -727,7 +720,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                 const { data: existingClient, error: fetchError } = await supabase
                     .from('clients')
                     .select('*')
-                    .eq('phone', phone)
+                    .eq('phone', fullPhone)
                     .single();
 
                 // If not found, create new (simple logic for now, or rely on upsert)
@@ -739,7 +732,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                 const { data: upsertData, error: upsertError } = await supabase
                     .from('clients')
                     .upsert({
-                        phone: phone,
+                        phone: fullPhone,
                         visits: newVisits,
                         last_visit: new Date().toISOString()
                     }, { onConflict: 'phone' })
@@ -752,7 +745,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                 const amount = (parseInt(visitAmount) || 0);
                 await recordTransaction(upsertData.id, amount, 'service', 'Manual: Visita');
 
-                setMessage('Visita registrada para ' + phone + '. Total: ' + newVisits);
+                setMessage('Visita registrada para ' + fullPhone + '. Total: ' + newVisits);
                 setPhone('');
             }
 
@@ -779,13 +772,20 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                 </p>
 
                 <div className="flex gap-4 mb-4 flex-wrap">
-                    <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+569..."
-                        className="flex-1 min-w-[150px] px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-green-600 outline-none"
-                    />
+                    <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                        <span className="bg-stone-200 border border-stone-300 text-stone-600 px-3 py-3 rounded-lg font-bold">+569</span>
+                        <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => {
+                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                if (val.length <= 8) setPhone(val);
+                            }}
+                            placeholder="12345678"
+                            maxLength={8}
+                            className="w-full px-4 py-3 rounded-lg border border-stone-300 focus:ring-2 focus:ring-green-600 outline-none"
+                        />
+                    </div>
                     {activeTab === 'loyalty' && (
                         <input
                             type="number"
@@ -993,13 +993,20 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ onLogout }) => {
                                         <div className="space-y-3 mb-6">
                                             <div>
                                                 <label className="text-xs text-stone-500 mb-1 block">Teléfono (ID único)</label>
-                                                <input
-                                                    className="w-full bg-stone-900 border border-stone-700 rounded p-2 text-white text-sm disabled:opacity-50"
-                                                    placeholder="+569..."
-                                                    value={clientFormPhone}
-                                                    onChange={e => setClientFormPhone(e.target.value)}
-                                                    disabled={!!editingClient} // Disable phone editing if updating to avoid ID issues for now
-                                                />
+                                                <div className="flex items-center gap-2">
+                                                    <span className="bg-stone-800 border border-stone-700 text-stone-400 px-2 py-2 rounded text-sm">+569</span>
+                                                    <input
+                                                        className="w-full bg-stone-900 border border-stone-700 rounded p-2 text-white text-sm disabled:opacity-50"
+                                                        placeholder="12345678"
+                                                        value={clientFormPhone}
+                                                        onChange={e => {
+                                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                                            if (val.length <= 8) setClientFormPhone(val);
+                                                        }}
+                                                        disabled={!!editingClient} // Disable phone editing if updating to avoid ID issues for now
+                                                        maxLength={8}
+                                                    />
+                                                </div>
                                                 {editingClient && <p className="text-[10px] text-stone-500 mt-1">El teléfono no se puede cambiar.</p>}
                                             </div>
                                             <div>

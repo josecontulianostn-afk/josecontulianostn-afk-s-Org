@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
-import { ChevronLeft, ChevronRight, X, Calendar, Edit2, Trash2, Lock, Clock, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Calendar, Edit2, Trash2, Lock, Clock, CheckCircle, Crown } from 'lucide-react';
 
 interface AgendaModuleProps {
     onRegisterService?: (booking: { name: string; phone: string; service: string }) => void;
@@ -32,21 +32,45 @@ const AgendaModule: React.FC<AgendaModuleProps> = ({ onRegisterService }) => {
     const [quickBlockEnd, setQuickBlockEnd] = useState<string>('21:00');
     const [quickBlockDate, setQuickBlockDate] = useState<string>('');
 
+    const [vipPhones, setVipPhones] = useState<Set<string>>(new Set());
+
     useEffect(() => {
         fetchBookings();
     }, [weekStart]);
 
     const fetchBookings = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('bookings')
-            .select('*')
-            .order('date', { ascending: true })
-            .order('time', { ascending: true });
+        try {
+            const { data, error } = await supabase
+                .from('bookings')
+                .select('*')
+                .order('date', { ascending: true })
+                .order('time', { ascending: true });
 
-        if (error) console.error('Error fetching bookings:', error);
-        else setBookings(data || []);
-        setLoading(false);
+            if (error) throw error;
+
+            setBookings(data || []);
+
+            // Optimization: Extract phones and fetch VIP status
+            if (data && data.length > 0) {
+                const uniquePhones = [...new Set(data.map(b => b.phone).filter(p => p && p.length >= 8))];
+                if (uniquePhones.length > 0) {
+                    const { data: vipClients } = await supabase
+                        .from('clients')
+                        .select('phone')
+                        .gte('visits', 10)
+                        .in('phone', uniquePhones);
+
+                    if (vipClients) {
+                        setVipPhones(new Set(vipClients.map(c => c.phone)));
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching bookings:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const getWeekDays = (start: Date) => {
@@ -154,7 +178,7 @@ const AgendaModule: React.FC<AgendaModuleProps> = ({ onRegisterService }) => {
                     date: selectedSlot.date,
                     time: slotTime,
                     name: name,
-                    phone: manualBookingPhone || '00000000',
+                    phone: manualBookingPhone ? '+569' + manualBookingPhone : '00000000',
                     email: 'manual@admin.com',
                     service_name: isBlock ? 'Bloqueo' : `${manualBookingService} (${manualBookingDuration}h)`,
                     is_home_service: manualBookingType === 'domicilio',
@@ -383,14 +407,25 @@ const AgendaModule: React.FC<AgendaModuleProps> = ({ onRegisterService }) => {
                                 let isClickable = true;
 
                                 if (booking) {
+                                    const isVIP = vipPhones.has(booking.phone);
+
                                     if (booking.name === 'BLOQUEADO') {
                                         cellClass += " bg-red-100 hover:bg-red-200 border-red-200 cursor-pointer";
                                         content = <div className="flex justify-center items-center h-full text-red-400"><Lock size={16} /></div>;
                                     } else {
                                         cellClass += booking.is_home_service ? " bg-blue-100 hover:bg-blue-200 border-blue-200 cursor-pointer" : " bg-purple-100 hover:bg-purple-200 border-purple-200 cursor-pointer";
+
+                                        // VIP Style Override
+                                        if (isVIP) {
+                                            cellClass = "transition p-1 border-r border-stone-100 min-h-[50px] bg-amber-100 hover:bg-amber-200 border-amber-300 cursor-pointer relative";
+                                        }
+
                                         content = (
                                             <div className="text-[10px] leading-tight p-1 h-full overflow-hidden">
-                                                <div className="font-bold truncate">{booking.name}</div>
+                                                <div className="font-bold truncate flex items-center gap-1">
+                                                    {isVIP && <Crown size={10} className="text-amber-600 fill-amber-600" />}
+                                                    {booking.name}
+                                                </div>
                                                 <div className="text-stone-500 truncate">{booking.service_name}</div>
                                             </div>
                                         );
@@ -455,12 +490,19 @@ const AgendaModule: React.FC<AgendaModuleProps> = ({ onRegisterService }) => {
                                         onChange={e => setManualBookingName(e.target.value)}
                                         autoFocus
                                     />
-                                    <input
-                                        className="w-full border border-stone-300 rounded-lg p-2 text-sm"
-                                        placeholder="Teléfono (Opcional)"
-                                        value={manualBookingPhone}
-                                        onChange={e => setManualBookingPhone(e.target.value)}
-                                    />
+                                    <div className="flex items-center gap-2 w-full">
+                                        <span className="bg-stone-200 border border-stone-300 text-stone-600 px-2 py-2 rounded-lg font-bold text-sm">+569</span>
+                                        <input
+                                            className="w-full border border-stone-300 rounded-lg p-2 text-sm outline-none focus:ring-1 focus:ring-stone-400"
+                                            placeholder="12345678"
+                                            value={manualBookingPhone}
+                                            onChange={e => {
+                                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                                if (val.length <= 8) setManualBookingPhone(val);
+                                            }}
+                                            maxLength={8}
+                                        />
+                                    </div>
                                     <select
                                         className="w-full border border-stone-300 rounded-lg p-2 text-sm"
                                         value={manualBookingService}

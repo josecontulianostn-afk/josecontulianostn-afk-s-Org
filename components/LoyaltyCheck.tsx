@@ -33,12 +33,8 @@ const LoyaltyCheck: React.FC = () => {
         let cleaned = value.replace(/[^0-9kK]/g, '').toUpperCase();
         // Replace K with 0 (as per user request "el K lo cambie por un 0")
         cleaned = cleaned.replace('K', '0');
-        // Limit length? Usually RUT is 8-9 chars. User said "sin puntos ni digito verificador"? 
-        // User request: "el rut que no tenga puntos ni digito verificador" 
-        // This implies just the number part? Or they meant "without validation digits"? 
-        // "que el K lo cambie por un 0" implies the verifier IS entered or handled.
-        // Let's assume standard input but we strip formatting.
-        return cleaned;
+        // Limit to 9 characters
+        return cleaned.slice(0, 9);
     };
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +43,20 @@ const LoyaltyCheck: React.FC = () => {
             setPhone(val);
         }
     };
-
+    // ... (skip down to lines 279-281)
+    <input
+        type="text"
+        placeholder="RUT (Sin puntos ni guión)"
+        required
+        value={regRUT}
+        onChange={(e) => {
+            const val = formatRUT(e.target.value);
+            setRegRUT(val);
+            setErrorMessage(null);
+        }}
+        maxLength={9}
+        className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:border-amber-500/50 focus:outline-none"
+    />
     const checkLoyalty = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
 
