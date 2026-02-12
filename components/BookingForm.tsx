@@ -415,18 +415,25 @@ Espero su confirmación final. Gracias.
                                     name="isHomeService"
                                     type="checkbox"
                                     checked={formData.isHomeService}
-                                    onChange={handleChange}
+                                    onChange={(e) => {
+                                        handleChange(e);
+                                        if (e.target.checked) {
+                                            const message = encodeURIComponent(`Hola, me interesa el servicio a domicilio para ${service.name}. ¿Tienen disponibilidad para la fecha [Indicar Fecha]? Soy de la comuna [Indicar Comuna]`);
+                                            window.open(`https://wa.me/${PHONE_NUMBER}?text=${message}`, '_blank');
+                                        }
+                                    }}
                                     disabled={service.homeServiceOnly}
                                     className="focus:ring-stone-500 h-5 w-5 text-stone-900 border-gray-300 rounded cursor-pointer disabled:opacity-50"
                                 />
                             </div>
                             <div className="ml-3">
                                 <label htmlFor="isHomeService" className="font-bold text-stone-900 cursor-pointer">
-                                    {service.homeServiceOnly ? 'Servicio Exclusivo a Domicilio' : '¿Servicio a Domicilio? (+ $3.000)'}
+                                    {service.homeServiceOnly ? 'Servicio Exclusivo a Domicilio' : '¿Servicio a Domicilio? (+ $9.990) - Sujeto a disponibilidad'}
                                 </label>
                                 <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-                                    Vamos a tu casa en {COVERAGE_AREAS.join(', ')}. <br />
-                                    <span className="text-blue-600 font-medium">Incluye +30 min de traslado.</span>
+                                    <span className="font-bold text-amber-600">⚠️ Servicio bajo disponibilidad de la estilista.</span><br />
+                                    Confirma disponibilidad por WhatsApp antes de agendar.<br />
+                                    Cobertura: {COVERAGE_AREAS.join(', ')}.
                                 </p>
                             </div>
                         </div>

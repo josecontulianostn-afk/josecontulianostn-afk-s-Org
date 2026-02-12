@@ -171,3 +171,10 @@ npm run deploy
 - **Causa:** El código (`GiftZone.tsx`) agrega un ícono de corazón automáticamente, y el texto en `constants.ts` también tenía un emoji '💗'.
 - **Solución:** Se eliminaron los emojis '💗' de `constants.ts`.
 - **Estado:** Desplegado.
+
+### Actualización Servicio a Domicilio (13:30 PM)
+- **Cambio:** Se actualizó la tarifa de domicilio de $3.000 a $9.990.
+- **Cambio:** Se agregaron Providencia y Las Condes a las zonas de cobertura.
+- **UX:** Ahora al marcar "Servicio a Domicilio", se abre automáticamente WhatsApp con un mensaje pre-llenado para consultar disponibilidad.
+- **Texto:** Se agregaron advertencias claras sobre la disponibilidad limitada.
+- **Estado:** Desplegado.

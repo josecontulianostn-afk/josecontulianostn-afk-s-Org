@@ -91,9 +91,9 @@ export const SERVICES: Service[] = [
   }
 ];
 
-export const HOME_SERVICE_FEE = 3000;
+export const HOME_SERVICE_FEE = 9990;
 export const HOME_SERVICE_EXTRA_MINUTES = 30; // Extra time for travel/setup
-export const COVERAGE_AREAS = ['Santiago Centro', 'Ñuñoa'];
+export const COVERAGE_AREAS = ['Santiago Centro', 'Providencia', 'Ñuñoa', 'Las Condes'];
 
 // Data for perfumes using reliable product image CDNs (Notino/Unsplash)
 export const PERFUMES: Perfume[] = [
