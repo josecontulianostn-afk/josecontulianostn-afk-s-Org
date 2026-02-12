@@ -29,7 +29,7 @@ const Hero: React.FC<HeroProps> = ({ onCtaClick }) => {
         <p className="text-stone-200 max-w-lg mx-auto text-lg mb-10 font-light">
           Experiencia exclusiva en nuestro Studio. Cortes y tratamientos personalizados.
           <br className="hidden md:block" />
-          <span className="text-sm opacity-80">(Servicio a domicilio disponible con recargo)</span>
+          <span className="text-sm opacity-80">(Atención en nuestro studio. Domicilio según disponibilidad)</span>
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

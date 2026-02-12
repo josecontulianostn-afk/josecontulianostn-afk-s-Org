@@ -12,7 +12,7 @@ const Footer: React.FC = () => {
               Tus3B <span className="text-stone-400 not-italic font-light text-xl ml-1">Style</span>
             </span>
             <p className="text-stone-400 font-light max-w-xs mx-auto md:mx-0">
-              Elevando tu estilo con servicios de peluquería premium a domicilio y lo mejor de la perfumería internacional.
+              Elevando tu estilo con servicios de peluquería premium y lo mejor de la perfumería internacional. Studio boutique en Santiago.
             </p>
           </div>
 

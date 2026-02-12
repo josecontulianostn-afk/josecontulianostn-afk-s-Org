@@ -178,3 +178,9 @@ npm run deploy
 - **UX:** Ahora al marcar "Servicio a Domicilio", se abre automáticamente WhatsApp con un mensaje pre-llenado para consultar disponibilidad.
 - **Texto:** Se agregaron advertencias claras sobre la disponibilidad limitada.
 - **Estado:** Desplegado.
+
+### Corrección de Contenidos (13:55 PM)
+- **Testimonio:** Se corrigió el testimonio de "Carla S." para eliminar la referencia falsa a "atención a domicilio" y enfocarlo en la experiencia en el studio.
+- **Hero:** Se cambió el texto "(Servicio a domicilio disponible con recargo)" por "(Atención en nuestro studio. Domicilio según disponibilidad)".
+- **Footer:** Se ajustó la descripción para no sobre-prometer servicios a domicilio y destacar el "Studio boutique".
+- **Estado:** Desplegado.

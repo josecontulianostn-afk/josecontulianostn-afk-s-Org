@@ -464,7 +464,7 @@ export const REVIEWS: Review[] = [
     id: 'r2',
     name: 'Carla S.',
     rating: 5,
-    comment: 'Increíble la atención a domicilio. Todo muy limpio y ordenado, y los perfumes huelen delicioso. Totalmente recomendada.',
+    comment: "Increíble la atención en el studio. Todo muy limpio y ordenado, y los perfumes huelen delicioso. Totalmente recomendada.",
     date: 'Hace 1 mes'
   },
   {
