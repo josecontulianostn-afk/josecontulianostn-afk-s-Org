@@ -573,7 +573,7 @@ export const GIFTS = [
     name: '✨ Love in the Air ✨',
     price: 26990,
     description: '¿Buscas una sorpresa que llegue a lo más alto? Hemos diseñado este encantador globo aerostático que combina la ternura clásica con una presentación inolvidable. Dulzura, suavidad y magia: el regalo perfecto para hacer volar su corazón en este día especial.',
-    image: '/love-air-correct.png',
+    image: '/love-air-correct.JPG',
     includes: [
       '💗 Oso de Peluche Premium',
       '💗 Caja Hershey\'s Kisses',

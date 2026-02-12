@@ -155,3 +155,8 @@ npm run deploy
 - **Acción:** El usuario subió las imágenes correctas (`pink-luxury-correct.jpg` y `love-air-correct.png`).
 - **Cambio:** Se actualizaron `gift-pink-surprise-luxury` y `love-in-air` en `constants.ts` para apuntar a los archivos correctos.
 - **Estado:** Corregido y desplegado nuevamente.
+
+### Actualización (11:45 AM)
+- **Cambio:** El usuario convirtió la imagen de "Love in the Air" a formato JPG (`love-air-correct.JPG`).
+- **Acción:** Se actualizó `constants.ts` para reflejar el cambio de extensión (.png -> .JPG).
+- **Estado:** Desplegado.
